@@ -22,6 +22,9 @@
         <option id="pbsmrtpipe.task_option.option_id2">
         <value>abcd</value>
         </option>
+        <option id="pbsmrtpipe.task_options.falcon.hello_message">
+            <value>My Most Especial Falcon Message</value>
+        </option>
     </task-options>
 
 </pipeline-template>
