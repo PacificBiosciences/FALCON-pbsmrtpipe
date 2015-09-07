@@ -1,3 +1,5 @@
+"""This file is an experimental WIP.
+"""
 from falcon_kit import run_support as support
 import pbcommand.cli
 import pbsmrtpipe.cli_utils
