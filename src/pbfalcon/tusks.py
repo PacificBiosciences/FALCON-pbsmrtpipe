@@ -121,7 +121,7 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
             script_fn = args['script_fn']
             rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
             print rc.exit_code
-    write_fns(o_fofn_fn, ['%s.1.las'%db_prefix]) # This is wrong, but it could just be a done-file I think.
+    write_fns(o_fofn_fn, glob.glob('%s/*.las' %os.path.dirname(script_fn)))
     return rc
 
 
@@ -154,7 +154,8 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
             uid += 1
             jobd = os.path.join(wd, "./job_%s" % job_uid)
             l = l.split()
-            if l[0] == "daligner":
+            if l[0] in ("daligner", "daligner_p"):
+                # daligner_p means this was chunked, but we pretend it is normal.
                 support.make_dirs(jobd)
                 call = "cd %s; ln -sf ../.%s.bps .; ln -sf ../.%s.idx .; ln -sf ../%s.db ." % (jobd, db_prefix, db_prefix, db_prefix)
                 rc = os.system(call)
@@ -179,9 +180,8 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
 
 def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
     print('run_merge_consensus_jobs: %s %s' %(repr(input_files), repr(output_files)))
-    i_json_config_fn, run_daligner_job_fn, daligner_done_fn = input_files
+    i_json_config_fn, run_daligner_job_fn, i_fofn_fn = input_files
     o_fofn_fn, = output_files
-    dal_dir = os.path.dirname(daligner_done_fn)
     db_dir = os.path.dirname(run_daligner_job_fn)
     cmds = ['pwd', 'ls -al']
     fns = ['.{pre}.bps', '.{pre}.idx', '{pre}.db']
@@ -195,7 +195,8 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
     print(repr(cmd))
     cwd = os.getcwd()
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
-    tasks = create_merge_tasks(dal_dir, run_daligner_job_fn, cwd, db_prefix=db_prefix, config=config)
+    # i_fofn_fn has the .las files, so create_merge_tasks does not need to look for theme.
+    tasks = create_merge_tasks(i_fofn_fn, run_daligner_job_fn, cwd, db_prefix=db_prefix, config=config)
     for p_id, argstuple in tasks.items():
             merge_args, cons_args = argstuple
             job_done = os.path.join(cwd, "rp_%05d_done" %p_id)
@@ -220,7 +221,7 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
             #print rc.exit_code
     write_fns(o_fofn_fn, sorted(os.path.abspath(f) for f in glob.glob('preads/out*.fasta')))
 
-def create_merge_tasks(dal_dir, run_jobs_fn, wd, db_prefix, config):
+def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
     tasks = {} # pid -> (merge_params, cons_params)
     mjob_data = {}
 
@@ -263,9 +264,11 @@ def create_merge_tasks(dal_dir, run_jobs_fn, wd, db_prefix, config):
         merge_dir = os.path.join(wd, merge_subdir)
         support.make_dirs(merge_dir)
         with cd(merge_dir):
-            print("dal_dir=%r" %dal_dir)
-            for fn in glob.glob('%s/%s/*.las' %(dal_dir, merge_subdir)):
-                print("symnlink %r <- %r" %(fn, os.path.basename(fn)))
+            print("i_fofn_fn=%r" %i_fofn_fn)
+            # Since we could be in the gather-task-dir, instead of globbing,
+            # we will read the fofn.
+            for fn in open(i_fofn_fn).read().splitlines():
+                print("symlink %r <- %r" %(fn, os.path.basename(fn)))
                 os.symlink(fn, os.path.basename(fn))
 
         merge_script_file = os.path.abspath( "%s/m_%05d/m_%05d.sh" % (wd, p_id, p_id) )

@@ -48,8 +48,8 @@ def run_main(json_file, bash_file, output_json, max_nchunks, chunk_keys):
     print("HELLOOOOOOOOOOOOOOOOOOOOOO")
     #CU.write_fasta_chunks_to_file(output_json, fasta_file, max_nchunks, output_dir, "scattered-daligner-jobs", "sh")
 
-    CU.write_bar(output_json, json_file,
-                                      bash_file,
+    CU.write_run_daligner_chunks_falcon(True, output_json, json_file,
+                                        bash_file,
                                         max_nchunks, output_dir,
                                        "scattered-daligner-jobs", "sh", chunk_keys)
     print("BYEEEEEEEEEEEEEEEEEEEEEEEEEEEE")

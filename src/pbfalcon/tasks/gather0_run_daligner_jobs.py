@@ -47,9 +47,11 @@ def run_main(chunk_json, fofn_output, chunk_key):
 
     fofn_files = get_datum_from_chunks_by_chunk_key(chunks, chunk_key)
     print("fofn_files:%s %s" %(repr(fofn_files), repr(fofn_output)))
-    #_ = gather_fasta(fastx_files, fasta_output)
-
-    return 0
+    # Combine all into one.
+    with open(fofn_output, 'w') as ofs:
+        for fn in fofn_files:
+            with open(fn) as ifs:
+                ofs.write(ifs.read())
 
 
 def args_runner(args):
