@@ -48,7 +48,7 @@ setup(
     tests_require=['nose'],
     long_description=_get_description(_get_local_file(_README)),
     #classifiers=['Development Status :: 4 - Beta'],
-    #include_package_data=True,
-    #zip_safe=False,
-    #package_data={'pbsmrtpipe': ['cluster_templates/*/*.tmpl', ]},
+    include_package_data=True,
+    zip_safe=False,
+    package_data={'pbfalcon': ['rtcs/*.json', ]},
 )
