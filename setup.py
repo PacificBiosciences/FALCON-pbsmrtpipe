@@ -35,7 +35,7 @@ setup(
     name='FALCON-pbsmrtpipe',
     version=version,
     package_dir={'': 'src'},
-    packages=['pbfalcon',],
+    packages=['pbfalcon', 'pbfalcon.tasks'],
     license='See LICENSE file.',
     author='Jason Chin',
     author_email='cdunn@pacificbiosciences.com',
