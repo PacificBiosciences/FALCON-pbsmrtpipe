@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from falcon_kit import run_support as support
 import glob
 import hashlib
+import itertools
 import json
 import logging
 import os
@@ -115,13 +116,15 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
     tasks = create_daligner_tasks(
             run_daligner_job_fn, cwd, db_prefix, db_prefix+'.db', config)
+    odirs = []
     for jobd, args in tasks.items():
         with cd(jobd):
             support.run_daligner(**args)
             script_fn = args['script_fn']
             rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-            print rc.exit_code
-    write_fns(o_fofn_fn, glob.glob('%s/*.las' %os.path.dirname(script_fn)))
+            print rc.exit_code, "script_fn=%s"%script_fn
+            odirs.append(os.path.dirname(script_fn))
+    write_fns(o_fofn_fn, itertools.chain.from_iterable(glob.glob('%s/*.las' %d) for d in odirs))
     return rc
 
 
