@@ -38,15 +38,16 @@ def _get_config_from_json_fileobj(ifs_json):
     return json.loads(i_json)
 
 def run_falcon_config(input_files, output_files):
-        config_fn, = input_files
-        json_fn, = output_files
-        config = _get_config(config_fn)
-        config['ORIGINAL_SELF'] = config_fn
+        i_config_fn, i_fasta_fofn = input_files
+        o_json_fn, = output_files
+        config = _get_config(i_config_fn)
+        config['input_fofn_fn'] = os.path.abspath(i_fasta_fofn)
+        config['ORIGINAL_SELF'] = i_config_fn
         output = json.dumps(config)
         out = StringIO.StringIO()
         out.write(output)
         log.info('falcon_config:\n' + output)
-        with open(json_fn, 'w') as ofs:
+        with open(o_json_fn, 'w') as ofs:
             ofs.write(output)
         #return run_cmd('echo hi', open(hello, 'w'), sys.stderr, shell=False)
 
