@@ -37,6 +37,16 @@ def _get_config_from_json_fileobj(ifs_json):
     say('JSON=\n%s' %i_json[:1024]) # truncated
     return json.loads(i_json)
 
+def run_falcon_config_get_fasta(input_files, output_files):
+        i_config_fn, = input_files
+        o_fofn_fn, = output_files
+        config = _get_config(i_config_fn)
+        i_fofn_fn = config['input_fofn_fn']
+        msg = '%r -> %r' %(i_fofn_fn, o_fofn_fn)
+        say(msg)
+        with cd(os.path.dirname(i_fofn_fn)):
+            return support.make_fofn_abs(i_fofn_fn, o_fofn_fn)
+
 def run_falcon_config(input_files, output_files):
         i_config_fn, i_fasta_fofn = input_files
         o_json_fn, = output_files
@@ -53,13 +63,13 @@ def run_falcon_config(input_files, output_files):
 
 def run_falcon_make_fofn_abs(input_files, output_files):
         i_json_fn, = input_files
+        o_fofn_fn, = output_files
         config = _get_config_from_json_fileobj(open(i_json_fn))
         i_fofn_fn = config['input_fofn_fn']
         if not i_fofn_fn.startswith('/'):
             # i_fofn_fn can be relative to the location of the config file.
             original_config_fn = config['ORIGINAL_SELF']
             i_fofn_fn = os.path.join(os.path.dirname(original_config_fn), i_fofn_fn)
-        o_fofn_fn, = output_files
         msg = '%r -> %r' %(i_fofn_fn, o_fofn_fn)
         say(msg)
         with cd(os.path.dirname(i_fofn_fn)):

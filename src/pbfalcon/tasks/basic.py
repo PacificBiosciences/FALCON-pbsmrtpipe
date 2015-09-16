@@ -32,6 +32,11 @@ def FT(file_type, basename):
                           basename)
 RDJ = FT(FC_BASH, 'run_daligner_jobs.sh')
 
+@registry('task_falcon_config_get_fasta', '0.0.0', [FC_CONFIG], [FC_FOFN], is_distributed=False)
+def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
+    return pbfalcon.run_falcon_config_get_fasta(rtc.task.input_files, rtc.task.output_files)
+
 @registry('task_falcon_config', '0.0.0', [FC_CONFIG, FC_FOFN], [FC_JSON], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
