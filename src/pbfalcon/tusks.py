@@ -15,10 +15,12 @@ log = logging.getLogger(__name__)
 @contextmanager
 def cd(newdir):
     prevdir = os.getcwd()
+    say('CD: %r <- %r' %(newdir, prevdir))
     os.chdir(os.path.expanduser(newdir))
     try:
         yield
     finally:
+        say('CD: %r -> %r' %(newdir, prevdir))
         os.chdir(prevdir)
 
 def say(msg):

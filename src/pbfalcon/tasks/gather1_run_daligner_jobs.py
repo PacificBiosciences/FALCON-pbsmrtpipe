@@ -1,14 +1,14 @@
-import logging
-import sys
-
+from .. import tusks as pbfalcon
 from pbcommand.pb_io import load_pipeline_chunks_from_json
-
 from pbcommand.utils import setup_log
 from pbcommand.cli import pbparser_runner
 from pbcommand.models import (FileTypes, get_gather_pbparser)
-
 from pbsmrtpipe.tools.gather import (gather_fasta,
                                      get_datum_from_chunks_by_chunk_key)
+import logging
+import os
+import sys
+cd = pbfalcon.cd
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +38,7 @@ def get_contract_parser():
 
 
 def run_main(chunk_json, fofn_output, chunk_key):
+  with cd(os.path.dirname(fofn_output)):
     chunks = load_pipeline_chunks_from_json(chunk_json)
 
     # Allow looseness

@@ -4,7 +4,9 @@ from .. import tusks as pbfalcon
 from pbcommand.cli import registry_builder, registry_runner
 from pbcommand.models import (FileTypes, OutputFileType)
 import logging
+import os
 import sys
+cd = pbfalcon.cd
 
 log = logging.getLogger(__name__)
 
@@ -32,39 +34,48 @@ RDJ = FT(FC_BASH, 'run_daligner_jobs.sh')
 
 @registry('task_falcon_config', '0.0.0', [FC_CONFIG], [FC_JSON], is_distributed=False)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_config(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon_make_fofn_abs', '0.0.0', [FC_FOFN], [FC_FOFN], is_distributed=False)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_make_fofn_abs(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon0_build_rdb', '0.0.0', [FC_JSON, FC_FOFN], [RDJ, FT(FC_DUMMY, 'job.done')], is_distributed=False)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_build_rdb(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon0_run_daligner_jobs', '0.0.0', [FC_JSON, RDJ], [FC_FOFN], is_distributed=False, nproc=4)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_daligner_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
 
 @registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FC_JSON, RDJ, FC_FOFN], [FC_FOFN], is_distributed=False)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
 
 # Run similar steps for preads.
 @registry('task_falcon1_build_pdb', '0.0.0', [FC_JSON, FC_FOFN], [RDJ], is_distributed=False)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_build_pdb(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon1_run_daligner_jobs', '0.0.0', [FC_JSON, RDJ], [FC_FOFN], is_distributed=False, nproc=4)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_daligner_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
 @registry('task_falcon1_run_merge_consensus_jobs', '0.0.0', [FC_JSON, RDJ, FC_FOFN], [FC_FOFN], is_distributed=False)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
 @registry('task_falcon2_run_asm', '0.0.0', [FC_JSON, FC_FOFN], [FileTypes.FASTA], is_distributed=False)
 def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
 
