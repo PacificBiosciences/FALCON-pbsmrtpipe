@@ -13,16 +13,13 @@ version = '1.0.0'
 _REQUIREMENTS_FILE = 'REQUIREMENTS.txt'
 _README = 'README.md'
 
-
 def _get_local_file(file_name):
     return os.path.join(os.path.dirname(__file__), file_name)
-
 
 def _get_description(file_name):
     with open(file_name, 'r') as f:
         _long_description = f.read()
     return _long_description
-
 
 def _get_requirements(file_name):
     with open(file_name, 'r') as f:
@@ -50,5 +47,5 @@ setup(
     #classifiers=['Development Status :: 4 - Beta'],
     include_package_data=True,
     zip_safe=False,
-    package_data={'pbfalcon': ['rtcs/*.json', ]},
+    #package_data={'pbfalcon': ['reg-tcs/*.json', ]},
 )
