@@ -1,12 +1,14 @@
 from pbcommand.engine import run_cmd
 from contextlib import contextmanager
 from falcon_kit import run_support as support
+from falcon_kit.mains import run as support2
 import glob
 import hashlib
 import itertools
 import json
 import logging
 import os
+import re
 import StringIO
 import sys
 
@@ -142,56 +144,44 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
 
 
 def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln = False):
-    # wd == cwd for now
-    #pd = os.path.dirname(run_jobs_fn)
     job_id = 0
     tasks = dict() # uid -> parameters-dict
 
-    nblock = 1
-    new_db = True
-    if os.path.exists(db_file):
-        with open(db_file) as f:
-            for l in f:
-                l = l.strip().split()
-                if l[0] == "blocks" and l[1] == "=":
-                    nblock = int(l[2])
-                    new_db = False
-                    break
+    nblock = support2.get_nblock(db_file)
 
+    # Not in other version. Still needed?
     for pid in xrange(1, nblock + 1):
         # support.run_daligner() links into this at end. Maybe we should change that.
         support.make_dirs("%s/m_%05d" % (wd, pid))
 
-    uid = 0
-    with open(run_jobs_fn) as f :
-        for l in f :
-            l = l.strip()
-            job_uid = '%08d'%uid
-            uid += 1
-            jobd = os.path.join(wd, "./job_%s" % job_uid)
-            l = l.split()
-            if l[0] in ("daligner", "daligner_p"):
-                # daligner_p means this was chunked, but we pretend it is normal.
-                support.make_dirs(jobd)
-                call = "cd %s; ln -sf ../.%s.bps .; ln -sf ../.%s.idx .; ln -sf ../%s.db ." % (jobd, db_prefix, db_prefix, db_prefix)
-                rc = os.system(call)
-                if rc:
-                    raise Exception("Failure in system call: %r -> %d" %(call, rc))
-                job_done = os.path.abspath("%s/job_%s_done" %(jobd, job_uid))
-                if pread_aln == True:
-                    l[0] = "daligner_p"
-                script_fn = os.path.join(jobd , "rj_%s.sh"% (job_uid))
-                args = {
-                    'daligner_cmd': " ".join(l),
-                    'db_prefix': db_prefix,
-                    'nblock': nblock,
-                    'config': config,
-                    'job_done': job_done,
-                    'script_fn': script_fn,
-                }
-                daligner_task = args #make_daligner_task( task_run_daligner )
-                tasks[jobd] = daligner_task
-                job_id += 1
+    re_daligner = re.compile(r'\bdaligner\b')
+
+    line_count = 0
+    job_descs = support2.get_daligner_job_descriptions(open(run_jobs_fn), db_prefix)
+    for desc, bash in job_descs.iteritems():
+        job_uid = '%08d' %line_count
+        line_count += 1
+        jobd = os.path.join(wd, "./job_%s" % job_uid)
+        support.make_dirs(jobd)
+        call = "cd %s; ln -sf ../.%s.bps .; ln -sf ../.%s.idx .; ln -sf ../%s.db ." % (jobd, db_prefix, db_prefix, db_prefix)
+        rc = os.system(call)
+        if rc:
+            raise Exception("Failure in system call: %r -> %d" %(call, rc))
+        job_done = os.path.abspath("%s/job_%s_done" %(jobd, job_uid))
+        if pread_aln:
+            bash = re_daligner.sub("daligner_p", bash)
+        script_fn = os.path.join(jobd , "rj_%s.sh"% (job_uid))
+        args = {
+            'daligner_cmd': bash,
+            'db_prefix': db_prefix,
+            'nblock': nblock,
+            'config': config,
+            'job_done': job_done,
+            'script_fn': script_fn,
+        }
+        daligner_task = args #make_daligner_task( task_run_daligner )
+        tasks[jobd] = daligner_task
+        job_id += 1
     return tasks
 
 def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
@@ -247,9 +237,11 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
             if l[0] not in ( "LAsort", "LAmerge", "mv" ):
                 continue
             if l[0] == "LAsort":
+                # We now run this part w/ daligner, but we still need
+                # a small script for some book-keeping.
                 p_id = int( l[2].split(".")[1] )
                 mjob_data.setdefault( p_id, [] )
-                mjob_data[p_id].append(  " ".join(l) )
+                #mjob_data[p_id].append(  " ".join(l) ) # Already done w/ daligner!
             if l[0] == "LAmerge":
                 l2 = l[2].split(".")
                 if l2[1][0] == "L":
