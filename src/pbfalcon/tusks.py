@@ -40,6 +40,46 @@ def _get_config_from_json_fileobj(ifs_json):
     say('JSON=\n%s' %i_json[:1024]) # truncated
     return json.loads(i_json)
 
+def get_config_default():
+    return {'job_type': 'local', 'input_fofn':'None', 'input_type': 'raw',
+            'length_cutoff': 12000, "length_cutoff_pr": 12000, 'jobqueue':
+            'production', 'sge_option_da': '-pe smp 8 -q %(jobqueue)s',
+            'sge_option_la': '-pe smp 2 -q %(jobqueue)s',
+            'sge_option_pda': '-pe smp 8 -q %(jobqueue)s',
+            'sge_option_pla': '-pe smp 2 -q %(jobqueue)s',
+            'sge_option_fc': '-pe smp 24 -q %(jobqueue)s',
+            'sge_option_cns': '-pe smp 8 -q %(jobqueue)s',
+            'pa_concurrent_jobs': 32, 'ovlp_concurrent_jobs': 32,
+            'pa_HPCdaligner_option': '-v -dal4 -t16 -e.70 -l1000 -s1000',
+            'ovlp_HPCdaligner_option': '-v -dal4 -t32 -h60 -e.96 -l500 -s1000',
+            'pa_DBsplit_option': '-x500 -s50',
+            'ovlp_DBsplit_option': '-x500 -s50',
+            'falcon_sense_option': ('--output_multi --min_idt 0.70 --min_cov '
+                '4 --local_match_count_threshold 2 --max_n_read 200 --n_core '
+                '6 --output_dformat'),
+            'overlap_filtering_setting': ('--max_diff 100 --max_cov 100 '
+                '--min_cov 20 --bestn 10 --n_core 24')}
+
+def _gen_config(options_dict):
+    # get an emtpy config:
+    cfg = support.parse_config('')
+    sec = "General"
+    cfg.add_section(sec)
+    for key, value in options_dict.items():
+        cfg.set(sec, key.split('.')[-1], value)
+    return cfg
+
+def _write_config(config, config_fn):
+    with open(config_fn, 'w') as ofh:
+        config.write(ofh)
+
+def run_falcon_get_config(input_files, output_files, options):
+    i_fofn_fn, = input_files
+    o_config_fn, = output_files
+    config = _gen_config(options)
+    with cd(os.path.dirname(i_fofn_fn)):
+        return _write_config(config, o_config_fn)
+
 def run_falcon_config_get_fasta(input_files, output_files):
         i_config_fn, = input_files
         o_fofn_fn, = output_files
