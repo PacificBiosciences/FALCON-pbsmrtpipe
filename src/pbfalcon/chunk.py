@@ -1,8 +1,10 @@
-# This was in pbsmrtpipe/tools/chunk_utils.py
+# Much of this was in pbsmrtpipe/tools/chunk_utils.py
+from falcon_kit.mains import run as support2
 from pbcommand.models import PipelineChunk
 from pbsmrtpipe.tools.chunk_utils import write_chunks_to_json
 import logging
 import os
+import re
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +44,7 @@ def parse_daligner_jobs(run_jobs_fn):
     """Find lines starting with 'daligner'.
     Return lists of split lines.
     """
+    job_descs = support2.get_daligner_job_descriptions(open(run_jobs_fn), db_prefix)
     with open(run_jobs_fn) as f:
         for l in f :
             words = l.strip().split()
@@ -83,25 +86,28 @@ def write_run_daligner_chunks_falcon(
         chunk_ext,
         chunk_keys):
     if pread_aln:
-        # preads
-        daligner_exe = 'daligner_p'
         db_prefix = 'preads'
+        # Transform daligner -> daligner_p
+        daligner_exe = 'daligner_p'
     else:
-        # raw reads
-        daligner_exe = 'daligner'
         db_prefix = 'raw_reads'
+        daligner_exe = 'daligner'
+    re_sub_daligner = re.compile(r'^daligner\b')
+    def sub_daligner(script):
+       return re_sub_daligner.sub(daligner_exe, script, re.MULTILINE)
     def chunk():
-        cmds = list(parse_daligner_jobs(run_jobs_fn))
+        # cmds is actually a list of small bash scripts, including linefeeds.
+        cmds = support2.get_daligner_job_descriptions(open(run_jobs_fn), db_prefix).values()
         if max_total_nchunks < len(cmds):
             raise Exception("max_total_nchunks < # daligner cmds: %d < %d" %(
                 max_total_nchunks, len(cmds)))
         symlink_dazzdb(os.path.dirname(run_jobs_fn), db_prefix)
-        for i, words in enumerate(cmds):
+        for i, script in enumerate(cmds):
             chunk_id = '_'.join([chunk_base_name, str(i)])
             chunk_name = '.'.join([chunk_id, chunk_ext])
             chunk_path = os.path.join(dir_name, chunk_name)
-            cmd = ' '.join([daligner_exe] + words[1:])
-            open(chunk_path, 'w').write(cmd + '\n')
+            script = sub_daligner(script)
+            open(chunk_path, 'w').write(script)
             d = {}
             d[chunk_keys[1]] = os.path.abspath(chunk_path)
             d[chunk_keys[0]] = config_json_fn
