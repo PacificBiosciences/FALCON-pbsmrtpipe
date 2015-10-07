@@ -1,7 +1,7 @@
 # Much of this was in pbsmrtpipe/tools/chunk_utils.py
 from falcon_kit.functional import (get_daligner_job_descriptions, get_script_xformer)
 from pbcommand.models import PipelineChunk
-from pbsmrtpipe.tools.chunk_utils import write_chunks_to_json
+from pbcommand.pb_io import write_pipeline_chunks
 import logging
 import os
 import re
@@ -63,4 +63,4 @@ def write_run_daligner_chunks_falcon(
             c = PipelineChunk(chunk_id, **d)
             yield c
     chunks = list(chunk())
-    write_chunks_to_json(chunks, chunk_file)
+    write_pipeline_chunks(chunks, chunk_file, comment=None)

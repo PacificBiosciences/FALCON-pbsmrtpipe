@@ -6,8 +6,6 @@ from pbcommand.utils import setup_log
 from pbcommand.cli import pbparser_runner
 from pbcommand.models import get_scatter_pbparser, FileTypes
 
-#import pbsmrtpipe.mock as M
-#import pbsmrtpipe.tools.chunk_utils as CU
 from .. import chunk as CU
 
 log = logging.getLogger(__name__)
@@ -34,11 +32,6 @@ def get_contract_parser():
     p.add_output_file_type(FileTypes.CHUNK, "cjson_out", "Chunk JSON Filtered Fasta",
                            "Chunked JSON Filtered Fasta",
                            "fasta.chunked.json")
-    # max nchunks for this specific task
-    #p.add_int("pbsmrtpipe.task_options.dev_scatter_max_nchunks", "max_nchunks", Constants.DEFAULT_NCHUNKS,
-    #          "Max NChunks", "Maximum number of Chunks")
-    #p.add_str("pbsmrtpipe.task_options.dev_scatter_chunk_key", "chunk_key",
-    #          Constants.CHUNK_KEY, "Chunk key", "Chunk key to use (format $chunk:{chunk-key}")
     return p
 
 

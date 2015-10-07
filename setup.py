@@ -7,7 +7,6 @@ try:
 except ImportError:
     from distutils.core import setup
 
-#version = __import__('pbsmrtpipe').get_version()
 version = '1.0.0'
 
 _REQUIREMENTS_FILE = 'REQUIREMENTS.txt'
