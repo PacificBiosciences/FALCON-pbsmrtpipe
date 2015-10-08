@@ -1,3 +1,4 @@
+from pbcore.io import FastaIO
 from pbcommand.engine import run_cmd
 from contextlib import contextmanager
 from falcon_kit import run_support as support
@@ -72,7 +73,7 @@ def run_falcon_make_fofn_abs(input_files, output_files):
             # i_fofn_fn can be relative to the location of the config file.
             original_config_fn = config['ORIGINAL_SELF']
             i_fofn_fn = os.path.join(os.path.dirname(original_config_fn), i_fofn_fn)
-        msg = '%r -> %r' %(i_fofn_fn, o_fofn_fn)
+        msg = 'run_falcon_make_fofn_abs(%r -> %r)' %(i_fofn_fn, o_fofn_fn)
         say(msg)
         with cd(os.path.dirname(i_fofn_fn)):
             return support.make_fofn_abs(i_fofn_fn, o_fofn_fn)
@@ -326,6 +327,12 @@ def run_falcon_build_pdb(input_files, output_files):
     rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
     return rc
 
+def _linewrap_fasta(ifn, ofn):
+    with FastaIO.FastaReader(ifn) as fa_in:
+        with FastaIO.FastaWriter(ofn) as fa_out:
+            for rec in fa_in:
+                fa_out.writeRecord(rec)
+
 def run_falcon_asm(input_files, output_files):
     i_json_config_fn, i_fofn_fn = input_files
     o_fasta_fn, = output_files
@@ -344,6 +351,7 @@ def run_falcon_asm(input_files, output_files):
     }
     support.run_falcon_asm(**args)
     rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-    os.link('p_ctg.fa', o_fasta_fn)
+    say('rc={}'.format(rc))
+    _linewrap_fasta('p_ctg.fa', o_fasta_fn)
     return rc
 
