@@ -19,7 +19,7 @@ def get_dict(cfg, sec='General'):
     return dict((key, val) for key, val in cfg.items(sec))
 
 def dump(ofp, data):
-    indent = '  '
+    indent = '    '
     n = [1]
     def writeln(msg):
         ofp.write(indent*n[0] + msg + '\n')
@@ -33,14 +33,13 @@ def dump(ofp, data):
         n[0] -= 1
         writeln('</{}>'.format(tag))
 
-    with xml('pipeline-template-preset'):
-        with xml('task-options'):
-            prefix = 'falcon_ns.task_options.'
-            for key, val in sorted(data.iteritems()):
-                attrs = dict([('id', prefix+key)])
-                with xml('option', **attrs):
-                    with xml('value'):
-                        writeln(val)
+    with xml('task-options'):
+        prefix = 'falcon_ns.task_options.'
+        for key, val in sorted(data.iteritems()):
+            attrs = dict([('id', prefix+key)])
+            with xml('option', **attrs):
+                with xml('value'):
+                    writeln(val)
 
 def convert(ifp, ofp):
     config = parse_config(ifp)
