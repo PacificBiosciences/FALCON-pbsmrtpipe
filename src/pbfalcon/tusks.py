@@ -41,11 +41,16 @@ def _get_config_from_json_fileobj(ifs_json):
     return json.loads(i_json)
 
 def _gen_config(options_dict):
-    cfg = support.parse_config('[General]\n')
+    cfg = support.parse_config('') # Will this add any defaults?
     sec = "General"
     cfg.add_section(sec)
-    for key, value in options_dict.items():
-        cfg.set(sec, key.split('.')[-1], value)
+    for key, val in options_dict.items():
+        # Strip leading and trailing ws, b/c the pbsmrtpipe
+        # misinterprets XML as a data-interchanges language.
+        # (It is only mark-up, so ws is never meaningful.)
+        # Also, we want only strings; hopefully, we can fix
+        # the TC later to drop the type-info (e.g. integer).
+        cfg.set(sec, key.split('.')[-1], str(val).strip())
     return cfg
 
 def _write_config(config, config_fn):
