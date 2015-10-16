@@ -38,8 +38,10 @@ setup(
     description='FALCON using pbsmrtpipe.',
     #setup_requires=['nose>=1.0'],
     # Maybe the pbtools-* should really be done in a subparser style
-    entry_points={'console_scripts': ['pb-falcon = pbfalcon.run:main',
-                                    ]},
+    entry_points={'console_scripts': [
+        'pb-falcon = pbfalcon.run:main',
+        'pb-ini2xml = pbfalcon.ini2xml:main',
+    ]},
     install_requires=_get_requirements(_get_local_file(_REQUIREMENTS_FILE)),
     tests_require=['nose'],
     long_description=_get_description(_get_local_file(_README)),
