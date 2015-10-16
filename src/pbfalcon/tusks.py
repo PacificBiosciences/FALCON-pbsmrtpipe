@@ -1,5 +1,5 @@
 from pbcore.io import FastaIO
-from pbcommand.engine import run_cmd
+from pbcommand.engine import run_cmd as pb_run_cmd
 from contextlib import contextmanager
 from falcon_kit import run_support as support
 from falcon_kit.mains import run as support2
@@ -29,6 +29,13 @@ def cd(newdir):
 def say(msg):
         log.info(msg)
         print(msg)
+
+def run_cmd(cmd, *args, **kwds):
+    say('RUN: %s' %repr(cmd))
+    rc = pb_run_cmd(cmd, *args, **kwds)
+    say(' RC: %s' %repr(rc))
+    if rc.exit_code:
+        raise Exception(repr(rc))
 
 def _get_config(fn):
     """Return a dict.
@@ -134,11 +141,11 @@ def run_falcon_build_rdb(input_files, output_files):
     #write_fns(o_fofn_fn, [script_fn])
     #run_cmd('touch %s' %dummy_fn, sys.stdout, sys.stderr, shell=False)
     support.build_rdb(i_fofn_fn, cwd, config, job_done_fn, script_fn, run_daligner_jobs_fn)
-    rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-    return rc
+    run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
 
 def touch(fn):
     run_cmd('touch %s' %fn, sys.stdout, sys.stderr, shell=False)
+
 def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
     print('run_daligner_jobs: %s %s' %(repr(input_files), repr(output_files)))
     i_json_config_fn, run_daligner_job_fn, = input_files
@@ -150,10 +157,7 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
     cmds += ['ln -sf {dir}/%s .' %fn for fn in fns]
     cmd = ';'.join(cmds).format(
             dir=db_dir, pre=db_prefix)
-    print(repr(cmd))
-    rc = run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
-    print rc.exit_code
-    print(repr(cmd))
+    run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
     cwd = os.getcwd()
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
     tasks = create_daligner_tasks(
@@ -163,11 +167,9 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
         with cd(jobd):
             support.run_daligner(**args)
             script_fn = args['script_fn']
-            rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-            print rc.exit_code, "script_fn=%s"%script_fn
+            run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
             odirs.append(os.path.dirname(script_fn))
     write_fns(o_fofn_fn, itertools.chain.from_iterable(glob.glob('%s/*.las' %d) for d in odirs))
-    return rc
 
 
 def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln = False):
@@ -222,10 +224,7 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
     cmds += ['ln -sf {dir}/%s .' %fn for fn in fns]
     cmd = ';'.join(cmds).format(
             dir=db_dir, pre=db_prefix)
-    print(repr(cmd))
-    rc = run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
-    print rc.exit_code
-    print(repr(cmd))
+    run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
     cwd = os.getcwd()
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
     # i_fofn_fn has the .las files, so create_merge_tasks does not need to look for theme.
@@ -237,21 +236,13 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
             merge_args['job_done'] = job_done
             merge_args['script_fn'] = script_fn
             support.run_las_merge(**merge_args)
-            print("RUN: %s" %script_fn)
-            rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-            print rc.exit_code
+            run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
             job_done = os.path.join(cwd, 'preads', "c_%05d_done" %p_id)
             script_fn = os.path.join(cwd, 'preads', "c_%05d.sh" %(p_id))
             cons_args['job_done'] = job_done
             cons_args['script_fn'] = script_fn
             support.run_consensus(**cons_args)
-            print("RUN: %s" %script_fn)
-            rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-            print rc.exit_code
-            #support.run_daligner(**args)
-            #script_fn = args['script_fn']
-            #rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-            #print rc.exit_code
+            run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
     write_fns(o_fofn_fn, sorted(os.path.abspath(f) for f in glob.glob('preads/out*.fasta')))
 
 def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
@@ -350,8 +341,7 @@ def run_falcon_build_pdb(input_files, output_files):
     script_fn = os.path.join(odir, 'prepare_pdb.sh')
     job_done_fn = os.path.join(odir, 'job_done')
     support.build_pdb(i_fofn_fn, cwd, config, job_done_fn, script_fn, run_daligner_jobs_fn)
-    rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-    return rc
+    run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
 
 def _linewrap_fasta(ifn, ofn):
     with FastaIO.FastaReader(ifn) as fa_in:
@@ -376,8 +366,7 @@ def run_falcon_asm(input_files, output_files):
         'script_fn': script_fn,
     }
     support.run_falcon_asm(**args)
-    rc = run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-    say('rc={}'.format(rc))
+    run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
     _linewrap_fasta('p_ctg.fa', o_fasta_fn)
-    return rc
+    say('Finished run_falcon_asm(%s, %s)' %(repr(input_files), repr(output_files)))
 
