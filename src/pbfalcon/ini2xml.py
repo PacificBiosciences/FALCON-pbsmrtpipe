@@ -14,8 +14,10 @@ def parse_config(ifp):
     config = ConfigParser.ConfigParser()
     config.readfp(ifp)
     return config
+
 def get_dict(cfg, sec='General'):
     return dict((key, val) for key, val in cfg.items(sec))
+
 def dump(ofp, data):
     indent = '  '
     n = [1]
@@ -39,15 +41,23 @@ def dump(ofp, data):
                 with xml('option', **attrs):
                     with xml('value'):
                         writeln(val)
-    #ofp.write(pprint.pformat(data))
+
 def convert(ifp, ofp):
     config = parse_config(ifp)
     data = get_dict(config)
     dump(ofp, data)
+
 def main():
+    args = sys.argv[1:]
+    if args:
+        raise Exception(usage)
     ifs = sys.stdin
     ofs = sys.stdout
     convert(ifs, ofs)
+
+usage = """Usage:
+  ini2xml < file.ini > file.xml
+"""
 
 if __name__=="__main__":
     main(*sys.argv[1:])
