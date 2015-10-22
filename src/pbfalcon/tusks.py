@@ -3,6 +3,7 @@ from pbcommand.engine import run_cmd as pb_run_cmd
 from contextlib import contextmanager
 from falcon_kit import run_support as support
 from falcon_kit.mains import run as support2
+import ConfigParser as configparser
 import glob
 import hashlib
 import itertools
@@ -48,7 +49,7 @@ def _get_config_from_json_fileobj(ifs_json):
     return json.loads(i_json)
 
 def _gen_config(options_dict):
-    cfg = support.parse_config('') # Will this add any defaults?
+    cfg = support.parse_config('')
     sec = "General"
     cfg.add_section(sec)
     for key, val in options_dict.items():
@@ -63,6 +64,11 @@ def _gen_config(options_dict):
 def _write_config(config, config_fn):
     with open(config_fn, 'w') as ofh:
         config.write(ofh)
+
+def ini2json(ifs):
+    cp = configparser.ConfigParser()
+    cp.readfp(ifs)
+    return dict(cp.items('General'))
 
 def run_falcon_get_config(input_files, output_files, options):
     """Generate a config-file from options.

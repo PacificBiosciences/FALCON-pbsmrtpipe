@@ -5,6 +5,7 @@ from pbcommand.cli import registry_builder, registry_runner
 from pbcommand.models import (FileTypes, OutputFileType)
 import logging
 import os
+import StringIO
 import sys
 cd = pbfalcon.cd
 
@@ -32,7 +33,37 @@ def FT(file_type, basename):
                           basename)
 RDJ = FT(FC_BASH, 'run_daligner_jobs.sh')
 
-@registry('task_falcon_get_config', '0.0.0', [FC_FOFN], [FC_CONFIG], is_distributed=False)
+
+# temporary defaults for lambda
+# see: http://bugzilla.nanofluidics.com/show_bug.cgi?id=28896
+_defaults_for_task_falcon_get_config = """[General]
+input_fofn = nodefault
+length_cutoff = 1
+length_cutoff_pr = 1
+pa_concurrent_jobs = 32
+ovlp_concurrent_jobs = 32
+pa_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.95 -l40 -s1000 -t27
+ovlp_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.99 -l40 -s1000 -t27
+pa_DBsplit_option = -x5 -s50 -a
+ovlp_DBsplit_option = -x5 -s50 -a
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
+overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
+
+sge_option_da=IGNORE1
+sge_option_la=IGNORE2
+sge_option_pda=IGNORE2
+sge_option_pla=IGNORE2
+sge_option_fc=IGNORE2
+sge_option_cns=IGNORE2
+"""
+
+def _get_defaults_for_task_falcon_get_config():
+    result = pbfalcon.ini2json(StringIO.StringIO(_defaults_for_task_falcon_get_config))
+    return result
+
+@registry('task_falcon_get_config', '0.0.0', [FC_FOFN], [FC_CONFIG],
+        options=_get_defaults_for_task_falcon_get_config(),
+        is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_get_config(rtc.task.input_files,
