@@ -131,7 +131,7 @@ def write_fns(fofn, fns):
 def run_falcon_build_rdb(input_files, output_files):
     print('output_files: %s' %(repr(output_files)))
     cwd = os.getcwd()
-    odir = os.path.abspath(os.path.dirname(output_files[0]))
+    odir = os.path.realpath(os.path.abspath(os.path.dirname(output_files[0])))
     if True: #debug
         if cwd != odir:
             raise Exception('%r != %r' %(cwd, odir))
