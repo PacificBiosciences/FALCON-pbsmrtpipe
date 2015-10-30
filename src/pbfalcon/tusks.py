@@ -49,6 +49,9 @@ def _get_config_from_json_fileobj(ifs_json):
     return json.loads(i_json)
 
 def _gen_config(options_dict):
+    """Generate ConfigParser object from dict.
+    (Not used anymore, but maybe useful for testing.)
+    """
     cfg = support.parse_config('')
     sec = "General"
     cfg.add_section(sec)
@@ -72,12 +75,19 @@ def ini2dict(ifs):
 
 def run_falcon_get_config(input_files, output_files, options):
     """Generate a config-file from options.
+
+    TODO(CD):
+    Eventually, use GenomeSize and ParallelTasksMax too.
+    Also, validate cfg, in case of missing options.
     """
     i_fofn_fn, = input_files
-    o_config_fn, = output_files
-    config = _gen_config(options)
+    o_cfg_fn, = output_files
+    #config = _gen_config(options)
+    cfg_content = options[OPTION_CFG]
     with cd(os.path.dirname(i_fofn_fn)):
-        return _write_config(config, o_config_fn)
+        #return _write_config(config, o_cfg_fn)
+        with open(o_cfg_fn, 'w') as ofs:
+            ofs.write(cfg_content)
 
 def run_falcon_config_get_fasta(input_files, output_files):
         i_config_fn, = input_files
