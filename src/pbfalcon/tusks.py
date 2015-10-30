@@ -65,7 +65,7 @@ def _write_config(config, config_fn):
     with open(config_fn, 'w') as ofh:
         config.write(ofh)
 
-def ini2json(ifs):
+def ini2dict(ifs):
     cp = configparser.ConfigParser()
     cp.readfp(ifs)
     return dict(cp.items('General'))

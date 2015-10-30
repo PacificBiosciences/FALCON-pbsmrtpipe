@@ -58,7 +58,7 @@ sge_option_cns=IGNORE2
 """
 
 def _get_defaults_for_task_falcon_get_config():
-    result = pbfalcon.ini2json(StringIO.StringIO(_defaults_for_task_falcon_get_config))
+    result = pbfalcon.ini2dict(StringIO.StringIO(_defaults_for_task_falcon_get_config))
     return result
 
 @registry('task_falcon_get_config', '0.0.0', [FC_FOFN], [FC_CONFIG],
