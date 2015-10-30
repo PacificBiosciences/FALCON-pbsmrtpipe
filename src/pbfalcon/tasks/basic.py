@@ -57,8 +57,16 @@ sge_option_fc=IGNORE2
 sge_option_cns=IGNORE2
 """
 
+def sorted_str(s):
+    return '\n'.join(sorted(s.splitlines()))
+
 def _get_defaults_for_task_falcon_get_config():
-    result = pbfalcon.ini2dict(StringIO.StringIO(_defaults_for_task_falcon_get_config))
+    #result = pbfalcon.ini2dict(StringIO.StringIO(_defaults_for_task_falcon_get_config))
+    result = {
+        'GenomeSize_int': '5000000',
+        'ParallelTasksMax_int': '10',
+        'FalconCfg_str': sorted_str(_defaults_for_task_falcon_get_config),
+    }
     return result
 
 @registry('task_falcon_get_config', '0.0.0', [FC_FOFN], [FC_CONFIG],
