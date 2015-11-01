@@ -37,7 +37,6 @@ RDJ = FT(FC_BASH, 'run_daligner_jobs.sh')
 # temporary defaults for lambda
 # see: http://bugzilla.nanofluidics.com/show_bug.cgi?id=28896
 _defaults_for_task_falcon_get_config = """[General]
-input_fofn = nodefault
 length_cutoff = 1
 length_cutoff_pr = 1
 pa_concurrent_jobs = 32
@@ -48,13 +47,6 @@ pa_DBsplit_option = -x5 -s50 -a
 ovlp_DBsplit_option = -x5 -s50 -a
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
 overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
-
-sge_option_da=IGNORE1
-sge_option_la=IGNORE2
-sge_option_pda=IGNORE2
-sge_option_pla=IGNORE2
-sge_option_fc=IGNORE2
-sge_option_cns=IGNORE2
 """
 
 def sorted_str(s):
