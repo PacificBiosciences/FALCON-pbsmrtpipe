@@ -15,6 +15,8 @@ import StringIO
 import sys
 
 log = logging.getLogger(__name__)
+OPTION_CFG = 'FalconCfg_str'
+
 
 @contextmanager
 def cd(newdir):
@@ -48,6 +50,15 @@ def _get_config_from_json_fileobj(ifs_json):
     say('JSON=\n%s' %i_json[:1024]) # truncated
     return json.loads(i_json)
 
+def _options_dict_with_base_keys(options_dict):
+    """Remove leading namespaces from key names,
+    in a copy of options_dict.
+    """
+    new_dict = dict()
+    for key, val in options_dict.items():
+        new_dict[key.split('.')[-1]] = val
+    return new_dict
+
 def _gen_config(options_dict):
     """Generate ConfigParser object from dict.
     """
@@ -60,7 +71,7 @@ def _gen_config(options_dict):
         # (It is only mark-up, so ws is never meaningful.)
         # Also, we want only strings; hopefully, we can fix
         # the TC later to drop the type-info (e.g. integer).
-        cfg.set(sec, key.split('.')[-1], str(val).strip())
+        cfg.set(sec, key, str(val).strip())
     return cfg
 
 def _write_config(config, config_fn):
@@ -72,6 +83,16 @@ def ini2dict(ifs):
     cp.readfp(ifs)
     return dict(cp.items('General'))
 
+re_semicolon = re.compile(r'\s*;+\s*')
+
+def option_text2ini(option_text):
+    return re_semicolon.sub('\n', option_text)
+
+re_newline = re.compile(r'\s*\n\s*', re.MULTILINE)
+
+def ini2option_text(ini):
+    return re_newline.sub(';', ini)
+
 def run_falcon_get_config(input_files, output_files, options):
     """Generate a config-file from options.
 
@@ -81,6 +102,7 @@ def run_falcon_get_config(input_files, output_files, options):
     """
     i_fofn_fn, = input_files
     o_cfg_fn, = output_files
+    options = _options_dict_with_base_keys(options)
     if OPTION_CFG in options:
         log.info('Found option "%s"; GS=%r, PTM=%r; writing to %s.TEMPORARY.*' %(
             OPTION_CFG,
@@ -88,11 +110,9 @@ def run_falcon_get_config(input_files, output_files, options):
             options.get('ParallelTasksMax_int'),
             o_cfg_fn))
         cfg_content = options[OPTION_CFG]
-        cfg1 = configparse.ConfigParser()
+        del options[OPTION_CFG] # so ConfigParser will not see it
+        cfg1 = configparser.ConfigParser()
         cfg1.readfp(StringIO.StringIO(cfg_content))
-        with open(o_cfg_fn+'.TEMPORARY.raw', 'w') as ofs:
-            ofs.write(cfg_content)
-        _write_config(cfg1, o_cfg_fn+'TEMPORARY.ini')
     config = _gen_config(options)
     with cd(os.path.dirname(i_fofn_fn)):
         return _write_config(config, o_cfg_fn)
