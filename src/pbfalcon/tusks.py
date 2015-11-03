@@ -50,7 +50,6 @@ def _get_config_from_json_fileobj(ifs_json):
 
 def _gen_config(options_dict):
     """Generate ConfigParser object from dict.
-    (Not used anymore, but maybe useful for testing.)
     """
     cfg = support.parse_config('')
     sec = "General"
@@ -82,12 +81,21 @@ def run_falcon_get_config(input_files, output_files, options):
     """
     i_fofn_fn, = input_files
     o_cfg_fn, = output_files
-    #config = _gen_config(options)
-    cfg_content = options[OPTION_CFG]
-    with cd(os.path.dirname(i_fofn_fn)):
-        #return _write_config(config, o_cfg_fn)
-        with open(o_cfg_fn, 'w') as ofs:
+    if OPTION_CFG in options:
+        log.info('Found option "%s"; GS=%r, PTM=%r; writing to %s.TEMPORARY.*' %(
+            OPTION_CFG,
+            options.get('GenomeSize_int'),
+            options.get('ParallelTasksMax_int'),
+            o_cfg_fn))
+        cfg_content = options[OPTION_CFG]
+        cfg1 = configparse.ConfigParser()
+        cfg1.readfp(StringIO.StringIO(cfg_content))
+        with open(o_cfg_fn+'.TEMPORARY.raw', 'w') as ofs:
             ofs.write(cfg_content)
+        _write_config(cfg1, o_cfg_fn+'TEMPORARY.ini')
+    config = _gen_config(options)
+    with cd(os.path.dirname(i_fofn_fn)):
+        return _write_config(config, o_cfg_fn)
 
 def run_falcon_config_get_fasta(input_files, output_files):
         i_config_fn, = input_files
