@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
+/*.json
 FALCON_pbsmrtpipe.egg-info/
 /build/
 /dist/

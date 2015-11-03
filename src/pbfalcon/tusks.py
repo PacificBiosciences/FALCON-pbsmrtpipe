@@ -87,12 +87,37 @@ def ini2dict(ini_text):
 re_semicolon = re.compile(r'\s*;+\s*')
 
 def option_text2ini(option_text):
+    # Basically, just translate semicolons into linefeeds.
     return re_semicolon.sub('\n', option_text)
 
 re_newline = re.compile(r'\s*\n\s*', re.MULTILINE)
 
 def ini2option_text(ini):
+    # Basically, just translate linefeeds into semicolons.
     return re_newline.sub(';', ini)
+
+def get_falcon_overrides(cfg_content, OPTION_CFG=OPTION_CFG):
+    """options keys are bare (no namespaces)
+    """
+    if '\n' in cfg_content:
+        log.error('linefeed found in option "%s", which is ok here but should have been prevented earler' %(
+            OPTION_CFG))
+        cfg_content = ini2option_text(cfg_content)
+    if cfg_content.strip().startswith('['):
+        log.error('Option "%s" seems to have .ini-style [brackets], which is an error. It is not really a .ini file.' %(
+            OPTION_CFG))
+        # Try to strip the first line, and hope there are no others.
+        cfg_content = cfg_content[cfg_content.index(']'):]
+    ini = option_text2ini(cfg_content)
+    log.info(ini)
+    # Now, parse the overrides, but skip it on any error.
+    try:
+        overrides = ini2dict(ini)
+    except Exception as exc:
+        log.exception('For option "%s" (for overrides) we had a problem parsing its contents:\n%s' %(
+            OPTION_CFG, cfg_content))
+        overrides = dict()
+    return overrides
 
 def run_falcon_get_config(input_files, output_files, options):
     """Generate a config-file from options.
@@ -105,15 +130,8 @@ def run_falcon_get_config(input_files, output_files, options):
     o_cfg_fn, = output_files
     options = _options_dict_with_base_keys(options)
     if OPTION_CFG in options:
-        log.info('Found option "%s"; GS=%r, PTM=%r; writing to %s.TEMPORARY.*' %(
-            OPTION_CFG,
-            options.get('GenomeSize_int'),
-            options.get('ParallelTasksMax_int'),
-            o_cfg_fn))
-        cfg_content = options[OPTION_CFG]
-        del options[OPTION_CFG] # so ConfigParser will not see it
-        cfg1 = configparser.ConfigParser()
-        cfg1.readfp(StringIO.StringIO(cfg_content))
+        overrides = get_falcon_overrides(options[OPTION_CFG], OPTION_CFG)
+        options.update(overrides)
     config = _gen_config(options)
     with cd(os.path.dirname(i_fofn_fn)):
         return _write_config(config, o_cfg_fn)
