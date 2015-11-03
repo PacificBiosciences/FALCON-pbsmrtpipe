@@ -78,9 +78,10 @@ def _write_config(config, config_fn):
     with open(config_fn, 'w') as ofh:
         config.write(ofh)
 
-def ini2dict(ifs):
+def ini2dict(ini_text):
+    ifp = StringIO.StringIO('[General]\n' + ini_text)
     cp = configparser.ConfigParser()
-    cp.readfp(ifs)
+    cp.readfp(ifp)
     return dict(cp.items('General'))
 
 re_semicolon = re.compile(r'\s*;+\s*')
