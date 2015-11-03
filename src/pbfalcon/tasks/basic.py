@@ -36,7 +36,7 @@ RDJ = FT(FC_BASH, 'run_daligner_jobs.sh')
 
 # temporary defaults for lambda
 # see: http://bugzilla.nanofluidics.com/show_bug.cgi?id=28896
-_defaults_for_task_falcon_get_config = """[General]
+_defaults_for_task_falcon_get_config = """\
 length_cutoff = 1
 length_cutoff_pr = 1
 pa_concurrent_jobs = 32
@@ -52,13 +52,15 @@ overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --best
 def sorted_str(s):
     return '\n'.join(sorted(s.splitlines()))
 
+_defaults_for_task_falcon_get_config = sorted_str(_defaults_for_task_falcon_get_config)
+
 def _get_defaults_for_task_falcon_get_config():
-    #result = pbfalcon.ini2dict(StringIO.StringIO(_defaults_for_task_falcon_get_config))
-    result = {
+    result = pbfalcon.ini2dict(_defaults_for_task_falcon_get_config)
+    result.update({
         'GenomeSize_int': '5000000',
         'ParallelTasksMax_int': '10',
-        'FalconCfg_str': sorted_str(_defaults_for_task_falcon_get_config),
-    }
+        'FalconCfg_str': pbfalcon.ini2option_text(_defaults_for_task_falcon_get_config),
+    })
     return result
 
 @registry('task_falcon_get_config', '0.0.0', [FC_FOFN], [FC_CONFIG],
