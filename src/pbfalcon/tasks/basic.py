@@ -59,7 +59,8 @@ def sorted_str(s):
 _defaults_for_task_falcon_get_config = sorted_str(_defaults_for_task_falcon_get_config)
 
 def _get_defaults_for_task_falcon_get_config():
-    result = pbfalcon.ini2dict(_defaults_for_task_falcon_get_config)
+    #result = pbfalcon.ini2dict(_defaults_for_task_falcon_get_config)
+    result = dict()
     result.update({
         'GenomeSize_int': '5000000',
         'ParallelTasksMax_int': '10',
