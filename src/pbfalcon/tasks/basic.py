@@ -63,6 +63,7 @@ def _get_defaults_for_task_falcon_get_config():
     result.update({
         'GenomeSize_int': '5000000',
         'ParallelTasksMax_int': '10',
+        'ParallelProcsMax_int': '40',
         'FalconCfg_str': pbfalcon.ini2option_text(_defaults_for_task_falcon_get_config),
     })
     return result
