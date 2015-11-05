@@ -7,6 +7,7 @@ run:
 	cd falcon; pbsmrtpipe  pipeline $$(pwd)/workflow_id.xml --debug  -e e_01:$$(pwd)/input.txt --preset-xml=$$(pwd)/preset.xml    --output-dir=$$(pwd)/job_output
 
 PBFALCON_TC_RUNNERS:= \
+	pbfalcon.tasks.gen_config \
 	pbfalcon.tasks.scatter0_run_daligner_jobs \
 	pbfalcon.tasks.scatter1_run_daligner_jobs \
 	pbfalcon.tasks.gather0_run_daligner_jobs \
