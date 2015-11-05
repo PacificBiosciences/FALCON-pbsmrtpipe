@@ -2,37 +2,13 @@ from pbcommand.cli import pbparser_runner
 from pbcommand.utils import setup_log
 from pbcommand.models import (ResourceTypes, FileTypes)
 from pbcommand.models.parser import get_pbparser
-from .. import tusks
+from ..gen_config import run_falcon_gen_config
 import sys
 import logging
 
 __version__ = '1.0.0'
 log = logging.getLogger(__name__)
 TOOL_ID = 'pbfalcon.tasks.task_falcon_gen_config'
-
-# temporary defaults for lambda
-# see: http://bugzilla.nanofluidics.com/show_bug.cgi?id=28896
-_defaults_for_task_falcon_get_config = """\
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
-length_cutoff = 1
-length_cutoff_pr = 1
-pa_DBsplit_option = -x5 -s50 -a
-pa_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.95 -l40 -s1000 -t27
-pa_concurrent_jobs = 32
-overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
-ovlp_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.99 -l40 -s1000 -t27
-ovlp_DBsplit_option = -x5 -s50 -a
-ovlp_concurrent_jobs = 32
-"""
-# also see:
-#   https://dazzlerblog.wordpress.com/command-guides/daligner-command-reference-guide/
-#   https://dazzlerblog.wordpress.com/2014/06/01/the-dazzler-db/
-#   https://github.com/PacificBiosciences/FALCON/wiki/Manual
-
-def sorted_str(s):
-    return '\n'.join(sorted(s.splitlines()))
-
-_defaults_for_task_falcon_get_config = sorted_str(_defaults_for_task_falcon_get_config)
 
 
 def add_args_and_options(p):
@@ -65,7 +41,7 @@ def get_contract_parser():
 
 def run_my_main(input_files, output_files, options):
     # do stuff. Main should return an int exit code
-    rc = tusks.run_falcon_gen_config(input_files, output_files, options)
+    rc = gen_config.run_falcon_gen_config(input_files, output_files, options)
     if rc:
         return rc
     else:
@@ -74,7 +50,8 @@ def run_my_main(input_files, output_files, options):
 def _args_runner(args):
     # this is the args from parser.parse_args()
     # the properties of args are defined as "labels" in the add_args_and_options func.
-    return run_my_main(args.fasta_in, fasta_out, args.read_length)
+    # TODO: Convert 'args' to a dict somehow?
+    return run_my_main([args.fasta_in], [args.fasta_out], args)
 
 def _resolved_tool_contract_runner(resolved_tool_contract):
     rtc = resolved_tool_contract
