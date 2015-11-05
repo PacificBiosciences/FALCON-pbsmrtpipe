@@ -14,7 +14,9 @@ import StringIO
 
 
 log = logging.getLogger(__name__)
-OPTION_CFG = 'FalconAdvanced_str'
+OPTION_GENOME_LENGTH = 'A0_GenomeLength_str'
+OPTION_CORES_MAX = 'B0_CoresMax_str'
+OPTION_CFG = 'F0_FalconAdvanced_str'
 
 defaults_old = """\
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6

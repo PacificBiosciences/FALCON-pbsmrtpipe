@@ -2,7 +2,7 @@ from pbcommand.cli import pbparser_runner
 from pbcommand.utils import setup_log
 from pbcommand.models import (ResourceTypes, FileTypes)
 from pbcommand.models.parser import get_pbparser
-from ..gen_config import run_falcon_gen_config
+from .. import gen_config
 import sys
 import logging
 
@@ -17,11 +17,11 @@ def add_args_and_options(p):
     # File Type, label, name, description, default file name
     p.add_output_file_type(FileTypes.TXT, "cfg_out", "INI File", "FALCON cfg (aka 'ini')", 'fc_run.cfg')
     # Option id, label, default value, name, description
-    p.add_str("falcon_ns.task_options.GenomeLength_int", "genome-length", '5000000',
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_GENOME_LENGTH, "genome-length", '5000000',
             "Genome length (base pairs)", "Approx. number of base pairs expected in the genome.")
-    p.add_str("falcon_ns.task_options.CoresMax_int", "cores-max", '40',
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_CORES_MAX, "cores-max", '40',
             "Cores Max.", "Maximum number of cores to use simultaneously across the network. For any given Task, this setting might further reduce the number of 'chunks', beneather the global maximum. Note that a Task can use multiple cores in 2 ways: processes and threads. You can assume that our Tasks honestly report what they expect to consume.")
-    p.add_str("falcon_ns.task_options.FalconAdvanced_str", "falcon-advanced", '',
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_CFG, "falcon-advanced", '',
             "FALCON cfg overrides", "This is intended to allow support engineers to overrides the config which we will generate from other options. It is a semicolon-separated list of key=val pairs. Newlines are allowed by ignored. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
     return p
 
