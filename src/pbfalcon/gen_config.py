@@ -4,6 +4,17 @@ We plan to generate cfg in a complicated way.
 But for now, we just use a look-up table,
 based on ranges of the length of a genome.
 """
+from falcon_kit import run_support as support
+from . import tusks
+import ConfigParser as configparser
+import logging
+import os
+import re
+import StringIO
+
+
+log = logging.getLogger(__name__)
+OPTION_CFG = 'FalconAdvanced_str'
 
 defaults_old = """\
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
@@ -133,6 +144,6 @@ def run_falcon_gen_config(input_files, output_files, options):
         overrides = get_falcon_overrides(options[OPTION_CFG], OPTION_CFG)
         options.update(overrides)
     config = _gen_config(options)
-    with cd(os.path.dirname(i_fofn_fn)):
+    with tusks.cd(os.path.dirname(i_fofn_fn)):
         return _write_config(config, o_cfg_fn) # Write lower-case keys, which is fine.
 

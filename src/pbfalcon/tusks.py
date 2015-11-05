@@ -3,7 +3,6 @@ from pbcommand.engine import run_cmd as pb_run_cmd
 from contextlib import contextmanager
 from falcon_kit import run_support as support
 from falcon_kit.mains import run as support2
-import ConfigParser as configparser
 import glob
 import hashlib
 import itertools
@@ -15,7 +14,6 @@ import StringIO
 import sys
 
 log = logging.getLogger(__name__)
-OPTION_CFG = 'FalconAdvanced_str'
 
 
 @contextmanager
