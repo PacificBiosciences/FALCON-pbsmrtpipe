@@ -37,15 +37,15 @@ RDJ = FT(FC_BASH, 'run_daligner_jobs.sh')
 # temporary defaults for lambda
 # see: http://bugzilla.nanofluidics.com/show_bug.cgi?id=28896
 _defaults_for_task_falcon_get_config = """\
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
-length_cutoff = 1
-length_cutoff_pr = 1
-pa_DBsplit_option = -x5 -s50 -a
-pa_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.95 -l40 -s1000 -t27
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --local_match_count_threshold 2 --max_n_read 200 --n_core 6
+length_cutoff = 12000
+length_cutoff_pr = 12000
+pa_DBsplit_option = -x500 -s50
+pa_HPCdaligner_option = -v -dal4 -t16 -e.70 -l1000 -s1000
 pa_concurrent_jobs = 32
-overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
-ovlp_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.99 -l40 -s1000 -t27
-ovlp_DBsplit_option = -x5 -s50 -a
+overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24
+ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
+ovlp_DBsplit_option = -x500 -s50
 ovlp_concurrent_jobs = 32
 """
 # also see:
