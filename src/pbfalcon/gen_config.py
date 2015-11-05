@@ -13,7 +13,9 @@ import re
 import StringIO
 
 
+#logging.basicConfig()
 log = logging.getLogger(__name__)
+#log.setLevel(logging.DEBUG)
 OPTION_GENOME_LENGTH = 'A0_GenomeLength_str'
 OPTION_CORES_MAX = 'B0_CoresMax_str'
 OPTION_CFG = 'F0_FalconAdvanced_str'
@@ -57,17 +59,35 @@ def sorted_str(s):
     return '\n'.join(sorted(s.splitlines()))
 
 def _populate_falcon_options(options):
-    return ini2option_text(sorted_str(defaults[length]))
+    length = int(options[OPTION_GENOME_LENGTH]) # required!
+    index = 0
+    # We could binary-search, but we will just walk thru.
+    while index < len(defaults) - 1:
+        if defaults[index+1][0] <= length:
+            index += 1
+    fc = ini2dict(sorted_str(defaults[index][1]))
+
+    # Also keep everything except a few which could be mal-formatted.
+    excluded = [OPTION_CFG]
+    for key in options:
+        if key not in excluded:
+            fc[key] = options[key]
+    return fc
     
-def _options_dict_with_base_keys(options_dict):
+def _options_dict_with_base_keys(options_dict, prefix='falcon_ns.task_options.'):
     """Remove leading namespaces from key names,
     in a copy of options_dict.
 
-    TODO: Separate *our* namespace from others?
+    prefix: should include trailing dot
     """
     new_dict = dict()
     for key, val in options_dict.items():
-        new_dict[key.split('.')[-1]] = val
+        if key.startswith(prefix):
+            tail = key[len(prefix):]
+            if '.' in tail:
+                log.warning('prefix {!r} found on option {!r}'.format(
+                    prefix, key))
+            new_dict[tail] = val
     return new_dict
 
 def _gen_config(options_dict):
@@ -139,13 +159,16 @@ def run_falcon_gen_config(input_files, output_files, options):
     """
     i_fofn_fn, = input_files
     o_cfg_fn, = output_files
+    import pprint
+    log.info('options to run_falcon_gen_config:\n{}'.format(pprint.pformat(options)))
     options = _options_dict_with_base_keys(options)
     falcon_options = _populate_falcon_options(options)
-    options = falcon_options # For now, put them all together. Messy, but easy.
     if OPTION_CFG in options:
         overrides = get_falcon_overrides(options[OPTION_CFG], OPTION_CFG)
-        options.update(overrides)
-    config = _gen_config(options)
+        falcon_options.update(overrides)
+    else:
+        raise Exception("Could not find %s" %OPTION_CFG)
+    config = _gen_config(falcon_options)
     with tusks.cd(os.path.dirname(i_fofn_fn)):
         return _write_config(config, o_cfg_fn) # Write lower-case keys, which is fine.
 

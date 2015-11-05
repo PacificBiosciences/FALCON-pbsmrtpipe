@@ -57,7 +57,7 @@ def _resolved_tool_contract_runner(resolved_tool_contract):
     rtc = resolved_tool_contract
     # all options are referenced by globally namespaced id. This allows tools to use other tools options
     # e.g., pbalign to use blasr defined options.
-    return run_my_main(rtc.inputs, rtc.outputs, rtc.options)
+    return run_my_main(rtc.task.input_files, rtc.task.output_files, rtc.task.options)
 
 def main(argv=sys.argv):
     log.info("Starting {f} version {v} pbcommand example dev app".format(f=__file__, v=__version__))
