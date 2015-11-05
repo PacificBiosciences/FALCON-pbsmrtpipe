@@ -8,7 +8,7 @@ import logging
 
 __version__ = '1.0.0'
 log = logging.getLogger(__name__)
-TOOL_ID = 'pbfalcon.tasks.task_falcon_gen_config'
+TOOL_ID = 'falcon_ns.tasks.task_falcon_gen_config'
 
 
 def add_args_and_options(p):
