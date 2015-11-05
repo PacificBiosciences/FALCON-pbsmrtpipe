@@ -41,14 +41,11 @@ def add_args_and_options(p):
     # File Type, label, name, description, default file name
     p.add_output_file_type(FileTypes.TXT, "cfg_out", "INI File", "FALCON cfg (aka 'ini')", 'fc_run.cfg')
     # Option id, label, default value, name, description
-    p.add_str("falcon_ns.task_options.GenomeSize_int", "genome-size", '5000000',
-            "Genome size (base pairs)", "Approx. number of base pairs expected in the genome.")
-    p.add_str("falcon_ns.task_options.ParallelTasksMax_int", "parallel-tasks-max", '10',
-            "Parallel Tasks Max.", "Maximum number of simultaneous tasks. Currently, this will set an upper bound on the number of 'chunks'.")
-    p.add_str("falcon_ns.task_options.ParallelProcsMax_int", "parallel-procs-max", '40',
-            "Parallel Procs Max.", "Maximum number of processors in use across the network. Note that a Task can use multiple processors.")
-    falcon_semi_default = tusks.ini2option_text(_defaults_for_task_falcon_get_config)
-    p.add_str("falcon_ns.task_options.FalconCfg_str", "falcon-cfg", falcon_semi_default,
+    p.add_str("falcon_ns.task_options.GenomeLength_int", "genome-length", '5000000',
+            "Genome length (base pairs)", "Approx. number of base pairs expected in the genome.")
+    p.add_str("falcon_ns.task_options.CoresMax_int", "cores-max", '40',
+            "Cores Max.", "Maximum number of cores to use simultaneously across the network. For any given Task, this setting might further reduce the number of 'chunks', beneather the global maximum. Note that a Task can use multiple cores in 2 ways: processes and threads. You can assume that our Tasks honestly report what they expect to consume.")
+    p.add_str("falcon_ns.task_options.FalconAdvanced_str", "falcon-advanced", '',
             "FALCON cfg overrides", "This is intended to allow support engineers to overrides the config which we will generate from other options. It is a semicolon-separated list of key=val pairs. Newlines are allowed by ignored. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
     return p
 
@@ -66,9 +63,13 @@ def get_contract_parser():
     add_args_and_options(p)
     return p
 
-def run_my_main(fasta_in, fasta_out, min_length):
+def run_my_main(input_files, output_files, options):
     # do stuff. Main should return an int exit code
-    return 0
+    rc = tusks.run_falcon_gen_config(input_files, output_files, options)
+    if rc:
+        return rc
+    else:
+        return 0
 
 def _args_runner(args):
     # this is the args from parser.parse_args()
@@ -79,7 +80,7 @@ def _resolved_tool_contract_runner(resolved_tool_contract):
     rtc = resolved_tool_contract
     # all options are referenced by globally namespaced id. This allows tools to use other tools options
     # e.g., pbalign to use blasr defined options.
-    return run_my_main(rtc.inputs[0], rtc.outputs[0], rtc.options["pbcommand.task_options.dev_read_length"])
+    return run_my_main(rtc.inputs, rtc.outputs, rtc.options)
 
 def main(argv=sys.argv):
     log.info("Starting {f} version {v} pbcommand example dev app".format(f=__file__, v=__version__))

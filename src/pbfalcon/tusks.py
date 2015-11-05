@@ -15,7 +15,7 @@ import StringIO
 import sys
 
 log = logging.getLogger(__name__)
-OPTION_CFG = 'FalconCfg_str'
+OPTION_CFG = 'FalconAdvanced_str'
 
 
 @contextmanager
@@ -119,7 +119,7 @@ def get_falcon_overrides(cfg_content, OPTION_CFG=OPTION_CFG):
         overrides = dict()
     return overrides
 
-def run_falcon_get_config(input_files, output_files, options):
+def run_falcon_gen_config(input_files, output_files, options):
     """Generate a config-file from options.
 
     TODO(CD):

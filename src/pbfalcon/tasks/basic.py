@@ -62,10 +62,9 @@ def _get_defaults_for_task_falcon_get_config():
     #result = pbfalcon.ini2dict(_defaults_for_task_falcon_get_config)
     result = dict()
     result.update({
-        'GenomeSize_int': '5000000',
-        'ParallelTasksMax_int': '10',
-        'ParallelProcsMax_int': '40',
-        'FalconCfg_str': pbfalcon.ini2option_text(_defaults_for_task_falcon_get_config),
+        'GenomeLength_int': '5000000',
+        'CoresMax_int': '40',
+        'FalconAdvanced_str': pbfalcon.ini2option_text(_defaults_for_task_falcon_get_config),
     })
     return result
 
