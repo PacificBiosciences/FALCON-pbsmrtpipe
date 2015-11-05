@@ -67,11 +67,12 @@ def _populate_falcon_options(options):
             index += 1
     fc = ini2dict(sorted_str(defaults[index][1]))
 
-    # Also keep everything except a few which could be mal-formatted.
+    # Also keep everything except a few which could be mal-formatted,
+    # but prefix the ones from special pbsmrtpipe options.
     excluded = [OPTION_CFG]
     for key in options:
         if key not in excluded:
-            fc[key] = options[key]
+            fc['pbsmrtpipe.' + key] = options[key]
     return fc
     
 def _options_dict_with_base_keys(options_dict, prefix='falcon_ns.task_options.'):
@@ -107,6 +108,7 @@ def _gen_config(options_dict):
 
 def _write_config(config, config_fn):
     with open(config_fn, 'w') as ofh:
+        # I wish ConfigParser would sort. Oh, well.
         config.write(ofh)
 
 def ini2dict(ini_text):
