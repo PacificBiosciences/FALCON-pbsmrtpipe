@@ -304,7 +304,7 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
 def run_falcon_build_pdb(input_files, output_files):
     print('output_files: %s' %(repr(output_files)))
     cwd = os.getcwd()
-    odir = os.path.abspath(os.path.dirname(output_files[0]))
+    odir = os.path.realpath(os.path.abspath(os.path.dirname(output_files[0])))
     if True: #debug
         if cwd != odir:
             raise Exception('%r != %r' %(cwd, odir))
