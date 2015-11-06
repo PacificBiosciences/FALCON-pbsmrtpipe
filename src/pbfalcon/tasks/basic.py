@@ -34,44 +34,6 @@ def FT(file_type, basename):
 RDJ = FT(FC_BASH, 'run_daligner_jobs.sh')
 
 
-# temporary defaults for lambda
-# see: http://bugzilla.nanofluidics.com/show_bug.cgi?id=28896
-_defaults_for_task_falcon_get_config = """\
-length_cutoff = 1
-length_cutoff_pr = 1
-pa_concurrent_jobs = 32
-ovlp_concurrent_jobs = 32
-pa_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.95 -l40 -s1000 -t27
-ovlp_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.99 -l40 -s1000 -t27
-pa_DBsplit_option = -x5 -s50 -a
-ovlp_DBsplit_option = -x5 -s50 -a
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
-overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
-"""
-
-def sorted_str(s):
-    return '\n'.join(sorted(s.splitlines()))
-
-_defaults_for_task_falcon_get_config = sorted_str(_defaults_for_task_falcon_get_config)
-
-def _get_defaults_for_task_falcon_get_config():
-    result = pbfalcon.ini2dict(_defaults_for_task_falcon_get_config)
-    result.update({
-        'GenomeSize_int': '5000000',
-        'ParallelTasksMax_int': '10',
-        'FalconCfg_str': pbfalcon.ini2option_text(_defaults_for_task_falcon_get_config),
-    })
-    return result
-
-@registry('task_falcon_get_config', '0.0.0', [FC_FOFN], [FC_CONFIG],
-        options=_get_defaults_for_task_falcon_get_config(),
-        is_distributed=False)
-def run_rtc(rtc):
-  with cd(os.path.dirname(rtc.task.output_files[0])):
-    return pbfalcon.run_falcon_get_config(rtc.task.input_files,
-                                          rtc.task.output_files,
-                                          rtc.task.options)
-
 @registry('task_falcon_config_get_fasta', '0.0.0', [FC_CONFIG], [FC_FOFN], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
