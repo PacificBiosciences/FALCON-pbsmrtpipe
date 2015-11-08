@@ -18,11 +18,11 @@ def add_args_and_options(p):
     p.add_output_file_type(FileTypes.TXT, "cfg_out", "INI File", "FALCON cfg (aka 'ini')", 'fc_run.cfg')
     # Option id, label, default value, name, description
     p.add_str("falcon_ns.task_options." + gen_config.OPTION_GENOME_LENGTH, "genome-length", '5000000',
-            "Genome length (base pairs)", "Approx. number of base pairs expected in the genome.")
+            "Genome length (base pairs) REQUIRED", "Approx. number of base pairs expected in the genome. We choose other settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
     p.add_str("falcon_ns.task_options." + gen_config.OPTION_CORES_MAX, "cores-max", '40',
-            "Cores Max.", "Maximum number of cores to use simultaneously across the network. For any given Task, this setting might further reduce the number of 'chunks', beneather the global maximum. Note that a Task can use multiple cores in 2 ways: processes and threads. You can assume that our Tasks honestly report what they expect to consume.")
-    p.add_str("falcon_ns.task_options." + gen_config.OPTION_CFG, "falcon-advanced", '',
-            "FALCON cfg overrides", "This is intended to allow support engineers to overrides the config which we will generate from other options. It is a semicolon-separated list of key=val pairs. Newlines are allowed by ignored. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
+            "Cores Max IGNORED.", "IGNORE - not currently used")
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_CFG, "falcon-overrides", '',
+            "FALCON cfg overrides", "This is intended to allow support engineers to override the cfg which we will generate from other options. It is a semicolon-separated list of key=val pairs. Newlines are allowed but ignored. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
     return p
 
 def get_contract_parser():
