@@ -128,10 +128,10 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
     db_dir = os.path.dirname(run_daligner_job_fn)
     cmds = ['pwd', 'ls -al']
     fns = ['.{pre}.bps', '.{pre}.idx', '{pre}.db']
-    cmds += ['rm -f %s' %fn for fn in fns]
+    cmds += [r'\rm -f %s' %fn for fn in fns]
     cmds += ['ln -sf {dir}/%s .' %fn for fn in fns]
     cmd = ';'.join(cmds).format(
-            dir=db_dir, pre=db_prefix)
+            dir=os.path.relpath(db_dir), pre=db_prefix)
     run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
     cwd = os.getcwd()
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
@@ -198,7 +198,7 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
     cmds += ['rm -f %s' %fn for fn in fns]
     cmds += ['ln -sf {dir}/%s .' %fn for fn in fns]
     cmd = ';'.join(cmds).format(
-            dir=db_dir, pre=db_prefix)
+            dir=os.path.relpath(db_dir), pre=db_prefix)
     run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
     cwd = os.getcwd()
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
@@ -269,8 +269,9 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
             # Since we could be in the gather-task-dir, instead of globbing,
             # we will read the fofn.
             for fn in open(i_fofn_fn).read().splitlines():
-                print("symlink %r <- %r" %(fn, os.path.basename(fn)))
-                os.symlink(fn, os.path.basename(fn))
+                rel_fn = os.path.relpath(fn)
+                print("symlink %r <- %r" %(rel_fn, os.path.basename(fn)))
+                os.symlink(rel_fn, os.path.basename(fn))
 
         merge_script_file = os.path.abspath( "%s/m_%05d/m_%05d.sh" % (wd, p_id, p_id) )
         with open(merge_script_file, "w") as merge_script:

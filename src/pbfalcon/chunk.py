@@ -18,10 +18,11 @@ def symlink(actual):
     """Symlink into cwd, using basename.
     """
     symbolic = os.path.basename(actual)
-    lg('ln -s %s %s' %(actual, symbolic))
+    rel = os.path.relpath(actual)
+    lg('ln -s %s %s' %(rel, symbolic))
     if os.path.lexists(symbolic):
         os.unlink(symbolic)
-    os.symlink(actual, symbolic)
+    os.symlink(rel, symbolic)
 
 def symlink_dazzdb(actualdir, db_prefix):
     """Symlink elements of dazzler db.
