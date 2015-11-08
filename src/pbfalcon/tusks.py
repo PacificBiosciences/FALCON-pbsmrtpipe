@@ -256,6 +256,9 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
                     mjob_data.setdefault( p_id, [] )
                     mjob_data[p_id].append(  " ".join(l) )
 
+    # Could be L1.* or preads.*
+    re_las = re.compile(r'\.(\d*)(\.\d*)?\.las$')
+
     for p_id in mjob_data:
         s_data = mjob_data[p_id]
 
@@ -269,6 +272,14 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
             # Since we could be in the gather-task-dir, instead of globbing,
             # we will read the fofn.
             for fn in open(i_fofn_fn).read().splitlines():
+                basename = os.path.basename(fn)
+                mo = re_las.search(basename)
+                if not mo:
+                    continue
+                left_block = int(mo.group(1))
+                if left_block != p_id:
+                    # By convention, m_00005 merges L1.5.*.las, etc.
+                    continue
                 rel_fn = os.path.relpath(fn)
                 print("symlink %r <- %r" %(rel_fn, os.path.basename(fn)))
                 os.symlink(rel_fn, os.path.basename(fn))
