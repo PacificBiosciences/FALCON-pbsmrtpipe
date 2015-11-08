@@ -59,7 +59,15 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_daligner_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
 
-@registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FC_JSON, RDJ, FC_FOFN], [FC_FOFN], is_distributed=True)
+# Typically, 6 procs for falcon_sense, but really that is set in cfg.
+# We run each block on a single machine because we currently use python 'multiproc'.
+# We run one 6-proc job for each block, serially.
+# Too many could swamp NFS, so serial on one machine is fine, for now, until we measure.
+# We pipe the result of LA4Falcon to the main process, which means that each fork consumes that much memory;
+# that is the main impact on other processes on the same machine, typically 6GB altogether.
+# Because this is I/O bound, we do not really harm the machine we are on, so nproc=1 is fine.
+# TODO: Move into /tmp, to reduce the burden on NFS. Then we might chunk.
+@registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FC_JSON, RDJ, FC_FOFN], [FC_FOFN], is_distributed=True, nproc=1)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
@@ -75,7 +83,9 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_daligner_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
-@registry('task_falcon1_run_merge_consensus_jobs', '0.0.0', [FC_JSON, RDJ, FC_FOFN], [FC_FOFN], is_distributed=True)
+# Actually, this skips consensus.
+# TODO: Split this into 2 in pipelines, maybe. (But consider running in /tmp.)
+@registry('task_falcon1_run_merge_consensus_jobs', '0.0.0', [FC_JSON, RDJ, FC_FOFN], [FC_FOFN], is_distributed=True, nproc=1)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')

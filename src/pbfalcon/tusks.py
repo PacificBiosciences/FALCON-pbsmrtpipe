@@ -184,7 +184,7 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
     return tasks
 
 def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
-    print('run_merge_consensus_jobs: %s %s' %(repr(input_files), repr(output_files)))
+    print('run_merge_consensus_jobs: %s %s %s' %(db_prefix, repr(input_files), repr(output_files)))
     i_json_config_fn, run_daligner_job_fn, i_fofn_fn = input_files
     o_fofn_fn, = output_files
     db_dir = os.path.dirname(run_daligner_job_fn)
@@ -199,21 +199,37 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
     # i_fofn_fn has the .las files, so create_merge_tasks does not need to look for theme.
     tasks = create_merge_tasks(i_fofn_fn, run_daligner_job_fn, cwd, db_prefix=db_prefix, config=config)
-    for p_id, argstuple in tasks.items():
-            merge_args, cons_args = argstuple
+
+    _run_merge_jobs(
+            dict((p_id, argstuple[0]) for (p_id, argstuple) in tasks.items()))
+    # TODO: Write *.las into another fofn.
+
+    if db_prefix == 'raw_reads':
+        _run_consensus_jobs(
+            dict((p_id, argstuple[1]) for (p_id, argstuple) in tasks.items()))
+        write_fns(o_fofn_fn, sorted(os.path.abspath(f) for f in glob.glob('preads/out*.fasta')))
+    else:
+        write_fns(o_fofn_fn, []) # This will be ignored. Instead, ./las_file/*.las will be used.
+
+def _run_merge_jobs(tasks):
+    cwd = os.getcwd()
+    for p_id, merge_args in tasks.items():
             job_done = os.path.join(cwd, "rp_%05d_done" %p_id)
             script_fn = os.path.join(cwd, "rp_%05d.sh" % (p_id))
             merge_args['job_done'] = job_done
             merge_args['script_fn'] = script_fn
             support.run_las_merge(**merge_args)
             run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
+
+def _run_consensus_jobs(tasks):
+    cwd = os.getcwd()
+    for p_id, cons_args in tasks.items():
             job_done = os.path.join(cwd, 'preads', "c_%05d_done" %p_id)
             script_fn = os.path.join(cwd, 'preads', "c_%05d.sh" %(p_id))
             cons_args['job_done'] = job_done
             cons_args['script_fn'] = script_fn
             support.run_consensus(**cons_args)
             run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-    write_fns(o_fofn_fn, sorted(os.path.abspath(f) for f in glob.glob('preads/out*.fasta')))
 
 def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
     tasks = {} # pid -> (merge_params, cons_params)
