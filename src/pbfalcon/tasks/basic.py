@@ -65,9 +65,10 @@ def run_rtc(rtc):
 # Too many could swamp NFS, so serial on one machine is fine, for now, until we measure.
 # We pipe the result of LA4Falcon to the main process, which means that each fork consumes that much memory;
 # that is the main impact on other processes on the same machine, typically 6GB altogether.
-# Because this is I/O bound, we do not really harm the machine we are on, so nproc=1 is fine.
+# Because this is I/O bound, we do not really harm the machine we are on,
+# but we need to reserve some memory. nproc=6 is more than enough.
 # TODO: Move into /tmp, to reduce the burden on NFS. Then we might chunk.
-@registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FC_JSON, RDJ, FC_FOFN], [FC_FOFN], is_distributed=True, nproc=1)
+@registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FC_JSON, RDJ, FC_FOFN], [FC_FOFN], is_distributed=True, nproc=6)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
