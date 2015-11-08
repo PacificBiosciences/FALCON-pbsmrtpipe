@@ -154,19 +154,18 @@ def get_falcon_overrides(cfg_content, OPTION_CFG=OPTION_CFG):
 
 def run_falcon_gen_config(input_files, output_files, options):
     """Generate a config-file from options.
-
-    TODO(CD):
-    Eventually, use GenomeSize and ParallelTasksMax too.
-    Also, validate cfg, in case of missing options.
     """
     i_fofn_fn, = input_files
     o_cfg_fn, = output_files
     import pprint
     log.info('options to run_falcon_gen_config:\n{}'.format(pprint.pformat(options)))
+    print('options to run_falcon_gen_config:\n{}'.format(pprint.pformat(options)))
     options = _options_dict_with_base_keys(options)
     falcon_options = _populate_falcon_options(options)
+    print('falcon_options to run_falcon_gen_config:\n{}'.format(pprint.pformat(falcon_options)))
     if OPTION_CFG in options:
         overrides = get_falcon_overrides(options[OPTION_CFG], OPTION_CFG)
+        print('overrides:\n%s'% pprint.pformat(overrides))
         falcon_options.update(overrides)
     else:
         raise Exception("Could not find %s" %OPTION_CFG)
