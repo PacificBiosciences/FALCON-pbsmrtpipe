@@ -128,10 +128,10 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
     db_dir = os.path.dirname(run_daligner_job_fn)
     cmds = ['pwd', 'ls -al']
     fns = ['.{pre}.bps', '.{pre}.idx', '{pre}.db']
-    cmds += ['rm -f %s' %fn for fn in fns]
+    cmds += [r'\rm -f %s' %fn for fn in fns]
     cmds += ['ln -sf {dir}/%s .' %fn for fn in fns]
     cmd = ';'.join(cmds).format(
-            dir=db_dir, pre=db_prefix)
+            dir=os.path.relpath(db_dir), pre=db_prefix)
     run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
     cwd = os.getcwd()
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
@@ -152,11 +152,6 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
     tasks = dict() # uid -> parameters-dict
 
     nblock = support2.get_nblock(db_file)
-
-    # Not in other version. Still needed?
-    for pid in xrange(1, nblock + 1):
-        # support.run_daligner() links into this at end. Maybe we should change that.
-        support.make_dirs("%s/m_%05d" % (wd, pid))
 
     re_daligner = re.compile(r'\bdaligner\b')
 
@@ -198,7 +193,7 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
     cmds += ['rm -f %s' %fn for fn in fns]
     cmds += ['ln -sf {dir}/%s .' %fn for fn in fns]
     cmd = ';'.join(cmds).format(
-            dir=db_dir, pre=db_prefix)
+            dir=os.path.relpath(db_dir), pre=db_prefix)
     run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
     cwd = os.getcwd()
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
@@ -256,6 +251,9 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
                     mjob_data.setdefault( p_id, [] )
                     mjob_data[p_id].append(  " ".join(l) )
 
+    # Could be L1.* or preads.*
+    re_las = re.compile(r'\.(\d*)(\.\d*)?\.las$')
+
     for p_id in mjob_data:
         s_data = mjob_data[p_id]
 
@@ -269,8 +267,17 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
             # Since we could be in the gather-task-dir, instead of globbing,
             # we will read the fofn.
             for fn in open(i_fofn_fn).read().splitlines():
-                print("symlink %r <- %r" %(fn, os.path.basename(fn)))
-                os.symlink(fn, os.path.basename(fn))
+                basename = os.path.basename(fn)
+                mo = re_las.search(basename)
+                if not mo:
+                    continue
+                left_block = int(mo.group(1))
+                if left_block != p_id:
+                    # By convention, m_00005 merges L1.5.*.las, etc.
+                    continue
+                rel_fn = os.path.relpath(fn)
+                print("symlink %r <- %r" %(rel_fn, os.path.basename(fn)))
+                os.symlink(rel_fn, os.path.basename(fn))
 
         merge_script_file = os.path.abspath( "%s/m_%05d/m_%05d.sh" % (wd, p_id, p_id) )
         with open(merge_script_file, "w") as merge_script:
