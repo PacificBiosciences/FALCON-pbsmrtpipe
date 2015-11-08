@@ -153,11 +153,6 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
 
     nblock = support2.get_nblock(db_file)
 
-    # Not in other version. Still needed?
-    for pid in xrange(1, nblock + 1):
-        # support.run_daligner() links into this at end. Maybe we should change that.
-        support.make_dirs("%s/m_%05d" % (wd, pid))
-
     re_daligner = re.compile(r'\bdaligner\b')
 
     line_count = 0
