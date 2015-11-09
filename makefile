@@ -29,9 +29,13 @@ runners: ${PBFALCON_TC_RUNNERS}
 %:
 	python -m $@ --emit-tool-contract >| $@_tool_contract.json
 
+# Someday, to hide options?
+# //depot/software/smrtanalysis/services-ui/scala/services/secondary-smrt-server/src/main/resources/pipeline-template-view-rules
+
 # For templates, in pbsmrtpipe repo:
 #   pbsmrtpipe show-templates --output-templates-json out-dir
 # and copy *fal* to
-# //depot/software/smrtanalysis/services-ui/scala/services/secondary-smrt-server/src/main/resources/pipeline-template-view-rules
+# //depot/software/smrtanalysis/services-ui/scala/services/secondary-smrt-server/src/main/resources/resolved-pipeline-templates
+#
 
 .PHONY: all modules runners update
