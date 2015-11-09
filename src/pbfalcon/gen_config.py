@@ -32,7 +32,7 @@ ovlp_HPCdaligner_option =  -v -k25 -h35 -w5 -H1000 -e.99 -l40 -s1000 -t27
 ovlp_DBsplit_option = -x5 -s50 -a
 ovlp_concurrent_jobs = 32
 """
-defaults_lambda = """\
+old_defaults_lambda = """\
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --local_match_count_threshold 2 --max_n_read 200 --n_core 6
 length_cutoff = 12000
 length_cutoff_pr = 12000
@@ -44,13 +44,28 @@ ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
 ovlp_DBsplit_option = -x500 -s50
 ovlp_concurrent_jobs = 32
 """
+# These values will need more adjusting, but at least they worked on some dataset.
+defaults_lambda = """
+falcon_sense_option = --output_multi --min_idt 0.77 --min_cov 10 --max_n_read 2000 --n_core 6
+length_cutoff = 1
+length_cutoff_pr = 1
+overlap_filtering_setting = --max_diff 1000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
+ovlp_DBsplit_option = -s50 -a
+ovlp_HPCdaligner_option = -v -k15 -h60 -w5 -H1 -e.95 -l40 -s100 -M4
+ovlp_concurrent_jobs = 32
+pa_DBsplit_option = -x250 -s500 -a
+pa_HPCdaligner_option = -v -k15 -h35 -w5 -H1 -e.70 -l40 -s100 -M4
+pa_concurrent_jobs = 32
+"""
 # also see:
 #   https://dazzlerblog.wordpress.com/command-guides/daligner-command-reference-guide/
 #   https://dazzlerblog.wordpress.com/2014/06/01/the-dazzler-db/
 #   https://github.com/PacificBiosciences/FALCON/wiki/Manual
+#   http://bugzilla.nanofluidics.com/show_bug.cgi?id=29491
 
 defaults = list(sorted([
     (    0, defaults_old),
+    ( 8000, old_defaults_lambda),
     (10000, defaults_lambda),
 ]))
 
