@@ -117,6 +117,9 @@ def run_falcon_build_rdb(input_files, output_files):
     #run_cmd('touch %s' %dummy_fn, sys.stdout, sys.stderr, shell=False)
     support.build_rdb(i_fofn_fn, cwd, config, job_done_fn, script_fn, run_daligner_jobs_fn)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
+    job_descs = support2.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'raw_reads')
+    if not job_descs:
+        raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
 
 def touch(fn):
     run_cmd('touch %s' %fn, sys.stdout, sys.stderr, shell=False)
@@ -157,6 +160,8 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
 
     line_count = 0
     job_descs = support2.get_daligner_job_descriptions(open(run_jobs_fn), db_prefix)
+    if not job_descs:
+        raise Exception("No daligner jobs generated in '%s'." %run_jobs_fn)
     for desc, bash in job_descs.iteritems():
         job_uid = '%08d' %line_count
         line_count += 1
@@ -340,6 +345,9 @@ def run_falcon_build_pdb(input_files, output_files):
     job_done_fn = os.path.join(odir, 'job_done')
     support.build_pdb(i_fofn_fn, cwd, config, job_done_fn, script_fn, run_daligner_jobs_fn)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
+    job_descs = support2.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'preads')
+    if not job_descs:
+        raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
 
 def _linewrap_fasta(ifn, ofn):
     with FastaIO.FastaReader(ifn) as fa_in:
