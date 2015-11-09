@@ -350,10 +350,13 @@ def run_falcon_build_pdb(input_files, output_files):
         raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
 
 def _linewrap_fasta(ifn, ofn):
+    n = 0
     with FastaIO.FastaReader(ifn) as fa_in:
         with FastaIO.FastaWriter(ofn) as fa_out:
             for rec in fa_in:
+                n += 1
                 fa_out.writeRecord(rec)
+    return n
 
 def run_falcon_asm(input_files, output_files):
     i_json_config_fn, i_fofn_fn = input_files
@@ -373,6 +376,16 @@ def run_falcon_asm(input_files, output_files):
     }
     support.run_falcon_asm(**args)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-    _linewrap_fasta('p_ctg.fa', o_fasta_fn)
+    p_ctg = 'p_ctg.fa'
+    if filesize(p_ctg) == 0:
+        raise Exception("0-length filesize for primary contigs: '%s'" %os.path.abspath(p_ctg))
+    n_records = _linewrap_fasta(p_ctg, o_fasta_fn)
+    if n_records == 0:
+        # We already checked 0-length, but maybe this is still possible.
+        # Really, we want to detect 0 base-length, but I do not know how yet.
+        raise Exception("No records found in primary contigs: '%s'" %os.path.abspath(p_ctg))
     say('Finished run_falcon_asm(%s, %s)' %(repr(input_files), repr(output_files)))
 
+def filesize(path):
+    statinfo = os.stat(path)
+    return statinfo.st_size
