@@ -1,4 +1,4 @@
-from pbfalcon.tusks import ini2option_text, option_text2ini
+from pbfalcon.gen_config import ini2option_text, option_text2ini
 from nose.tools import assert_equal
 from StringIO import StringIO
 

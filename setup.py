@@ -35,7 +35,7 @@ setup(
         'pbfalcon.cli',
     ],
     license='See LICENSE file.',
-    author='Jason Chin',
+    author='PacBio',
     author_email='cdunn@pacificbiosciences.com',
     description='FALCON using pbsmrtpipe.',
     #setup_requires=['nose>=1.0'],
