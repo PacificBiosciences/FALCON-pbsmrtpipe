@@ -1,4 +1,6 @@
 """Purely functional, somewhat generic code.
+
+(Of course, these might exhaust input iterators.)
 """
 
 def total_length(pairs):
@@ -17,3 +19,9 @@ def calc_cutoff(target, pairs):
         raise Exception('Total=%d < target=%d' %(accum, target))
     return length
 
+def fns_from_fofn(fofn):
+    for line in fofn:
+        fn = line.strip()
+        if not fn:
+            continue
+        yield fn
