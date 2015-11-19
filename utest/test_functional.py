@@ -5,14 +5,11 @@ from nose.tools import assert_equal, assert_raises
 def test_calc_cutoff():
     pairs = {0: 1, 1:2, 2:3, 3:4}.items()
     total = 20
-    gt0 = func.calc_cutoff(0, pairs)
-    assert_equal(3, gt0)
-    gt12 = func.calc_cutoff(12, pairs)
-    assert_equal(3, gt12)
-    gt13 = func.calc_cutoff(13, pairs)
-    assert_equal(2, gt13)
-    gt20 = func.calc_cutoff(20, pairs)
-    assert_equal(1, gt20)
+    def check(n, expected):
+        got = func.calc_cutoff(n, pairs)
+        assert_equal(expected, got)
+    for n, expected in ((0, 3), (12, 3), (13, 2), (20, 1)):
+        yield check, n, expected
     assert_raises(Exception, func.calc_cutoff, 21, pairs)
 
 def test_total_length():
