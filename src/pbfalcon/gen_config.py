@@ -57,6 +57,18 @@ pa_DBsplit_option = -x250 -s500 -a
 pa_HPCdaligner_option = -v -k15 -h35 -w5 -H1 -e.70 -l40 -s100 -M4
 pa_concurrent_jobs = 32
 """
+defaults_yeast = """
+cns_concurrent_jobs = 32
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 8
+length_cutoff = 15000
+length_cutoff_pr = 500
+overlap_filtering_setting = --max_diff 40 --max_cov 80 --min_cov 2 --n_core 12
+ovlp_DBsplit_option = -x15000 -s40
+ovlp_HPCdaligner_option =  -v -dal4 -k24 -e.96  -s1000         -t32 -l2500 -h1024
+ovlp_concurrent_jobs = 32
+pa_DBsplit_option = -a -x500 -s500
+pa_HPCdaligner_option =    -v -dal4 -k18 -e0.70 -s1000 -H15000 -t16 -l4800 -h480 -w8
+"""
 # also see:
 #   https://dazzlerblog.wordpress.com/command-guides/daligner-command-reference-guide/
 #   https://dazzlerblog.wordpress.com/2014/06/01/the-dazzler-db/
@@ -64,9 +76,10 @@ pa_concurrent_jobs = 32
 #   http://bugzilla.nanofluidics.com/show_bug.cgi?id=29491
 
 defaults = list(sorted([
-    (    0, defaults_old),
-    ( 8000, old_defaults_lambda),
-    (10000, defaults_lambda),
+    (       0, defaults_old),
+    ( 8*10**3, old_defaults_lambda),
+    (10*10**3, defaults_lambda),
+    (10*10**6, defaults_yeast),
 ]))
 
 
