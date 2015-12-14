@@ -3,6 +3,7 @@ from pbcommand.engine import run_cmd as pb_run_cmd
 from contextlib import contextmanager
 from falcon_kit import run_support as support
 from falcon_kit.mains import run as support2
+import falcon_kit.functional
 import glob
 import hashlib
 import itertools
@@ -104,25 +105,17 @@ def run_falcon_build_rdb(input_files, output_files):
     if True: #debug
         if cwd != odir:
             raise Exception('%r != %r' %(cwd, odir))
-    # TODO: Take adv of existing raw_reads.db. (This TODO was copied from FALCON.)
     i_json_config_fn, i_fofn_fn = input_files
     print('output_files: %s' %repr(output_files))
     run_daligner_jobs_fn, job_done_fn = output_files
-    #o_fofn_fn, = output_files
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
-    script_fn = os.path.join(odir, 'prepare_rdb.sh')
+    script_fn = os.path.join(odir, 'prepare_rdb.sh') # implies run-dir too
     #job_done_fn = os.path.join(odir, 'job.done') # not needed in pbsmrtpipe today tho
-    #run_daligner_jobs_fn = os.path.join(odir, 'run_daligner_jobs.sh')
-    #write_fns(o_fofn_fn, [script_fn])
-    #run_cmd('touch %s' %dummy_fn, sys.stdout, sys.stderr, shell=False)
-    support.build_rdb(i_fofn_fn, cwd, config, job_done_fn, script_fn, run_daligner_jobs_fn)
+    support.build_rdb(i_fofn_fn, config, job_done_fn, script_fn, run_daligner_jobs_fn)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-    job_descs = support2.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'raw_reads')
+    job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'raw_reads')
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
-
-def touch(fn):
-    run_cmd('touch %s' %fn, sys.stdout, sys.stderr, shell=False)
 
 def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
     print('run_daligner_jobs: %s %s' %(repr(input_files), repr(output_files)))
@@ -149,17 +142,16 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
             odirs.append(os.path.dirname(script_fn))
     write_fns(o_fofn_fn, itertools.chain.from_iterable(glob.glob('%s/*.las' %d) for d in odirs))
 
-
+#    def scripts_daligner(run_jobs_fn, db_prefix, rdb_build_done, pread_aln=False):
 def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln = False):
-    job_id = 0
     tasks = dict() # uid -> parameters-dict
 
-    nblock = support2.get_nblock(db_file)
+    nblock = support.get_nblock(db_file)
 
     re_daligner = re.compile(r'\bdaligner\b')
 
     line_count = 0
-    job_descs = support2.get_daligner_job_descriptions(open(run_jobs_fn), db_prefix)
+    job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_jobs_fn), db_prefix)
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s'." %run_jobs_fn)
     for desc, bash in job_descs.iteritems():
@@ -174,18 +166,16 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
         job_done = os.path.abspath("%s/job_%s_done" %(jobd, job_uid))
         if pread_aln:
             bash = re_daligner.sub("daligner_p", bash)
-        script_fn = os.path.join(jobd , "rj_%s.sh"% (job_uid))
+        script_fn = os.path.join(jobd , "rj_%s.sh"% (job_uid)) # also implies run-dir
         args = {
-            'daligner_cmd': bash,
+            'daligner_script': bash,
             'db_prefix': db_prefix,
-            'nblock': nblock,
             'config': config,
             'job_done': job_done,
             'script_fn': script_fn,
         }
         daligner_task = args #make_daligner_task( task_run_daligner )
         tasks[jobd] = daligner_task
-        job_id += 1
     return tasks
 
 def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
@@ -200,43 +190,70 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
     cmd = ';'.join(cmds).format(
             dir=os.path.relpath(db_dir), pre=db_prefix)
     run_cmd(cmd, sys.stdout, sys.stderr, shell=True)
-    cwd = os.getcwd()
+    cwd = os.getcwd() # same as dir of o_fofn_fn
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
     # i_fofn_fn has the .las files, so create_merge_tasks does not need to look for theme.
     tasks = create_merge_tasks(i_fofn_fn, run_daligner_job_fn, cwd, db_prefix=db_prefix, config=config)
 
-    _run_merge_jobs(
-            dict((p_id, argstuple[0]) for (p_id, argstuple) in tasks.items()))
-    # TODO: Write *.las into another fofn.
+    las_fns = _run_merge_jobs(
+            dict((p_id, (argstuple[0], argstuple[2])) for (p_id, argstuple) in tasks.items()))
 
     if db_prefix == 'raw_reads':
-        _run_consensus_jobs(
-            dict((p_id, argstuple[1]) for (p_id, argstuple) in tasks.items()))
-        write_fns(o_fofn_fn, sorted(os.path.abspath(f) for f in glob.glob('preads/out*.fasta')))
-    else:
-        write_fns(o_fofn_fn, []) # This will be ignored. Instead, ./las_file/*.las will be used.
+        fasta_fns = _run_consensus_jobs(
+            dict((p_id, (argstuple[1], argstuple[3])) for (p_id, argstuple) in tasks.items()))
+        # Record '*.fasta' in FOFN.
+        write_fns(o_fofn_fn, sorted(os.path.abspath(f) for f in fasta_fns))
+        assert_nonzero(o_fofn_fn)
+        return
+
+    # Record '*.las' from merge_jobs in FOFN.
+    write_fns(o_fofn_fn, sorted(os.path.abspath(f) for f in las_fns))
+
+    # Generate preads4falcon.fasta from preads.db
+    script_fn = os.path.join(cwd, "run_db2falcon.sh")
+    job_done = script_fn + '_done'
+    args = {
+        'config': config,
+        'job_done': job_done,
+        'script_fn': script_fn,
+    }
+    support.run_db2falcon(**args)
+    run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
+    assert_nonzero('preads4falcon.fasta')
+    assert_nonzero(o_fofn_fn)
+
+merged_las_fofn_bfn = 'merged_las.fofn'
+#DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 def _run_merge_jobs(tasks):
-    cwd = os.getcwd()
-    for p_id, merge_args in tasks.items():
-            job_done = os.path.join(cwd, "rp_%05d_done" %p_id)
-            script_fn = os.path.join(cwd, "rp_%05d.sh" % (p_id))
+    fns = list()
+    for p_id, (merge_args, las_bfn) in tasks.items():
+            run_dir = merge_args['merge_subdir']
+            job_done = "merge_%05d_done" %p_id
+            script_fn = os.path.join(run_dir, "merge_%05d.sh" % (p_id))
             merge_args['job_done'] = job_done
             merge_args['script_fn'] = script_fn
+            del merge_args['merge_subdir'] # was just a temporary hack
             support.run_las_merge(**merge_args)
             run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
+            fns.append(os.path.join(run_dir, las_bfn))
+    return fns # *.las
 
 def _run_consensus_jobs(tasks):
-    cwd = os.getcwd()
-    for p_id, cons_args in tasks.items():
-            job_done = os.path.join(cwd, 'preads', "c_%05d_done" %p_id)
-            script_fn = os.path.join(cwd, 'preads', "c_%05d.sh" %(p_id))
+    fns = list()
+    for p_id, (cons_args, fasta_bfn) in tasks.items():
+            run_dir = 'preads'
+            job_done = "c_%05d_done" %p_id
+            script_fn = os.path.join(run_dir, "c_%05d.sh" %(p_id))
             cons_args['job_done'] = job_done
             cons_args['script_fn'] = script_fn
             support.run_consensus(**cons_args)
             run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
+            fns.append(os.path.join(run_dir, fasta_bfn))
+    return fns # *.fasta
 
 def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
+    #merge_scripts = bash.scripts_merge(config, db_prefix, run_jobs_fn)
     tasks = {} # pid -> (merge_params, cons_params)
     mjob_data = {}
 
@@ -283,6 +300,8 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
         merge_subdir = "m_%05d" %p_id
         merge_dir = os.path.join(wd, merge_subdir)
         support.make_dirs(merge_dir)
+        #merge_script_file = os.path.abspath( "%s/m_%05d/m_%05d.sh" % (wd, p_id, p_id) )
+        merge_script = StringIO.StringIO()
         with cd(merge_dir):
             print("i_fofn_fn=%r" %i_fofn_fn)
             # Since we could be in the gather-task-dir, instead of globbing,
@@ -300,32 +319,28 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
                 print("symlink %r <- %r" %(rel_fn, os.path.basename(fn)))
                 os.symlink(rel_fn, os.path.basename(fn))
 
-        merge_script_file = os.path.abspath( "%s/m_%05d/m_%05d.sh" % (wd, p_id, p_id) )
-        with open(merge_script_file, "w") as merge_script:
-            print >> merge_script, 'DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )'
-            print >> merge_script, 'set -vex'
-            print >> merge_script, 'cd ${DIR}'
-            #print >> merge_script, """for f in `find .. -wholename "*job*/%s.%d.%s.*.*.las"`; do ln -sf $f .; done""" % (db_prefix, p_id, db_prefix)
-            for l in s_data:
-                print >> merge_script, l
-            print >> merge_script, "ln -sf ../m_%05d/%s.%d.las ../las_files" % (p_id, db_prefix, p_id) 
-            print >> merge_script, "ln -sf ./m_%05d/%s.%d.las .. " % (p_id, db_prefix, p_id) 
-            
+        for l in s_data:
+            print >> merge_script, l
+        las_bfn = '%s.%d.las' %(db_prefix, p_id)
+        #print >> merge_script, 'echo %s >| %s' %(las_bfn, merged_las_fofn_bfn)
+
         #job_done = makePypeLocalFile(os.path.abspath( "%s/m_%05d/m_%05d_done" % (wd, p_id, p_id)  ))
-        parameters =  {"p_script_fn": merge_script_file, 
+        parameters =  {"script": merge_script.getvalue(),
+                       "merge_subdir": merge_subdir,
                        "config": config}
         merge_task = parameters
 
-        out_file = os.path.abspath("%s/preads/out.%05d.fasta" %(wd, p_id))
+        fasta_bfn = "out.%05d.fasta" %p_id
+        out_file_fn = os.path.abspath("%s/preads/%s" %(wd, fasta_bfn))
         #out_done = makePypeLocalFile(os.path.abspath( "%s/preads/c_%05d_done" % (wd, p_id)  ))
         parameters =  {
-                       "job_id": p_id, 
-                       "prefix": db_prefix,
-                       "out_file_fn": out_file,
+                       "db_fn": '../{}'.format(db_prefix),
+                       "las_fn": '../{}/{}'.format(merge_subdir, las_bfn), # assuming merge ran in merge_dir
+                       "out_file_fn": out_file_fn,
                        #"out_done": out_done,
                        "config": config}
         cons_task = parameters
-        tasks[p_id] = (merge_task, cons_task)
+        tasks[p_id] = (merge_task, cons_task, las_bfn, fasta_bfn)
 
     return tasks
 
@@ -343,13 +358,16 @@ def run_falcon_build_pdb(input_files, output_files):
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
     script_fn = os.path.join(odir, 'prepare_pdb.sh')
     job_done_fn = os.path.join(odir, 'job_done')
-    support.build_pdb(i_fofn_fn, cwd, config, job_done_fn, script_fn, run_daligner_jobs_fn)
+    support.build_pdb(i_fofn_fn, config, job_done_fn, script_fn, run_daligner_jobs_fn)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
-    job_descs = support2.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'preads')
+    job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'preads')
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
 
 def _linewrap_fasta(ifn, ofn):
+    """For the pbsmrtpipe validator.
+    Not sure whether any tools actually require this.
+    """
     n = 0
     with FastaIO.FastaReader(ifn) as fa_in:
         with FastaIO.FastaWriter(ofn) as fa_out:
@@ -363,28 +381,35 @@ def run_falcon_asm(input_files, output_files):
     o_fasta_fn, = output_files
     cwd = os.getcwd()
     pread_dir = os.path.dirname(i_fofn_fn)
+    preads4falcon_fasta_fn = os.path.join(pread_dir, 'preads4falcon.fasta')
     db_file = os.path.join(pread_dir, 'preads.db')
     job_done = os.path.join(cwd, 'job_done')
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
-    script_fn =  os.path.join(cwd ,"run_falcon_asm.sh")
+    script_fn = os.path.join(cwd ,"run_falcon_asm.sh")
     args = {
-        'pread_dir': pread_dir,
-        'db_file': db_file,
+        'las_fofn_fn': i_fofn_fn,
+        'preads4falcon_fasta_fn': preads4falcon_fasta_fn,
+        'db_file_fn': db_file,
         'config': config,
         'job_done': job_done,
         'script_fn': script_fn,
     }
+    assert_nonzero(i_fofn_fn)
+    assert_nonzero(preads4falcon_fasta_fn)
     support.run_falcon_asm(**args)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
     p_ctg = 'p_ctg.fa'
-    if filesize(p_ctg) == 0:
-        raise Exception("0-length filesize for primary contigs: '%s'" %os.path.abspath(p_ctg))
+    assert_nonzero(p_ctg)
     n_records = _linewrap_fasta(p_ctg, o_fasta_fn)
     if n_records == 0:
         # We already checked 0-length, but maybe this is still possible.
         # Really, we want to detect 0 base-length, but I do not know how yet.
         raise Exception("No records found in primary contigs: '%s'" %os.path.abspath(p_ctg))
     say('Finished run_falcon_asm(%s, %s)' %(repr(input_files), repr(output_files)))
+
+def assert_nonzero(fn):
+    if filesize(fn) == 0:
+        raise Exception("0-length filesize for: '%s'" %os.path.abspath(fn))
 
 def filesize(path):
     statinfo = os.stat(path)
