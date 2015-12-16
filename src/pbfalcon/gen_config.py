@@ -93,6 +93,8 @@ def _populate_falcon_options(options):
     while index < len(defaults) - 1:
         if defaults[index+1][0] <= length:
             index += 1
+        else:
+            break
     fc = ini2dict(sorted_str(defaults[index][1]))
 
     # Also keep everything except a few which could be mal-formatted,
