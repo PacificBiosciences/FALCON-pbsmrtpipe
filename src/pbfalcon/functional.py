@@ -25,3 +25,17 @@ def fns_from_fofn(fofn):
         if not fn:
             continue
         yield fn
+
+def joined_strs(pieces, olen):
+    """Reduce len to olen by joining some strings.
+
+    >>> list(joined_strs(['a', 'b', 'c'], 2))
+    ['ab', 'c']
+    """
+    ilen = len(pieces)
+    rem = ilen
+    while rem:
+        n = ((rem-1)//olen) + 1
+        yield ''.join(pieces[ilen-rem : n+ilen-rem])
+        rem -= n
+        olen -= 1
