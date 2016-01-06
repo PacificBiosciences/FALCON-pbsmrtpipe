@@ -2,6 +2,7 @@
 from falcon_kit.functional import (get_daligner_job_descriptions, get_script_xformer)
 from pbcommand.models import PipelineChunk
 from pbcommand.pb_io import write_pipeline_chunks
+from .functional import joined_strs
 import logging
 import os
 import re
@@ -49,8 +50,9 @@ def write_run_daligner_chunks_falcon(
         # cmds is actually a list of small bash scripts, including linefeeds.
         cmds = get_daligner_job_descriptions(open(run_jobs_fn), db_prefix).values()
         if max_total_nchunks < len(cmds):
-            raise Exception("max_total_nchunks < # daligner cmds: %d < %d" %(
+            log.debug("max_total_nchunks < # daligner cmds: %d < %d" %(
                 max_total_nchunks, len(cmds)))
+            cmds = joined_strs(cmds, max_total_nchunks)
         symlink_dazzdb(os.path.dirname(run_jobs_fn), db_prefix)
         for i, script in enumerate(cmds):
             chunk_id = '_'.join([chunk_base_name, str(i)])

@@ -28,3 +28,21 @@ c.d
     expected = ['a-b', 'c.d']
     got = list(func.fns_from_fofn(fofn))
     assert_equal(expected, got)
+
+def test_joined_strs():
+    def verify(args, expected):
+        got = func.joined_strs(*args)
+        assert_equal(list(got), list(expected))
+    yield verify, ([], 1), []
+    yield verify, (['a'], 1), ['a']
+    yield verify, (['a'], 2), ['a']
+    yield verify, (['a', 'b'], 1), ['ab']
+    yield verify, (['a', 'b'], 2), ['a', 'b']
+    yield verify, (['a', 'b'], 3), ['a', 'b']
+    yield verify, (['a', 'b', 'c'], 1), ['abc']
+    yield verify, (['a', 'b', 'c'], 2), ['ab', 'c']
+    yield verify, (['a', 'b', 'c'], 3), ['a', 'b', 'c']
+    yield verify, (['a', 'b', 'c', 'd'], 1), ['abcd']
+    yield verify, (['a', 'b', 'c', 'd'], 2), ['ab', 'cd']
+    yield verify, (['a', 'b', 'c', 'd'], 3), ['ab', 'c', 'd']
+    yield verify, (['a', 'b', 'c', 'd'], 4), ['a', 'b', 'c', 'd']
