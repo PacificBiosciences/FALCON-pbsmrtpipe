@@ -96,6 +96,11 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
+@registry('task_falconx', '0.0.0', [FC_JSON, FC_FOFN], [FileTypes.FASTA], is_distributed=False)
+def run_rtc(rtc):
+  with cd(os.path.dirname(rtc.task.output_files[0])):
+    return pbfalcon.run_falconx(rtc.task.input_files, rtc.task.output_files)
+
 
 if __name__ == '__main__':
     sys.exit(registry_runner(registry, sys.argv[1:]))

@@ -407,6 +407,12 @@ def run_falcon_asm(input_files, output_files):
         raise Exception("No records found in primary contigs: '%s'" %os.path.abspath(p_ctg))
     say('Finished run_falcon_asm(%s, %s)' %(repr(input_files), repr(output_files)))
 
+def run_falconx(input_files, output_files):
+    i_json_config_fn, i_fofn_fn = input_files
+    o_fasta_fn, = output_files
+    run_cmd('touch %s' %o_fasta_fn)
+    say('Finished run_falconx(%s, %s)' %(repr(input_files), repr(output_files)))
+
 def assert_nonzero(fn):
     if filesize(fn) == 0:
         raise Exception("0-length filesize for: '%s'" %os.path.abspath(fn))
