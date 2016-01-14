@@ -53,7 +53,7 @@ def run_falcon_config_get_fasta(input_files, output_files):
         i_config_fn, = input_files
         o_fofn_fn, = output_files
         config = _get_config(i_config_fn)
-        i_fofn_fn = config['input_fofn_fn']
+        i_fofn_fn = config['input_fofn']
         msg = '%r -> %r' %(i_fofn_fn, o_fofn_fn)
         say(msg)
         with cd(os.path.dirname(i_fofn_fn)):
@@ -62,9 +62,10 @@ def run_falcon_config_get_fasta(input_files, output_files):
 def run_falcon_config(input_files, output_files):
         i_config_fn, i_fasta_fofn = input_files
         o_json_fn, = output_files
+        log.info('i_config_fn cont: "{}"'.format(open(i_config_fn).read()))
         config = _get_config(i_config_fn)
-        config['input_fofn_fn'] = os.path.abspath(i_fasta_fofn)
-        config['ORIGINAL_SELF'] = i_config_fn
+        config['input_fofn'] = os.path.abspath(i_fasta_fofn)
+        config['original_self'] = i_config_fn
         output = json.dumps(config)
         out = StringIO.StringIO()
         out.write(output)
@@ -77,10 +78,10 @@ def run_falcon_make_fofn_abs(input_files, output_files):
         i_json_fn, = input_files
         o_fofn_fn, = output_files
         config = _get_config_from_json_fileobj(open(i_json_fn))
-        i_fofn_fn = config['input_fofn_fn']
+        i_fofn_fn = config['input_fofn']
         if not i_fofn_fn.startswith('/'):
             # i_fofn_fn can be relative to the location of the config file.
-            original_config_fn = config['ORIGINAL_SELF']
+            original_config_fn = config['original_self']
             i_fofn_fn = os.path.join(os.path.dirname(original_config_fn), i_fofn_fn)
         msg = 'run_falcon_make_fofn_abs(%r -> %r)' %(i_fofn_fn, o_fofn_fn)
         say(msg)
