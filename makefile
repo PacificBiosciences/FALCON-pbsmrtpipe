@@ -8,6 +8,7 @@ run:
 
 PBFALCON_TC_RUNNERS:= \
 	pbfalcon.cli.gen_config \
+	pbfalcon.cli.hgap_prepare \
 	pbfalcon.tasks.scatter0_run_daligner_jobs \
 	pbfalcon.tasks.scatter1_run_daligner_jobs \
 	pbfalcon.tasks.gather0_run_daligner_jobs \

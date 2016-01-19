@@ -52,7 +52,7 @@ def run_falcon_config(input_files, output_files):
         config = _get_config(i_config_fn)
         config['input_fofn'] = os.path.abspath(i_fasta_fofn)
         config['original_self'] = i_config_fn
-        output = json.dumps(config)
+        output = json.dumps(config, sort_keys=True, indent=4, separators=(',', ': '))
         out = StringIO.StringIO()
         out.write(output)
         log.info('falcon_config:\n' + output)
@@ -397,6 +397,20 @@ def run_falconx(input_files, output_files):
     o_fasta_fn, = output_files
     run_cmd('touch %s' %o_fasta_fn, sys.stdout, sys.stderr, shell=False)
     say('Finished run_falconx(%s, %s)' %(repr(input_files), repr(output_files)))
+
+def run_hgap(input_files, output_files):
+    i_cfg_fn, i_logging_fn, i_subreadset_fn = input_files
+    o_fasta_fn, = output_files
+    # Update the cfg with our subreadset.
+    # Run pypeflow.hgap.main.
+    #cmd = 'python -m pbfalcon.pypeflow.hgap --logging {} {}'.format(i_logging_fn, i_cfg_fn)
+    cmd = 'python -m pbfalcon.pypeflow.hgap {}'.format(i_cfg_fn)
+    system(cmd)
+    final_asm_fn = os.path.join('2-asm-falcon', 'p_ctg.fa') # TODO: Polish!
+    cmd = 'mkdir -p %s; touch %s' %(os.path.dirname(final_asm_fn), final_asm_fn)
+    system(cmd)
+    # Link the output fasta to the final assembly of HGAP.
+    symlink(final_asm_fn, o_fasta_fn)
 
 def assert_nonzero(fn):
     if filesize(fn) == 0:

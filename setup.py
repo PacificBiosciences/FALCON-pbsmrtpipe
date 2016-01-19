@@ -33,6 +33,7 @@ setup(
     package_dir={'': 'src'},
     packages=['pbfalcon', 'pbfalcon.tasks',
         'pbfalcon.cli',
+        'pbfalcon.pypeflow', # might be moved to FALCON someday
     ],
     license='See LICENSE file.',
     author='PacBio',
