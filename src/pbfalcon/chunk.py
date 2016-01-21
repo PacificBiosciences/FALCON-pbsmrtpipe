@@ -3,27 +3,11 @@ from falcon_kit.functional import (get_daligner_job_descriptions, get_script_xfo
 from pbcommand.models import PipelineChunk
 from pbcommand.pb_io import write_pipeline_chunks
 from .functional import joined_strs
+from .sys import symlink
 import logging
 import os
-import re
 
 log = logging.getLogger(__name__)
-
-def lg(msg):
-    """Does log work?
-    """
-    print(msg)
-    log.info(msg)
-
-def symlink(actual):
-    """Symlink into cwd, using basename.
-    """
-    symbolic = os.path.basename(actual)
-    rel = os.path.relpath(actual)
-    lg('ln -s %s %s' %(rel, symbolic))
-    if os.path.lexists(symbolic):
-        os.unlink(symbolic)
-    os.symlink(rel, symbolic)
 
 def symlink_dazzdb(actualdir, db_prefix):
     """Symlink elements of dazzler db.
@@ -32,7 +16,6 @@ def symlink_dazzdb(actualdir, db_prefix):
     symlink(os.path.join(actualdir, '.%s.bps'%db_prefix))
     symlink(os.path.join(actualdir, '.%s.idx'%db_prefix))
     symlink(os.path.join(actualdir, '%s.db'%db_prefix))
-
 
 def write_run_daligner_chunks_falcon(
         pread_aln,

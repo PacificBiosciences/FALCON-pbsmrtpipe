@@ -1,6 +1,7 @@
+from __future__ import absolute_import
+from .sys import symlink, cd, say, system, filesize
 from pbcore.io import FastaIO
 from pbcommand.engine import run_cmd as pb_run_cmd
-from contextlib import contextmanager
 from falcon_kit import run_support as support
 from falcon_kit.mains import run as support2
 import falcon_kit.functional
@@ -16,21 +17,6 @@ import sys
 
 log = logging.getLogger(__name__)
 
-
-@contextmanager
-def cd(newdir):
-    prevdir = os.getcwd()
-    say('CD: %r <- %r' %(newdir, prevdir))
-    os.chdir(os.path.expanduser(newdir))
-    try:
-        yield
-    finally:
-        say('CD: %r -> %r' %(newdir, prevdir))
-        os.chdir(prevdir)
-
-def say(msg):
-        log.info(msg)
-        print(msg)
 
 def run_cmd(cmd, *args, **kwds):
     say('RUN: %s' %repr(cmd))
@@ -316,9 +302,7 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
                 if left_block != p_id:
                     # By convention, m_00005 merges L1.5.*.las, etc.
                     continue
-                rel_fn = os.path.relpath(fn)
-                print("symlink %r <- %r" %(rel_fn, os.path.basename(fn)))
-                os.symlink(rel_fn, os.path.basename(fn))
+                symlink(fn)
 
         for l in s_data:
             print >> merge_script, l
@@ -417,7 +401,3 @@ def run_falconx(input_files, output_files):
 def assert_nonzero(fn):
     if filesize(fn) == 0:
         raise Exception("0-length filesize for: '%s'" %os.path.abspath(fn))
-
-def filesize(path):
-    statinfo = os.stat(path)
-    return statinfo.st_size
