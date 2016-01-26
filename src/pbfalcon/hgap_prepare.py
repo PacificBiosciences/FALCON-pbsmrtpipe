@@ -5,7 +5,6 @@ But for now, we just use a look-up table,
 based on ranges of the length of a genome.
 """
 from falcon_kit import run_support as support
-from . import tusks, reads
 import ConfigParser as configparser
 import json
 import logging
@@ -24,9 +23,12 @@ TASK_HGAP_PREPARE_CFG = 'falcon_ns.task_options.' + OPTION_CFG
 DEFAULT_LOGGING_CFG = {
     'version': 1,
     'formatters': {
-        'form01': {
+        'format_full': {
             'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         },
+        'format_brief': {
+            'format': '%(levelname)s: %(message)s',
+        }
     },
     'filters': {
     },
@@ -34,19 +36,19 @@ DEFAULT_LOGGING_CFG = {
         'handler_file_pypeflow': {
             'class': 'logging.FileHandler',
             'level': 'INFO',
-            'formatter': 'form01',
+            'formatter': 'format_full',
             'filename': 'pypeflow.log',
         },
         'handler_file_hgap': {
             'class': 'logging.FileHandler',
             'level': 'DEBUG',
-            'formatter': 'form01',
+            'formatter': 'format_full',
             'filename': 'hgap.log',
         },
         'handler_stream': {
             'class': 'logging.StreamHandler',
             'level': 'INFO',
-            'formatter': 'form01',
+            'formatter': 'format_brief',
             'stream': 'ext://sys.stderr',
         },
     },
@@ -69,7 +71,7 @@ DEFAULT_LOGGING_CFG = {
         'handlers': ['handler_stream'],
         'level': 'NOTSET',
     },
-    'incremental': True,
+    'disable_existing_loggers': False
 }
 OPTION_SECTION_HGAP = 'hgap'
 OPTION_SECTION_PBALIGN = 'pbalign'
@@ -86,6 +88,10 @@ def get_pbsmrtpipe_opts(d):
     # TODO: Removed any unneeded rtc opts.
     return opts
 
+def dump_as_json(data, ofs):
+    as_json = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    ofs.write(as_json)
+
 def run_hgap_prepare(input_files, output_files, options):
     """Generate a config-file from options.
     """
@@ -95,7 +101,10 @@ def run_hgap_prepare(input_files, output_files, options):
     run_dir = os.path.dirname(o_hgap_cfg_fn)
 
     # For now, ignore all but OPTION_CFG
-    all_cfg = json.loads(options[TASK_HGAP_PREPARE_CFG])
+    cfg_json = options[TASK_HGAP_PREPARE_CFG].strip()
+    if not cfg_json:
+        cfg_json = '{}'
+    all_cfg = json.loads(cfg_json)
     log.info('Parsed {!r}:\n{}'.format(
         TASK_HGAP_PREPARE_CFG, all_cfg))
 
@@ -107,11 +116,10 @@ def run_hgap_prepare(input_files, output_files, options):
     all_cfg[OPTION_SECTION_PBSMRTPIPE] = pbsmrtpipe_opts
 
     # Dump all_cfg.
-    as_json = json.dumps(all_cfg, sort_keys=True, indent=4, separators=(',', ': '))
-    log.info('Amended and formatted back to JSON:\n{}'.format(
-        as_json))
-    open(o_hgap_cfg_fn, 'w').write(as_json)
+    dump_as_json(all_cfg, open(o_hgap_cfg_fn, 'w'))
+
+    # Get logging cfg.
+    logging_cfg = DEFAULT_LOGGING_CFG
 
     # Dump logging cfg.
-    logging_cfg = DEFAULT_LOGGING_CFG
-    open(o_logging_cfg_fn, 'w').write(as_json)
+    dump_as_json(logging_cfg, open(o_logging_cfg_fn, 'w'))

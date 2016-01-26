@@ -1,5 +1,7 @@
 """This file is an experimental WIP.
+PROBABLY TO BE DELETED.
 """
+from __future__ import absolute_import
 from falcon_kit import run_support as support
 import pbcommand.cli
 import pbsmrtpipe.cli_utils
@@ -38,3 +40,6 @@ def main(argv=sys.argv):
     return pbcommand.cli.pacbio_args_runner(
             argv[1:], parser, _run_from_args,
             log, pbsmrtpipe.utils.setup_log)
+
+if __name__ == "__main__":
+    main()

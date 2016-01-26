@@ -26,8 +26,8 @@ default_variantCaller_section = """
 """
 # See "Minimal Options" at:
 #   https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/blob/master/HGAP/defaults.md
-default_HGAP_Options = """
-"""
+default_HGAP_Options = ""
+
 def add_args_and_options(p):
     # FileType, label, name, description
     p.add_input_file_type(FileTypes.DS_SUBREADS, "subreads-in", "DataSet-SubreadSet", "Input: Probably BAM files")
@@ -37,7 +37,8 @@ def add_args_and_options(p):
     # Option id, label, default value, name, description
     p.add_str("falcon_ns.task_options." + hgap_prepare.OPTION_CFG, "advanced-overrides",
             default_HGAP_Options,
-            "Config overrides", "This is intended to allow support engineers to override the config which we will generate from other options. It is a 2-level JSON dictionary, just like hgap-cfg.json. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
+            "Experimental HGAP.5 config overrides.",
+            "Experimental HGAP.5 config overrides are experimental.")
     return p
 
 def get_contract_parser():
@@ -47,8 +48,8 @@ def get_contract_parser():
     resource_types = ()
     # Commandline exe to call "{exe}" /path/to/resolved-tool-contract.json
     driver_exe = "python -m pbfalcon.cli.hgap_prepare --resolved-tool-contract "
-    desc = "Generate HGAP config from pbcommand options."
-    name = 'Tool HgapConfigGenerator'
+    desc = "XXX Experimental HGAP.5"
+    name = 'XXX Experimental HgapConfigGenerator'
     p = get_pbparser(TOOL_ID, __version__, name, desc, driver_exe,
             is_distributed=True, nproc=nproc, resource_types=resource_types)
     add_args_and_options(p)
