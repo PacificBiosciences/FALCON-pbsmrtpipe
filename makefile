@@ -38,5 +38,6 @@ runners: ${PBFALCON_TC_RUNNERS}
 # and copy *fal* to
 # //depot/software/smrtanalysis/services-ui/scala/services/secondary-smrt-server/src/main/resources/resolved-pipeline-templates
 #
+# cd ~/repo/pb/smrtanalysis-client/smrtanalysis/services-ui/scala/services/secondary-smrt-server/src/main/resources/resolved-pipeline-templates
 
 .PHONY: all modules runners update

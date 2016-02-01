@@ -39,11 +39,11 @@ DEFAULT_LOGGING_CFG = {
             'formatter': 'format_full',
             'filename': 'pypeflow.log',
         },
-        'handler_file_hgap': {
+        'handler_file_pbfalcon': {
             'class': 'logging.FileHandler',
             'level': 'DEBUG',
             'formatter': 'format_full',
-            'filename': 'hgap.log',
+            'filename': 'pbfalcon.log',
         },
         'handler_stream': {
             'class': 'logging.StreamHandler',
@@ -53,18 +53,15 @@ DEFAULT_LOGGING_CFG = {
         },
     },
     'loggers': {
-        'logger_pypeflow': {
+        'pypeflow': {
             'level': 'NOTSET',
             'propagate': 1,
             'handlers': ['handler_file_pypeflow'],
-            'qualname': 'pypeflow',
         },
-        'logger_hgap': {
+        'pbfalcon': {
             'level': 'NOTSET',
             'propagate': 1,
-            'handlers': ['handler_file_hgap'],
-            'qualname': 'hgap',
-            'foo': 'bar',
+            'handlers': ['handler_file_pbfalcon'],
         },
     },
     'root': {

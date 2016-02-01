@@ -16,7 +16,7 @@ def cd(newdir):
         os.chdir(prevdir)
 
 def lg(msg):
-    print(msg)
+    #print(msg)
     log.info(msg)
 
 say=lg

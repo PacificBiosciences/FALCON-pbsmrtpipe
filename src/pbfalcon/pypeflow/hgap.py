@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from . import flow
 import argparse
 import copy
 import json
@@ -10,7 +11,8 @@ import sys
 import time
 import ConfigParser as configparser
 import StringIO
-log = logging.getLogger(__name__)
+#log = logging.getLogger(__name__)
+
 
 default_logging_config = """
 [loggers]
@@ -102,6 +104,7 @@ def setup_logger(logging_config_fn):
     if logging_config_fn:
         if logging_config_fn.endswith('.json'):
             logging.config.dictConfig(json.loads(open(logging_config_fn).read()))
+            #print repr(logging.Logger.manager.loggerDict) # to debug
             return
         logger_fileobj = open(logging_config_fn)
     else:
@@ -174,14 +177,14 @@ def main1(input_config_fn, logging_config_fn=None):
     else:
         config = cfg2dict(open(input_config_fn))
     log.info('config=\n{}'.format(pprint.pformat(config)))
-    log.info('defs=\n{}'.format(pprint.pformat(DEFAULT_OPTIONS)))
+    log.info('defaults=\n{}'.format(pprint.pformat(DEFAULT_OPTIONS)))
     opts = dict()
     opts.update(DEFAULT_OPTIONS)
     update2(opts, config)
     log.info('opts=\n{}'.format(pprint.pformat(opts)))
+    flow.flow(config)
 
 def main(argv=sys.argv):
-    print(argv)
     parser = argparse.ArgumentParser()
     parser.add_argument('--logging',
             help='.ini or .json config file for Python logging module')
