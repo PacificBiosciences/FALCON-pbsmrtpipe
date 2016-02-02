@@ -11,15 +11,15 @@ import sys
 import time
 import ConfigParser as configparser
 import StringIO
-#log = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 default_logging_config = """
 [loggers]
-keys=root,pypeflow,fc_run
+keys=root,pypeflow,hgap
 
 [handlers]
-keys=stream,file_pypeflow,file_fc
+keys=stream,file_pypeflow,file_hgap
 
 [formatters]
 keys=form01,form02
@@ -34,9 +34,9 @@ handlers=file_pypeflow
 qualname=pypeflow
 propagate=1
 
-[logger_fc_run]
+[logger_hgap]
 level=NOTSET
-handlers=file_fc
+handlers=file_hgap
 qualname=.
 propagate=1
 
@@ -52,11 +52,11 @@ level=INFO
 formatter=form01
 args=('pypeflow.log',)
 
-[handler_file_fc]
+[handler_file_hgap]
 class=FileHandler
 level=DEBUG
 formatter=form01
-args=('fc.log',)
+args=('hgap.log',)
 
 [formatter_form01]
 format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
