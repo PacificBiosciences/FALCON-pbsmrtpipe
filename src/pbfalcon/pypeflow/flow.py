@@ -42,7 +42,9 @@ def run_bam_to_fastx(program_name, fastx_reader, fastx_writer,
                     if (min_subread_length < 1 or
                         min_subread_length < len(rec.sequence)):
                         fastx_out.writeRecord(rec)
-
+def run_falcon(i_fasta_fn, o_fasta_fn):
+    sys.system('cp -f {} {}'.format(
+        i_fasta_fn, o_fasta_fn))
 def task_bam2fasta(self):
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
     #sys.system('touch {}'.format(fn(self.fasta)))
@@ -51,7 +53,18 @@ def task_bam2fasta(self):
     run_bam_to_fastx('bam2fasta', FastaReader, FastaWriter,
                      input_file_name, output_file_name,
                      min_subread_length=0)
-
+def task_falcon(self):
+    input_file_name = fn(self.orig_fasta)
+    output_file_name = fn(self.asm_fasta)
+    run_falcon(input_file_name, output_file_name)
+def task_fasta2referenceset(self):
+    """Copied from pbsmrtpipe/pb_tasks/pacbio.py:run_fasta_to_referenceset()
+    """
+    input_file_name = fn(self.fasta)
+    output_file_name = fn(self.referenceset)
+    cmd = 'dataset create --type ReferenceSet --generateIndices {} {}'.format(
+            output_file_name, input_file_name)
+    sys.system(cmd)
 def task_foo(self):
     log.debug('WARNME1 {!r}'.format(__name__))
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
@@ -65,17 +78,46 @@ def flow(config):
     wf = PypeThreadWorkflow()
 
     dataset_pfn = makePypeLocalFile(config['pbsmrtpipe']['input_files'][0])
-    fasta_pfn = makePypeLocalFile('input.fasta')
+    orig_fasta_pfn = makePypeLocalFile('input.fasta')
     parameters =  {
             "fooparam": "barval",
     }
     make_task = PypeTask(
             inputs = {"dataset": dataset_pfn,},
-            outputs =  {"fasta": fasta_pfn,},
+            outputs =  {"fasta": orig_fasta_pfn,},
             parameters = parameters,
             TaskType = PypeThreadTaskBase,
             URL = "task://localhost/bam2fasta")
     task = make_task(task_bam2fasta)
+    wf.addTask(task)
+    wf.refreshTargets()
+
+    # We could integrate the FALCON workflow here, but for now we will just execute it.
+    asm_fasta_pfn = makePypeLocalFile('asm.fasta')
+    parameters =  {
+    }
+    make_task = PypeTask(
+            inputs =  {"orig_fasta": orig_fasta_pfn,},
+            outputs =  {"asm_fasta": asm_fasta_pfn,},
+            parameters = parameters,
+            TaskType = PypeThreadTaskBase,
+            URL = "task://localhost/falcon")
+    #task = make_task(task_falcon)
+    #wf.addTask(task)
+    #wf.refreshTargets()
+    run_falcon(fn(orig_fasta_pfn), fn(asm_fasta_pfn))
+
+    # The reset of the workflow will operate on datasets, not fasta directly.
+    referenceset_pfn = makePypeLocalFile('asm.referenceset.xml')
+    parameters =  {
+    }
+    make_task = PypeTask(
+            inputs =  {"fasta": asm_fasta_pfn,},
+            outputs = {"referenceset": referenceset_pfn,},
+            parameters = parameters,
+            TaskType = PypeThreadTaskBase,
+            URL = "task://localhost/fasta2referenceset")
+    task = make_task(task_fasta2referenceset)
     wf.addTask(task)
     wf.refreshTargets()
 
