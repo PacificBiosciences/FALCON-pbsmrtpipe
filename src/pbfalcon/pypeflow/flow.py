@@ -43,7 +43,9 @@ def run_bam_to_fastx(program_name, fastx_reader, fastx_writer,
                         min_subread_length < len(rec.sequence)):
                         fastx_out.writeRecord(rec)
 def run_falcon(i_fasta_fn, o_fasta_fn):
-    sys.system('cp -f {} {}'.format(
+    sys.system('rm -f {}'.format(
+        o_fasta_fn))
+    sys.system('ln {} {}'.format(
         i_fasta_fn, o_fasta_fn))
 def run_pbalign(reads, asm, alignmentset):
     """
