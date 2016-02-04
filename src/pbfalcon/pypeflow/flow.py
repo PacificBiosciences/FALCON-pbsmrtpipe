@@ -45,6 +45,53 @@ def run_bam_to_fastx(program_name, fastx_reader, fastx_writer,
 def run_falcon(i_fasta_fn, o_fasta_fn):
     sys.system('cp -f {} {}'.format(
         i_fasta_fn, o_fasta_fn))
+def run_pbalign(reads, asm, alignmentset):
+    """
+ BlasrService: Align reads to references using blasr.
+ BlasrService: Call "blasr /pbi/dept/secondary/siv/testdata/SA3-DS/lambda/2372215/0007_tiny/Analysis_Results/m150404_101626_42267_c100807920800000001823174110291514_s1_p0.all.subreadset.xml /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_falcon2_run_asm-0/file.fasta -out /scratch/tmpTbV4Ec/wLCUdL.bam  -bam  -bestn 10 -minMatch 12  -nproc 16  -minSubreadLength 50 -minAlnLength 50  -minPctSimilarity 70 -minPctAccuracy 70 -hitPolicy randombest  -randomSeed 1  -minPctSimilarity 70.0 "
+ FilterService: Filter alignments using samFilter.
+ FilterService: Call "rm -f /scratch/tmpTbV4Ec/aM1Mor.bam && ln -s /scratch/tmpTbV4Ec/wLCUdL.bam /scratch/tmpTbV4Ec/aM1Mor.bam"
+ BamPostService: Sort and build index for a bam file.
+ BamPostService: Call "samtools sort -m 4G /scratch/tmpTbV4Ec/aM1Mor.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/pbalign.tasks.pbalign-0/aligned.subreads.alignmentset"
+ BamPostService: Call "samtools index /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/pbalign.tasks.pbalign-0/aligned.subreads.alignmentset.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/pbalign.tasks.pbalign-0/aligned.subreads.alignmentset.bam.bai"
+ BamPostService: Call "pbindex /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/pbalign.tasks.pbalign-0/aligned.subreads.alignmentset.bam"
+] OutputService: Generating the output XML file
+    """
+    """
+INFO:root:BlasrService: Align reads to references using blasr.
+[INFO] 2016-02-04 14:50:25,434Z [root run 178] BlasrService: Align reads to references using blasr.
+INFO:root:BlasrService: Call "blasr /pbi/dept/secondary/siv/testdata/SA3-DS/lambda/2372215/0007_tiny/Analysis_Results/m150404_101626_42267_c100807920800000001823174110291514_s1_p0.all.subreadset.xml /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/asm.fasta -out /scratch/tmpwWCCmy/YrpIw_.bam  -bam  -bestn 10 -minMatch 12  -nproc 16  -minSubreadLength 50 -minAlnLength 50  -minPctSimilarity 70 -minPctAccuracy 70 -hitPolicy randombest  -randomSeed 1  -minPctSimilarity 70.0 "
+[INFO] 2016-02-04 14:50:25,435Z [root Execute 63] BlasrService: Call "blasr /pbi/dept/secondary/siv/testdata/SA3-DS/lambda/2372215/0007_tiny/Analysis_Results/m150404_101626_42267_c100807920800000001823174110291514_s1_p0.all.subreadset.xml /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/asm.fasta -out /scratch/tmpwWCCmy/YrpIw_.bam  -bam  -bestn 10 -minMatch 12  -nproc 16  -minSubreadLength 50 -minAlnLength 50  -minPctSimilarity 70 -minPctAccuracy 70 -hitPolicy randombest  -randomSeed 1  -minPctSimilarity 70.0 "
+INFO:root:FilterService: Filter alignments using samFilter.
+[INFO] 2016-02-04 14:51:00,543Z [root run 150] FilterService: Filter alignments using samFilter.
+INFO:root:FilterService: Call "rm -f /scratch/tmpwWCCmy/Ba3axn.bam && ln -s /scratch/tmpwWCCmy/YrpIw_.bam /scratch/tmpwWCCmy/Ba3axn.bam"
+[INFO] 2016-02-04 14:51:00,544Z [root Execute 63] FilterService: Call "rm -f /scratch/tmpwWCCmy/Ba3axn.bam && ln -s /scratch/tmpwWCCmy/YrpIw_.bam /scratch/tmpwWCCmy/Ba3axn.bam"
+INFO:root:BamPostService: Sort and build index for a bam file.
+[INFO] 2016-02-04 14:51:00,692Z [root run 100] BamPostService: Sort and build index for a bam file.
+INFO:root:BamPostService: Call "samtools sort -m 4G /scratch/tmpwWCCmy/Ba3axn.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset"
+[INFO] 2016-02-04 14:51:00,692Z [root Execute 63] BamPostService: Call "samtools sort -m 4G /scratch/tmpwWCCmy/Ba3axn.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset"
+INFO:root:BamPostService: Call "samtools index /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam.bai"
+[INFO] 2016-02-04 14:51:10,610Z [root Execute 63] BamPostService: Call "samtools index /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam.bai"
+INFO:root:BamPostService: Call "pbindex /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam"
+[INFO] 2016-02-04 14:51:12,162Z [root Execute 63] BamPostService: Call "pbindex /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam"
+INFO:root:OutputService: Generating the output XML file
+[INFO] 2016-02-04 14:51:13,239Z [root _output 228] OutputService: Generating the output XML file
+    """
+    args = [
+        'pbalign',
+        '--verbose',
+        #'--debug', # requires 'ipdb'
+        #'--profile', # kinda interesting, but maybe slow?
+        '--nproc 16',
+        '--algorithmOptions "-minMatch 12 -bestn 10 -minPctSimilarity 70.0"',
+        #'--concordant',
+        '--hitPolicy randombest',
+        '--minAccuracy 70.0',
+        '--minLength 50',
+        reads, asm,
+        alignmentset,
+    ]
+    sys.system(' '.join(args))
 def task_bam2fasta(self):
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
     #sys.system('touch {}'.format(fn(self.fasta)))
@@ -65,6 +112,11 @@ def task_fasta2referenceset(self):
     cmd = 'dataset create --type ReferenceSet --generateIndices {} {}'.format(
             output_file_name, input_file_name)
     sys.system(cmd)
+def task_pbalign(self):
+    reads = fn(self.dataset)
+    asm = fn(self.referenceset)
+    alignmentset = fn(self.alignmentset)
+    run_pbalign(reads, asm, alignmentset)
 def task_foo(self):
     log.debug('WARNME1 {!r}'.format(__name__))
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
@@ -118,6 +170,26 @@ def flow(config):
             TaskType = PypeThreadTaskBase,
             URL = "task://localhost/fasta2referenceset")
     task = make_task(task_fasta2referenceset)
+    wf.addTask(task)
+    wf.refreshTargets()
+
+    # pbalign (TODO: Look into chunking.)
+    alignmentset_pfn = makePypeLocalFile('aligned.subreads.alignmentset.xml')
+    """Also produces:
+    aligned.subreads.alignmentset.bam
+    aligned.subreads.alignmentset.bam.bai
+    aligned.subreads.alignmentset.bam.pbi
+    """
+    parameters =  {
+    }
+    make_task = PypeTask(
+            inputs = {"dataset": dataset_pfn,
+                      "referenceset": referenceset_pfn,},
+            outputs = {"alignmentset": alignmentset_pfn,},
+            parameters = parameters,
+            TaskType = PypeThreadTaskBase,
+            URL = "task://localhost/pbalign")
+    task = make_task(task_pbalign)
     wf.addTask(task)
     wf.refreshTargets()
 
