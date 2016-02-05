@@ -6,10 +6,11 @@ from pbcore.io import (SubreadSet, HdfSubreadSet, FastaReader, FastaWriter,
 from pypeflow.controller import PypeThreadWorkflow
 from pypeflow.data import PypeLocalFile, makePypeLocalFile, fn
 from pypeflow.task import PypeTask, PypeThreadTaskBase
+import contextlib
 import gzip
 import logging
 import os
-#import tempfile
+import cStringIO
 
 log = logging.getLogger(__name__)
 
@@ -42,11 +43,59 @@ def run_bam_to_fastx(program_name, fastx_reader, fastx_writer,
                     if (min_subread_length < 1 or
                         min_subread_length < len(rec.sequence)):
                         fastx_out.writeRecord(rec)
-def run_falcon(i_fasta_fn, o_fasta_fn):
+def dict2ini(ofs, options_dict):
+    opts = dict()
+    for key, val in options_dict.iteritems():
+        # Drop comments (keys w/ leading ~).
+        if key.startswith('~'):
+            continue
+        # Strip leading and trailing ws, just in case.
+        opts[key] = val
+    opts['job_type'] = 'local' # OVERRIDE FOR NOW
+    def add(key, val):
+        if not key in opts:
+            opts[key] = val
+    add('input_fofn', 'NA')
+    add('target', 'assembly')
+    add('sge_option_da', 'NA')
+    add('sge_option_la', 'NA')
+    add('sge_option_pda', 'NA')
+    add('sge_option_pla', 'NA')
+    add('sge_option_fc', 'NA')
+    add('sge_option_cns', 'NA')
+    ofs.write('[General]\n')
+    for key, val in sorted(opts.items()):
+        ofs.write('{} = {}\n'.format(key, val))
+
+@contextlib.contextmanager
+def ContentUpdater(fn):
+    """Write new content only if differs from old.
+    """
+    with open(fn) as f:
+        old_content = f.read()
+    new_writer = cStringIO.StringIO()
+    yield new_writer
+    new_content = new_writer.getvalue()
+    if new_content != old_content:
+        with open(fn, 'w') as f:
+            f.write(new_content)
+def run_falcon(i_fasta_fn, o_fasta_fn, config_falcon):
     sys.system('rm -f {}'.format(
         o_fasta_fn))
+    input_fofn_fn = 'input.fofn'
+    with ContentUpdater(input_fofn_fn) as f:
+        f.write('{}\n'.format(i_fasta_fn))
+    config_falcon['input_fofn'] = input_fofn_fn
+    # Write fc.cfg for FALCON.
+    fc_cfg_fn = 'fc.cfg'
+    with ContentUpdater(fc_cfg_fn) as f:
+        dict2ini(f, config_falcon)
+    #TODO: Let falcon use logging.json?
+    cmd = 'fc_run.py {}'.format(
+        fc_cfg_fn)
+    sys.system(cmd)
     sys.system('ln {} {}'.format(
-        i_fasta_fn, o_fasta_fn))
+        '2-asm-falcon/p_ctg.fa', o_fasta_fn))
 def run_pbalign(reads, asm, alignmentset):
     """
  BlasrService: Align reads to references using blasr.
@@ -99,7 +148,7 @@ def run_gc(alignmentset, referenceset, polished_fastq):
         'variantCaller',
         '--verbose',
         '--log-level INFO',
-        '--debug', # requires 'ipdb'
+        #'--debug', # requires 'ipdb'
         #'-j NWORKERS',
         '--algorithm quiver',
         '--diploid', # binary
@@ -121,12 +170,15 @@ def task_bam2fasta(self):
 def task_falcon(self):
     input_file_name = fn(self.orig_fasta)
     output_file_name = fn(self.asm_fasta)
-    run_falcon(input_file_name, output_file_name)
+    run_falcon(input_file_name, output_file_name, self.parameters['falcon'])
 def task_fasta2referenceset(self):
     """Copied from pbsmrtpipe/pb_tasks/pacbio.py:run_fasta_to_referenceset()
     """
     input_file_name = fn(self.fasta)
     output_file_name = fn(self.referenceset)
+    sys.system('rm -f {} {}'.format(
+        output_file_name,
+        input_file_name + '.fai'))
     cmd = 'dataset create --type ReferenceSet --generateIndices {} {}'.format(
             output_file_name, input_file_name)
     sys.system(cmd)
@@ -146,6 +198,7 @@ def task_foo(self):
     sys.system('touch {}'.format(fn(self.foo2)))
 
 def flow(config):
+    parameters = config
     #exitOnFailure=config['stop_all_jobs_on_failure'] # only matter for parallel jobs
     #wf.refreshTargets(exitOnFailure=exitOnFailure)
     #concurrent_jobs = config["pa_concurrent_jobs"]
@@ -154,9 +207,6 @@ def flow(config):
 
     dataset_pfn = makePypeLocalFile(config['pbsmrtpipe']['input_files'][0])
     orig_fasta_pfn = makePypeLocalFile('input.fasta')
-    parameters =  {
-            "fooparam": "barval",
-    }
     make_task = PypeTask(
             inputs = {"dataset": dataset_pfn,},
             outputs =  {"fasta": orig_fasta_pfn,},
@@ -169,8 +219,6 @@ def flow(config):
 
     # We could integrate the FALCON workflow here, but for now we will just execute it.
     asm_fasta_pfn = makePypeLocalFile('asm.fasta')
-    parameters =  {
-    }
     make_task = PypeTask(
             inputs =  {"orig_fasta": orig_fasta_pfn,},
             outputs =  {"asm_fasta": asm_fasta_pfn,},
@@ -180,12 +228,10 @@ def flow(config):
     #task = make_task(task_falcon)
     #wf.addTask(task)
     #wf.refreshTargets()
-    run_falcon(fn(orig_fasta_pfn), fn(asm_fasta_pfn))
+    run_falcon(fn(orig_fasta_pfn), fn(asm_fasta_pfn), config['falcon'])
 
     # The reset of the workflow will operate on datasets, not fasta directly.
     referenceset_pfn = makePypeLocalFile('asm.referenceset.xml')
-    parameters =  {
-    }
     make_task = PypeTask(
             inputs =  {"fasta": asm_fasta_pfn,},
             outputs = {"referenceset": referenceset_pfn,},
@@ -203,8 +249,6 @@ def flow(config):
     aligned.subreads.alignmentset.bam.bai
     aligned.subreads.alignmentset.bam.pbi
     """
-    parameters =  {
-    }
     make_task = PypeTask(
             inputs = {"dataset": dataset_pfn,
                       "referenceset": referenceset_pfn,},
@@ -220,8 +264,6 @@ def flow(config):
     polished_fastq_pfn = makePypeLocalFile('polished.fastq')
     """Also produces:
     """
-    parameters =  {
-    }
     make_task = PypeTask(
             inputs = {"alignmentset": alignmentset_pfn,
                       "referenceset": referenceset_pfn,},
@@ -240,9 +282,6 @@ def flow(config):
         sys.system('touch foo.bar1')
     foo_fn1 = makePypeLocalFile('foo.bar1')
     foo_fn2 = makePypeLocalFile('foo.bar2')
-    parameters =  {
-            "fooparam": "barval",
-    }
     make_task = PypeTask(
             inputs = {"foo1": foo_fn1,},
             outputs =  {"foo2": foo_fn2,},
