@@ -94,6 +94,22 @@ INFO:root:OutputService: Generating the output XML file
         alignmentset,
     ]
     sys.system(' '.join(args))
+def run_gc(alignmentset, referenceset, polished_fastq):
+    args = [
+        'variantCaller',
+        '--verbose',
+        '--log-level INFO',
+        '--debug', # requires 'ipdb'
+        #'-j NWORKERS',
+        '--algorithm quiver',
+        '--diploid', # binary
+        '--minConfidence 40',
+        '--minCoverage 5',
+        '--referenceFilename', referenceset,
+        '-o', polished_fastq,
+        alignmentset,
+    ]
+    sys.system(' '.join(args))
 def task_bam2fasta(self):
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
     #sys.system('touch {}'.format(fn(self.fasta)))
@@ -116,9 +132,14 @@ def task_fasta2referenceset(self):
     sys.system(cmd)
 def task_pbalign(self):
     reads = fn(self.dataset)
-    asm = fn(self.referenceset)
+    referenceset = fn(self.referenceset)
     alignmentset = fn(self.alignmentset)
-    run_pbalign(reads, asm, alignmentset)
+    run_pbalign(reads, referenceset, alignmentset)
+def task_genomic_consensus(self):
+    alignmentset = fn(self.alignmentset)
+    referenceset = fn(self.referenceset)
+    polished_fastq = fn(self.polished_fastq)
+    run_gc(alignmentset, referenceset, polished_fastq)
 def task_foo(self):
     log.debug('WARNME1 {!r}'.format(__name__))
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
@@ -192,6 +213,23 @@ def flow(config):
             TaskType = PypeThreadTaskBase,
             URL = "task://localhost/pbalign")
     task = make_task(task_pbalign)
+    wf.addTask(task)
+    wf.refreshTargets()
+
+    # variantcaller/genomicconsensus (TODO: Look into chunking.)
+    polished_fastq_pfn = makePypeLocalFile('polished.fastq')
+    """Also produces:
+    """
+    parameters =  {
+    }
+    make_task = PypeTask(
+            inputs = {"alignmentset": alignmentset_pfn,
+                      "referenceset": referenceset_pfn,},
+            outputs = {"polished_fastq": polished_fastq_pfn,},
+            parameters = parameters,
+            TaskType = PypeThreadTaskBase,
+            URL = "task://localhost/genomic_consensus")
+    task = make_task(task_genomic_consensus)
     wf.addTask(task)
     wf.refreshTargets()
 
