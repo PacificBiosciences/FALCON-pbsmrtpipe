@@ -3,7 +3,7 @@ from pbcommand.pb_io import load_pipeline_chunks_from_json
 from pbcommand.utils import setup_log
 from pbcommand.cli import pbparser_runner
 from pbcommand.models import (FileTypes, get_gather_pbparser)
-from pbsmrtpipe.tools.gather import (get_datum_from_chunks_by_chunk_key)
+from pbcoretools.chunking.gather import (get_datum_from_chunks_by_chunk_key)
 import logging
 import os
 import sys
