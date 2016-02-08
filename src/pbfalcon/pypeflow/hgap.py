@@ -11,15 +11,15 @@ import sys
 import time
 import ConfigParser as configparser
 import StringIO
-#log = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 default_logging_config = """
 [loggers]
-keys=root,pypeflow,fc_run
+keys=root,pypeflow,hgap
 
 [handlers]
-keys=stream,file_pypeflow,file_fc
+keys=stream,file_pypeflow,file_hgap
 
 [formatters]
 keys=form01,form02
@@ -34,9 +34,9 @@ handlers=file_pypeflow
 qualname=pypeflow
 propagate=1
 
-[logger_fc_run]
+[logger_hgap]
 level=NOTSET
-handlers=file_fc
+handlers=file_hgap
 qualname=.
 propagate=1
 
@@ -52,11 +52,11 @@ level=INFO
 formatter=form01
 args=('pypeflow.log',)
 
-[handler_file_fc]
+[handler_file_hgap]
 class=FileHandler
 level=DEBUG
 formatter=form01
-args=('fc.log',)
+args=('hgap.log',)
 
 [formatter_form01]
 format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
@@ -157,6 +157,36 @@ DEFAULT_OPTIONS = """
 """
 DEFAULT_OPTIONS = json.loads(DEFAULT_OPTIONS)
 
+falcon_lambda_defaults = """
+[General]
+falcon_sense_option = --output_multi --min_idt 0.77 --min_cov 10 --max_n_read 2000 --n_core 6
+length_cutoff = 1
+length_cutoff_pr = 1
+overlap_filtering_setting = --max_diff 1000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
+ovlp_DBsplit_option = -s50 -a
+ovlp_HPCdaligner_option = -v -k15 -h60 -w5 -H1 -e.95 -l40 -s100 -M4
+ovlp_concurrent_jobs = 32
+pa_DBsplit_option = -x250 -s500 -a
+pa_HPCdaligner_option = -v -k15 -h35 -w5 -H1 -e.70 -l40 -s100 -M4
+pa_concurrent_jobs = 32
+"""
+# These are used in the passing siv test for lambda, same subread input! But GL=5M
+falcon_test_options = """
+[General]
+#pbsmrtpipe.hgap_coresmax_str = 40
+#pbsmrtpipe.hgap_genomelength_str = 5000000
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
+length_cutoff = 1
+length_cutoff_pr = 1
+overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
+ovlp_dbsplit_option = -x500 -s50
+ovlp_hpcdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
+ovlp_concurrent_jobs = 32
+pa_dbsplit_option = -x500 -s50
+pa_hpcdaligner_option = -v -dal4 -t16 -e.70 -l1000 -s1000
+pa_concurrent_jobs = 32
+"""
+
 def update2(start, updates):
     for key1, val1 in updates.iteritems():
         if key1 not in start:
@@ -181,8 +211,9 @@ def main1(input_config_fn, logging_config_fn=None):
     opts = dict()
     opts.update(DEFAULT_OPTIONS)
     update2(opts, config)
+    opts['falcon'].update(cfg2dict(StringIO.StringIO(falcon_test_options))['General'])
     log.info('opts=\n{}'.format(pprint.pformat(opts)))
-    flow.flow(config)
+    flow.flow(opts)
 
 def main(argv=sys.argv):
     parser = argparse.ArgumentParser()
