@@ -71,8 +71,11 @@ def dict2ini(ofs, options_dict):
 def ContentUpdater(fn):
     """Write new content only if differs from old.
     """
-    with open(fn) as f:
-        old_content = f.read()
+    if os.path.exists(fn):
+        with open(fn) as f:
+            old_content = f.read()
+    else:
+        old_content = None
     new_writer = cStringIO.StringIO()
     yield new_writer
     new_content = new_writer.getvalue()
