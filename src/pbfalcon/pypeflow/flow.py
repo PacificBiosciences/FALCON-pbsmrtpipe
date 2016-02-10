@@ -94,7 +94,7 @@ def run_falcon(i_fasta_fn, o_fasta_fn, config_falcon):
     with ContentUpdater(fc_cfg_fn) as f:
         dict2ini(f, config_falcon)
     #TODO: Let falcon use logging.json?
-    cmd = 'fc_run.py {}'.format(
+    cmd = 'fc_run {}'.format(
         fc_cfg_fn)
     sys.system(cmd)
     sys.system('ln {} {}'.format(
