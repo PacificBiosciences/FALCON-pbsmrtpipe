@@ -59,7 +59,7 @@ pa_concurrent_jobs = 32
 """
 # ecoli based on Jim's run: http://smrtlink-beta:8080/#/analysis-job/2437
 defaults_ecoli = """
-length_cutoff = 9000
+length_cutoff = 6000
 length_cutoff_pr = 500
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --local_match_count_threshold 2 --max_n_read 200 --n_core 6
 overlap_filtering_setting = --max_diff 200 --max_cov 100 --min_cov 2 --bestn 10 --n_core 4
