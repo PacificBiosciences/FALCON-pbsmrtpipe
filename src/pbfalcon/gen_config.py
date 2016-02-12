@@ -127,7 +127,7 @@ defaults = list(sorted([
     (       0, defaults_old),
     ( 8*10**3, old_defaults_lambda),
     (10*10**3, defaults_lambda),
-    ( 4*10**6, defaults_ecoli),
+    ( 1*10**6, defaults_ecoli),
     #(10*10**6, defaults_yeast), # For now, use ecoli as default for bacteria.
     ( 1*10**9, defaults_human_recent), # These are old; maybe not good with Sequel.
 ]))
