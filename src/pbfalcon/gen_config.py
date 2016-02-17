@@ -45,28 +45,31 @@ ovlp_DBsplit_option = -x500 -s50
 ovlp_concurrent_jobs = 32
 """
 # These values will need more adjusting, but at least they worked on some dataset.
+# The current values are from my latest experiment, producing 2 contigs and a total
+# draft assembly of 49820b. I meant to experiment some more, but we are in a rush to
+# to update defaults in 3.0.4 for ecoli.
 defaults_lambda = """
 falcon_sense_option = --output_multi --min_idt 0.77 --min_cov 10 --max_n_read 2000 --n_core 6
-length_cutoff = 1
-length_cutoff_pr = 1
+length_cutoff = 1200
+length_cutoff_pr = 50
 overlap_filtering_setting = --max_diff 1000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
 ovlp_DBsplit_option = -s50 -a
-ovlp_HPCdaligner_option = -v -k15 -h60 -w5 -H1 -e.95 -l40 -s100 -M4
+ovlp_hpcdaligner_option = -v -k15 -h60 -w6 -e.95 -l40 -s100 -M16
 ovlp_concurrent_jobs = 32
-pa_DBsplit_option = -x250 -s500 -a
-pa_HPCdaligner_option = -v -k15 -h35 -w5 -H1 -e.70 -l40 -s100 -M4
+pa_DBsplit_option = -x1200 -s500 -a
+pa_HPCdaligner_option =   -v -k16 -h35 -w7 -e.70 -l40 -s100 -M16
 pa_concurrent_jobs = 32
 """
 # ecoli based on Jim's run: http://smrtlink-beta:8080/#/analysis-job/2437
 defaults_ecoli = """
-length_cutoff = 6000
+length_cutoff = 9000
 length_cutoff_pr = 500
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --local_match_count_threshold 2 --max_n_read 200 --n_core 6
 overlap_filtering_setting = --max_diff 200 --max_cov 100 --min_cov 2 --bestn 10 --n_core 4
 ovlp_DBsplit_option = -x500 -s200
 ovlp_HPCdaligner_option = -v -dal24 -t16 -h35 -e.93 -l1000 -s100
 pa_DBsplit_option = -x500 -s200
-pa_HPCdaligner_option = -v -dal24 -t14 -e.70 -l1000 -s100
+pa_HPCdaligner_option =   -v -dal24 -t14 -h35 -e.70 -l1000 -s100
 """
 defaults_yeast = """
 cns_concurrent_jobs = 32
