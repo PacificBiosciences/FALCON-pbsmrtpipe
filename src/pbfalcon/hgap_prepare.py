@@ -38,12 +38,14 @@ DEFAULT_LOGGING_CFG = {
             'level': 'INFO',
             'formatter': 'format_full',
             'filename': 'pypeflow.log',
+            'mode': 'w',
         },
         'handler_file_pbfalcon': {
             'class': 'logging.FileHandler',
             'level': 'DEBUG',
             'formatter': 'format_full',
             'filename': 'pbfalcon.log',
+            'mode': 'w',
         },
         'handler_stream': {
             'class': 'logging.StreamHandler',

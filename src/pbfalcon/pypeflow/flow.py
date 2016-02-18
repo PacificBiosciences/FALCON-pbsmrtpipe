@@ -14,6 +14,9 @@ import cStringIO
 
 log = logging.getLogger(__name__)
 
+def say(x):
+    log.warning(x)
+    print 'IN FLOW!'
 def run_bam_to_fastx(program_name, fastx_reader, fastx_writer,
                      input_file_name, output_file_name,
                      min_subread_length=0):
@@ -162,7 +165,31 @@ def run_gc(alignmentset, referenceset, polished_fastq):
         alignmentset,
     ]
     sys.system(' '.join(args))
+def run_filterbam(ifn, ofn, config):
+    """
+    pbcoretools.tasks.filterdataset
+    python -m pbcoretools.tasks.filters  run-rtc
+        "options": {
+            "pbcoretools.task_options.other_filters": "rq >= 0.7",
+            "pbcoretools.task_options.read_length": 0
+        },
+    """
+    other_filters = config['pbcoretools'].get('other_filters', 'rq >= 0.7')
+    read_length = config['pbcoretools'].get('read_length', 0)
+    from pbcoretools.tasks.filters import run_filter_dataset
+    log.warning('RUNNING filterbam: %r %r' %(read_length, other_filters))
+    rc = run_filter_dataset(ifn, ofn, read_length=read_length, other_filters=other_filters)
+    log.warning('FINISHED filterbam(rc=%r): %r %r' %(rc, read_length, other_filters))
+def task_filterbam(self):
+    #print repr(self.parameters), repr(self.URL), repr(self.foo1)
+    #sys.system('touch {}'.format(fn(self.fasta)))
+    input_file_name = fn(self.i_dataset)
+    output_file_name = fn(self.o_dataset)
+    run_filterbam(input_file_name, output_file_name, self.parameters)
 def task_bam2fasta(self):
+    """
+    Same as bam2fasta_nofilter in pbcoretools.
+    """
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
     #sys.system('touch {}'.format(fn(self.fasta)))
     input_file_name = fn(self.dataset)
@@ -209,9 +236,21 @@ def flow(config):
     wf = PypeThreadWorkflow()
 
     dataset_pfn = makePypeLocalFile(config['pbsmrtpipe']['input_files'][0])
+    fdataset_pfn = makePypeLocalFile('filtered.subreadset.xml')
     orig_fasta_pfn = makePypeLocalFile('input.fasta')
     make_task = PypeTask(
-            inputs = {"dataset": dataset_pfn,},
+            inputs = {"i_dataset": dataset_pfn,},
+            outputs = {"o_dataset": fdataset_pfn,},
+            parameters = parameters,
+            TaskType = PypeThreadTaskBase,
+            URL = "task://localhost/filterbam")
+    task = make_task(task_filterbam)
+    wf.addTask(task)
+    wf.refreshTargets()
+
+    orig_fasta_pfn = makePypeLocalFile('input.fasta')
+    make_task = PypeTask(
+            inputs = {"dataset": fdataset_pfn,},
             outputs =  {"fasta": orig_fasta_pfn,},
             parameters = parameters,
             TaskType = PypeThreadTaskBase,

@@ -403,8 +403,8 @@ def run_hgap(input_files, output_files):
     o_fasta_fn, = output_files
     # Update the cfg with our subreadset.
     # Run pypeflow.hgap.main.
-    cmd = 'python -m pbfalcon.pypeflow.hgap --logging {} {}'.format(i_logging_fn, i_cfg_fn)
-    #cmd = 'python -m pbfalcon.pypeflow.hgap {}'.format(i_cfg_fn)
+    cmd = 'python -m pbfalcon.cli.hgap_run --logging {} {}'.format(i_logging_fn, i_cfg_fn)
+    #cmd = 'python -m pbfalcon.cli.hgap_run {}'.format(i_cfg_fn)
     system(cmd)
     final_asm_fn = os.path.join('2-asm-falcon', 'p_ctg.fa') # TODO: Polish!
     cmd = 'mkdir -p %s; touch %s' %(os.path.dirname(final_asm_fn), final_asm_fn)

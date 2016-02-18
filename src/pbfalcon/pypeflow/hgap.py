@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from . import flow
-import argparse
 import copy
 import json
 import logging
@@ -128,14 +127,14 @@ DEFAULT_OPTIONS = """
   },
   "falcon": {
     "falcon_sense_option": "--output_multi --min_idt 0.77 --min_cov 10 --max_n_read 2000 --n_core 6",
-    "length_cutoff": "1",
-    "length_cutoff_pr": "1",
+    "length_cutoff": "1200",
+    "length_cutoff_pr": "50",
     "overlap_filtering_setting": "--max_diff 1000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4",
     "ovlp_DBsplit_option": "-s50 -a",
-    "ovlp_HPCdaligner_option": "-v -k15 -h60 -w5 -H1 -e.95 -l40 -s100 -M4",
+    "ovlp_HPCdaligner_option": "-v -k15 -h60 -w6 -e.95 -l40 -s100 -M16",
     "ovlp_concurrent_jobs": "32",
-    "pa_DBsplit_option": "-x250 -s500 -a",
-    "pa_HPCdaligner_option": "-v -k15 -h35 -w5 -H1 -e.70 -l40 -s100 -M4",
+    "pa_DBsplit_option": "-x1200 -s500 -a",
+    "pa_HPCdaligner_option": "-v -k16 -h35 -w7 -e.70 -l40 -s100 -M16",
     "pa_concurrent_jobs": "32",
     "~comment": "Overrides for FALCON"
   },
@@ -146,8 +145,12 @@ DEFAULT_OPTIONS = """
     "~comment": "Overrides for blasr alignment (prior to polishing)"
   },
   "variantCaller": {
-    "options": "--algorithm quiver --diploid --min_confidence 40 --min_coverage 5",
+    "options": "--algorithm arrow --min_confidence 40 --min_coverage 5",
     "~comment": "Overrides for genomic consensus (polishing)"
+  },
+  "pbcoretools": {
+    "pbcoretools.task_options.other_filters": "rq >= 0.7",
+    "pbcoretools.task_options.read_length": 0
   },
   "pbsmrtpipe": {
     "~comment": "Overrides for pbsmrtpipe"
@@ -196,10 +199,13 @@ def update2(start, updates):
         for key2, val2 in val1.iteritems():
             start[key1][key2] = copy.deepcopy(val2)
 
-def main1(input_config_fn, logging_config_fn=None):
+def run(input_config_fn, logging_config_fn=None):
     global log
+    #import logging_tree
+    #logging_tree.printout()
     setup_logger(logging_config_fn)
-    log = logging.getLogger(__name__)
+    #logging_tree.printout()
+    #log = logging.getLogger(__name__)
     log.info('Read logging config from {!r}'.format(logging_config_fn))
     log.info('Reading HGAP config from {!r}'.format(input_config_fn))
     if input_config_fn.endswith('.json'):
@@ -211,18 +217,6 @@ def main1(input_config_fn, logging_config_fn=None):
     opts = dict()
     opts.update(DEFAULT_OPTIONS)
     update2(opts, config)
-    opts['falcon'].update(cfg2dict(StringIO.StringIO(falcon_test_options))['General'])
+    #opts['falcon'].update(cfg2dict(StringIO.StringIO(falcon_test_options))['General']) # TODO: gen_config from GenomeLength!
     log.info('opts=\n{}'.format(pprint.pformat(opts)))
     flow.flow(opts)
-
-def main(argv=sys.argv):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--logging',
-            help='.ini or .json config file for Python logging module')
-    parser.add_argument('config',
-            help='.ini or .json of HGAP config. Available sections: "general", "hgap", "falcon", "pbsmrtpipe", "blasr", "quiver", ...')
-    args = parser.parse_args(argv[1:])
-    return main1(args.config, args.logging)
-
-if __name__ == "__main__":
-    main(sys.argv)
