@@ -139,7 +139,7 @@ DEFAULT_OPTIONS = """
     "~comment": "Overrides for FALCON"
   },
   "pbalign": {
-    "options": "--hitPolicy randombest --minAccuracy 70.0 --minLength 50 --algorithm=blasr --concordant",
+    "options": "--hitPolicy randombest --minAccuracy 70.0 --minLength 50 --algorithm=blasr",
     "algorithmOptions": "-minMatch 12 -bestn 10 -minPctSimilarity 70.0",
     "_jdnotes": "--maxHits 1 --minAnchorSize 12 --maxDivergence=30 --minAccuracy=0.75 --minLength=50 --hitPolicy=random --seed=1",
     "~comment": "Overrides for blasr alignment (prior to polishing)"
@@ -148,9 +148,9 @@ DEFAULT_OPTIONS = """
     "options": "--algorithm arrow --minConfidence 40 --minCoverage 5",
     "~comment": "Overrides for genomic consensus (polishing)"
   },
-  "pbcoretools": {
-    "pbcoretools.task_options.other_filters": "rq >= 0.7",
-    "pbcoretools.task_options.read_length": 0
+  "pbcoretools.tasks.filterdataset": {
+    "other_filters": "rq >= 0.7",
+    "read_length": 0
   },
   "pbsmrtpipe": {
     "~comment": "Overrides for pbsmrtpipe"

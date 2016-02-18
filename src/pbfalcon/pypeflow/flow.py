@@ -102,7 +102,7 @@ def run_falcon(i_fasta_fn, o_fasta_fn, config_falcon):
     sys.system(cmd)
     sys.system('ln {} {}'.format(
         '2-asm-falcon/p_ctg.fa', o_fasta_fn))
-def run_pbalign(reads, asm, alignmentset):
+def run_pbalign(reads, asm, alignmentset, options, algorithmOptions):
     """
  BlasrService: Align reads to references using blasr.
  BlasrService: Call "blasr /pbi/dept/secondary/siv/testdata/SA3-DS/lambda/2372215/0007_tiny/Analysis_Results/m150404_101626_42267_c100807920800000001823174110291514_s1_p0.all.subreadset.xml /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_falcon2_run_asm-0/file.fasta -out /scratch/tmpTbV4Ec/wLCUdL.bam  -bam  -bestn 10 -minMatch 12  -nproc 16  -minSubreadLength 50 -minAlnLength 50  -minPctSimilarity 70 -minPctAccuracy 70 -hitPolicy randombest  -randomSeed 1  -minPctSimilarity 70.0 "
@@ -140,11 +140,13 @@ INFO:root:OutputService: Generating the output XML file
         #'--debug', # requires 'ipdb'
         #'--profile', # kinda interesting, but maybe slow?
         '--nproc 16',
-        '--algorithmOptions "-minMatch 12 -bestn 10 -minPctSimilarity 70.0"',
+        #'--algorithmOptions "-minMatch 12 -bestn 10 -minPctSimilarity 70.0"',
         #'--concordant',
-        '--hitPolicy randombest',
-        '--minAccuracy 70.0',
-        '--minLength 50',
+        #'--hitPolicy randombest',
+        #'--minAccuracy 70.0',
+        #'--minLength 50',
+        options,
+        '--algorithmOptions "%s"' %algorithmOptions,
         reads, asm,
         alignmentset,
     ]
@@ -178,8 +180,8 @@ def run_filterbam(ifn, ofn, config):
             "pbcoretools.task_options.read_length": 0
         },
     """
-    other_filters = config['pbcoretools'].get('other_filters', 'rq >= 0.7')
-    read_length = config['pbcoretools'].get('read_length', 0)
+    other_filters = config.get('other_filters', 'rq >= 0.7')
+    read_length = config.get('read_length', 0)
     from pbcoretools.tasks.filters import run_filter_dataset
     log.warning('RUNNING filterbam: %r %r' %(read_length, other_filters))
     rc = run_filter_dataset(ifn, ofn, read_length=read_length, other_filters=other_filters)
@@ -189,7 +191,10 @@ def task_filterbam(self):
     #sys.system('touch {}'.format(fn(self.fasta)))
     input_file_name = fn(self.i_dataset)
     output_file_name = fn(self.o_dataset)
-    run_filterbam(input_file_name, output_file_name, self.parameters)
+    config = self.parameters.get('pbcoretools.tasks.filterdataset', None) # TODO: Drop this.
+    if not config:
+        config = self.parameters['pbcoretools']
+    run_filterbam(input_file_name, output_file_name, config)
 def task_bam2fasta(self):
     """
     Same as bam2fasta_nofilter in pbcoretools.
@@ -220,12 +225,16 @@ def task_pbalign(self):
     reads = fn(self.dataset)
     referenceset = fn(self.referenceset)
     alignmentset = fn(self.alignmentset)
-    run_pbalign(reads, referenceset, alignmentset)
+    task_opts = self.parameters['pbalign']
+    options = task_opts.get('options', '')
+    algorithmOptions = task_opts.get('algorithmOptions', '')
+    run_pbalign(reads, referenceset, alignmentset, options, algorithmOptions)
 def task_genomic_consensus(self):
     alignmentset = fn(self.alignmentset)
     referenceset = fn(self.referenceset)
     polished_fastq = fn(self.polished_fastq)
-    options = self.parameters['variantCaller'].get('options', '')
+    task_opts = self.parameters['variantCaller']
+    options = task_opts.get('options', '')
     run_gc(alignmentset, referenceset, polished_fastq, options)
 def task_foo(self):
     log.debug('WARNME1 {!r}'.format(__name__))
