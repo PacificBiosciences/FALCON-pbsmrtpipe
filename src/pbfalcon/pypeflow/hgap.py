@@ -145,7 +145,7 @@ DEFAULT_OPTIONS = """
     "~comment": "Overrides for blasr alignment (prior to polishing)"
   },
   "variantCaller": {
-    "options": "--algorithm arrow --min_confidence 40 --min_coverage 5",
+    "options": "--algorithm arrow --minConfidence 40 --minCoverage 5",
     "~comment": "Overrides for genomic consensus (polishing)"
   },
   "pbcoretools": {

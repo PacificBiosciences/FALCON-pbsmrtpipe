@@ -149,17 +149,21 @@ INFO:root:OutputService: Generating the output XML file
         alignmentset,
     ]
     sys.system(' '.join(args))
-def run_gc(alignmentset, referenceset, polished_fastq):
+def run_gc(alignmentset, referenceset, polished_fastq, options):
+    """GenomicConsensus
+    TODO: Capture log output? Or figure out how to log to a file.
+    """
     args = [
         'variantCaller',
         '--verbose',
         '--log-level INFO',
         #'--debug', # requires 'ipdb'
         #'-j NWORKERS',
-        '--algorithm quiver',
-        '--diploid', # binary
-        '--minConfidence 40',
-        '--minCoverage 5',
+        #'--algorithm quiver',
+        #'--diploid', # binary
+        #'--minConfidence 40',
+        #'--minCoverage 5',
+        options,
         '--referenceFilename', referenceset,
         '-o', polished_fastq,
         alignmentset,
@@ -221,7 +225,8 @@ def task_genomic_consensus(self):
     alignmentset = fn(self.alignmentset)
     referenceset = fn(self.referenceset)
     polished_fastq = fn(self.polished_fastq)
-    run_gc(alignmentset, referenceset, polished_fastq)
+    options = self.parameters['variantCaller'].get('options', '')
+    run_gc(alignmentset, referenceset, polished_fastq, options)
 def task_foo(self):
     log.debug('WARNME1 {!r}'.format(__name__))
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
