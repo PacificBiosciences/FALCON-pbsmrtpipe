@@ -406,5 +406,95 @@ pbreports.tasks.summarize_coverage-0:
     }
 }
 
+pbcoretools.tasks.subreadset_align_scatter-1:
+{
+    "driver": {
+        "env": {},
+        "exe": "python -m pbcoretools.tasks.scatter_subread_reference --resolved-tool-contract ",
+        "serialization": "json"
+    },
+    "resolved_tool_contract": {
+        "_comment": "Created by pbcommand v0.3.13",
+        "chunk_keys": "chunk-key",
+        "input_files": [
+            "/pbi/collections/315/3150057/r54006_20160119_011818/2_B01/m54006_160119_063009.subreadset.xml",
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.fasta2referenceset-0/file.referenceset.referenceset.xml"
+        ],
+        "is_distributed": true,
+        "max_nchunks": 24,
+        "nproc": 1,
+        "options": {
+            "pbcoretools.task_options.scatter_subread_max_nchunks": 5
+        },
+        "output_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.subreadset_align_scatter-1/chunk.json"
+        ],
+        "resources": [],
+        "task_type": "pbsmrtpipe.task_types.scattered",
+        "tool_contract_id": "pbcoretools.tasks.subreadset_align_scatter"
+    }
+}
 
+pbcoretools.tasks.gather_alignmentset-1:
+{
+    "driver": {
+        "env": {},
+        "exe": "python -m pbcoretools.tasks.gather_alignments --resolved-tool-contract ",
+        "serialization": "json"
+    },
+    "resolved_tool_contract": {
+        "_comment": "Created by pbcommand v0.3.13",
+        "chunk_key": "$chunk.alignmentset_id",
+        "input_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/.pbcoretools.tasks.subreadset_align_scatter-f4a69d33-00fa-46c6-a8f1-a5e05d5b80ca-gathered-pipeline.chunks.json"
+        ],
+        "is_distributed": false,
+        "nproc": 1,
+        "options": {},
+        "output_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.gather_alignmentset-1/file.alignmentset.xml"
+        ],
+        "resources": [],
+        "task_type": "pbsmrtpipe.task_types.gathered",
+        "tool_contract_id": "pbcoretools.tasks.gather_alignmentset"
+    }
+}
+
+pbcoretools.tasks.alignment_contig_scatter-1:
+{
+    "driver": {
+        "env": {},
+        "exe": "python -m pbcoretools.tasks.scatter_alignments_reference --resolved-tool-contract ",
+        "serialization": "json"
+    },
+    "resolved_tool_contract": {
+        "_comment": "Created by pbcommand v0.3.13",
+        "chunk_keys": "chunk-key",
+        "input_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.gather_alignmentset-1/file.alignmentset.xml",
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.fasta2referenceset-0/file.referenceset.referenceset.xml"
+        ],
+        "is_distributed": true,
+        "max_nchunks": 24,
+        "nproc": 1,
+        "options": {
+            "pbcoretools.task_options.scatter_alignments_reference_max_nchunks": 12
+        },
+        "output_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.alignment_contig_scatter-1/chunk.json"
+        ],
+        "resources": [],
+        "task_type": "pbsmrtpipe.task_types.scattered",
+        "tool_contract_id": "pbcoretools.tasks.alignment_contig_scatter"
+    }
+}
+
+also:
+genomic_consensus.tasks.gff2vcf-0
+genomic_consensus.tasks.gff2bed-0
+pbcoretools.tasks.gather_gff-1
+pbcoretools.tasks.gather_fastq-1
+pbcoretools.tasks.gather_contigset-1
+
+/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks
 """
