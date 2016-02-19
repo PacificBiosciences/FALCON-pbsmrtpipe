@@ -349,3 +349,62 @@ def flow(config):
     wf.refreshTargets()
 
     #raise Exception('hi')
+"""
+pbreports
+
+pbreports.tasks.polished_assembly-0:
+{
+    "driver": {
+        "env": {},
+        "exe": "python -m pbreports.report.polished_assembly --resolved-tool-contract ",
+        "serialization": "json"
+    },
+    "resolved_tool_contract": {
+        "_comment": "Created by pbcommand v0.3.13",
+        "input_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbreports.tasks.summarize_coverage-0/alignment_summary.gff",
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.gather_fastq-1/file.fastq"
+        ],
+        "is_distributed": true,
+        "nproc": 1,
+        "options": {},
+        "output_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbreports.tasks.polished_assembly-0/polished_assembly_report.json"
+        ],
+        "resources": [],
+        "task_type": "pbsmrtpipe.task_types.standard",
+        "tool_contract_id": "pbreports.tasks.polished_assembly"
+    }
+}
+
+pbreports.tasks.summarize_coverage-0:
+{
+    "driver": {
+        "env": {},
+        "exe": "python -m pbreports.report.summarize_coverage.summarize_coverage --resolved-tool-contract ",
+        "serialization": "json"
+    },
+    "resolved_tool_contract": {
+        "_comment": "Created by pbcommand v0.3.13",
+        "input_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.gather_alignmentset-1/file.alignmentset.xml",
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbcoretools.tasks.fasta2referenceset-0/file.referenceset.referenceset.xml"
+        ],
+        "is_distributed": true,
+        "nproc": 1,
+        "options": {
+            "pbreports.task_options.force_num_regions": false,
+            "pbreports.task_options.num_regions": 1000,
+            "pbreports.task_options.region_size": 0
+        },
+        "output_files": [
+            "/pbi/dept/secondary/siv/smrtlink/smrtlink-alpha/smrtsuite_170220/userdata/jobs_root/000/000114/tasks/pbreports.tasks.summarize_coverage-0/alignment_summary.gff"
+        ],
+        "resources": [],
+        "task_type": "pbsmrtpipe.task_types.standard",
+        "tool_contract_id": "pbreports.tasks.summarize_coverage"
+    }
+}
+
+
+"""
