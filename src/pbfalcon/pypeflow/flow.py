@@ -151,7 +151,7 @@ INFO:root:OutputService: Generating the output XML file
         alignmentset,
     ]
     sys.system(' '.join(args))
-def run_gc(alignmentset, referenceset, polished_fastq, options):
+def run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_contigset, options):
     """GenomicConsensus
     TODO: Capture log output? Or figure out how to log to a file.
     """
@@ -168,6 +168,8 @@ def run_gc(alignmentset, referenceset, polished_fastq, options):
         options,
         '--referenceFilename', referenceset,
         '-o', polished_fastq,
+        '-o', variants_gff,
+        '-o', consensus_contigset,
         alignmentset,
     ]
     sys.system(' '.join(args))
@@ -233,9 +235,15 @@ def task_genomic_consensus(self):
     alignmentset = fn(self.alignmentset)
     referenceset = fn(self.referenceset)
     polished_fastq = fn(self.polished_fastq)
+    variants_gff = fn(self.variants_gff)
+    consensus_contigset = fn(self.consensus_contigset)
     task_opts = self.parameters['variantCaller']
     options = task_opts.get('options', '')
-    run_gc(alignmentset, referenceset, polished_fastq, options)
+    run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_contigset, options)
+def task_summarize_coverage(self):
+    pass
+def task_polished_assembly_report(self):
+    pass
 def task_foo(self):
     log.debug('WARNME1 {!r}'.format(__name__))
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
@@ -316,20 +324,60 @@ def flow(config):
     wf.addTask(task)
     wf.refreshTargets()
 
-    # variantcaller/genomicconsensus (TODO: Look into chunking.)
-    polished_fastq_pfn = makePypeLocalFile('polished.fastq')
+    # genomic_consensus.tasks.variantcaller-0 (TODO: Look into chunking.)
+    polished_fastq_pfn = makePypeLocalFile('consensus.fastq')
+    variants_gff_pfn = makePypeLocalFile('variants.gff')
+    consensus_contigset_pfn = makePypeLocalFile('consensus.contigset.contigset.xml')
     """Also produces:
+    consensus.contigset.fasta
+    consensus.contigset.fasta.fai
     """
     make_task = PypeTask(
             inputs = {"alignmentset": alignmentset_pfn,
                       "referenceset": referenceset_pfn,},
-            outputs = {"polished_fastq": polished_fastq_pfn,},
+            outputs = {
+                "polished_fastq": polished_fastq_pfn,
+                "variants_gff": variants_gff_pfn,
+                "consensus_contigset": consensus_contigset_pfn,
+            },
             parameters = parameters,
             TaskType = PypeThreadTaskBase,
             URL = "task://localhost/genomic_consensus")
     task = make_task(task_genomic_consensus)
     wf.addTask(task)
     wf.refreshTargets()
+
+    # Gathering
+    gathered_fastq_pfn = makePypeLocalFile("tasks/pbcoretools.tasks.gather_fastq-1/file.fastq")
+    gathered_alignmentset_pfn = makePypeLocalFile("tasks/pbcoretools.tasks.gather_alignmentset-1/file.alignmentset.xml")
+    #pbcoretools.tasks.gather_gff-1
+    #pbcoretools.tasks.gather_fastq-1
+
+    # pbreports
+
+    alignment_summary_gff_pfn = makePypeLocalFile("tasks/pbreports.tasks.summarize_coverage-0/alignment_summary.gff")
+    make_task = PypeTask(
+            inputs = {"referenceset": referenceset_pfn,
+                      "gathered_alignmentset": gathered_alignmentset_pfn,},
+            outputs = {"alignment_summary_gff": alignment_summary_gff_pfn,},
+            parameters = parameters,
+            TaskType = PypeThreadTaskBase,
+            URL = "task://localhost/summarize_coverage")
+    task = make_task(task_summarize_coverage)
+    #wf.addTask(task)
+
+    polished_assembly_report_json_pfn = makePypeLocalFile('polished_assembly_report.json')
+    make_task = PypeTask(
+            inputs = {"alignment_summary_gff": alignment_summary_gff_pfn,
+                      "polished_fastq": polished_fastq_pfn,},
+                      #"gathered_fastq": gathered_fastq_pfn,},
+            outputs = {"polished_assembly_report_json": polished_assembly_report_json_pfn,},
+            parameters = parameters,
+            TaskType = PypeThreadTaskBase,
+            URL = "task://localhost/polished_assembly_report")
+    task = make_task(task_polished_assembly_report)
+    #wf.addTask(task)
+    #wf.refreshTargets()
 
     #return
     ##############
