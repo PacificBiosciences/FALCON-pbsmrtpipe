@@ -339,7 +339,6 @@ def run_falcon_build_pdb(input_files, output_files):
     i_json_config_fn, i_fofn_fn = input_files
     print('output_files: %s' %repr(output_files))
     run_daligner_jobs_fn, = output_files
-    #o_fofn_fn, = output_files
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
     script_fn = os.path.join(odir, 'prepare_pdb.sh')
     job_done_fn = os.path.join(odir, 'job_done')
@@ -411,6 +410,19 @@ def run_hgap(input_files, output_files):
     system(cmd)
     # Link the output fasta to the final assembly of HGAP.
     symlink(final_asm_fn, o_fasta_fn)
+
+def run_report_preassembly_yield(input_files, output_files):
+    i_json_config_fn, i_raw_reads_fofn_fn, i_preads_fofn_fn = input_files
+    o_json_fn, = output_files
+    tmp = {
+        'preassembly yield report': 'not yet implemented, see bug#31512',
+        'i_json_config_fn': i_json_config_fn,
+        'i_raw_reads_fofn_fn': i_raw_reads_fofn_fn,
+        'i_preads_fofn_fn': i_preads_fofn_fn,
+    }
+    content = json.dumps(tmp)
+    with open(o_json_fn, 'w') as ofs:
+        ofs.write(content)
 
 def assert_nonzero(fn):
     if filesize(fn) == 0:
