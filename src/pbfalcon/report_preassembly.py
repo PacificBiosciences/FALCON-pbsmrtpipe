@@ -21,6 +21,7 @@ Output of Original Report
 """
 # Copied from
 #   http://swarm/files/depot/branches/springfield/S2.3/software/smrtanalysis/bioinformatics/tools/pbreports/pbreports/report/preassembly.py
+from __future__ import absolute_import
 from __future__ import division
 import sys
 import os
@@ -28,7 +29,6 @@ import logging
 import argparse
  
 from pbcore.io import FastaReader
-from pbsystem.common.cmdline.core import main_runner_default
 from pbreports.model.model import Report, Attribute
 from pbreports.util import get_fasta_readlengths, \
                         compute_n50_from_file
@@ -38,6 +38,31 @@ log = logging.getLogger(__name__)
 __version__ = '0.1'
  
  
+def for_task(
+        i_json_config_fn,
+        i_raw_reads_fofn_fn,
+        i_preads_fofn_fn,
+        o_json_fn,
+    ):
+    """See pbfalcon.tusks
+    """
+    kwds = {}
+    #kwds['length_cutoff'] = get_length_cutoff(cfg)
+    kwds['length_cutoff'] = 40
+    kwds['seed_bases'] = 41
+    kwds['polymerase_read_bases'] = 42
+    kwds['preassembled_bases'] = 43
+    kwds['preassembled_yield'] = 44
+    kwds['preassembled_reads'] = 45
+    kwds['preassembled_readlength'] = 46
+    kwds['preassembled_n50'] = 47
+    report = produce_report(**kwds)
+    log.info(report)
+    with open(o_json_fn, 'w') as ofs:
+        log.info("Writing report to {!r}.".format(o_json_fn))
+        content = report.to_json()
+        ofs.write(content)
+
 class FastaContainer(object):
  
     def __init__(self, nreads, total, file_name):
@@ -65,7 +90,30 @@ def _validate_file(file_name):
         log.error(msg)
         raise IOError(msg)
  
+def produce_report(
+        polymerase_read_bases,
+        length_cutoff,
+        seed_bases,
+        preassembled_bases,
+        preassembled_yield,
+        preassembled_reads,
+        preassembled_readlength,
+        preassembled_n50,
+    ):
+    # Report Attributes
+    attrs = []
+    attrs.append(Attribute('polymerase_read_bases', polymerase_read_bases, name="Polymerase Read Bases"))
+    attrs.append(Attribute('length_cutoff', length_cutoff, name="Length Cutoff"))
+    attrs.append(Attribute('seed_bases', seed_bases, name="Seed Bases"))
+    attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Pre-Assembled bases"))
+    attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield"))
+    attrs.append(Attribute('preassembled_reads', preassembled_reads, name="Pre-Assembled Reads"))
+    attrs.append(Attribute('preassembled_readlength', preassembled_readlength, name="Pre-Assembled Reads Length"))
+    attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled N50"))
  
+    report = Report('preassembly', attributes=attrs)
+    return report
+
 def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=None):
     """
     All inputs are paths to fasta files.
@@ -83,20 +131,16 @@ def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cut
 #    n50 = _compute_n50(corrected_reads, creads.total)
     n50 = compute_n50_from_file(corrected_reads)
  
-    # Report Attributes
-    attrs = []
-    attrs.append(Attribute('polymerase_read_bases', value=subreads.total, name="Polymerase Read Bases"))
-    if length_cutoff is not None:
-        attrs.append(Attribute('length_cutoff', length_cutoff, name="Length Cutoff"))
-    attrs.append(Attribute('seed_bases', longreads.total, name="Seed Bases"))
-    attrs.append(Attribute('preassembled_bases', creads.total, name="Pre-Assembled bases"))
-    attrs.append(Attribute('preassembled_yield', yield_, name="Pre-Assembled Yield"))
-    attrs.append(Attribute('presssembled_reads', creads.nreads, name="Pre-Assembled Reads"))
-    attrs.append(Attribute('presssembled_readlength', rlength, name="Pre-Assembled Reads Length"))
-    attrs.append(Attribute('preassembled_n50', n50, name="Pre-Assembled N50"))
- 
-    report = Report('preassembly', attributes=attrs)
-    return report
+    return produce_report(
+        polymerase_read_bases=subreads.total,
+        length_cutoff=length_cutoff,
+        seed_bases=longreads.total,
+        preassembled_bases=creads.total,
+        preassembled_yield=yield_,
+        preassembled_reads=creads.nreads,
+        preassembled_readlength=rlength,
+        preassembled_n50=n50,
+    )
  
  
 def args_runner(args):
@@ -110,7 +154,7 @@ def args_runner(args):
     report = to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=length_cutoff)
     log.info(report)
     with open(output_json, 'w') as f:
-        log.info("Writing report to {r}.".format(r=output_json))
+        log.info("Writing report to {!r}.".format(output_json))
         f.write(report.to_json())
  
     return 0
@@ -140,7 +184,9 @@ def get_parser():
 def main(argv=sys.argv):
     """Main point of Entry"""
     log.info("Starting {f} version {v} report generation".format(f=__file__, v=__version__))
-    return main_runner_default(argv[1:], get_parser(), log)
+    parser = get_parser()
+    args = parser.parse_args(argv[1:])
+    return args_runner(args)
  
  
 if __name__ == '__main__':
