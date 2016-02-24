@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """ PreAssembly Report.
- 
+
 Output of Original Report
- 
+
 <?xml version="1.0" encoding="UTF-8"?>
 <report>
   <layout onecolumn="true"/>
@@ -27,17 +27,17 @@ import sys
 import os
 import logging
 import argparse
- 
+
 from pbcore.io import FastaReader
 from pbreports.model.model import Report, Attribute
 from pbreports.util import get_fasta_readlengths, \
                         compute_n50_from_file
- 
+
 log = logging.getLogger(__name__)
- 
+
 __version__ = '0.1'
- 
- 
+
+
 def for_task(
         i_json_config_fn,
         i_raw_reads_fofn_fn,
@@ -64,12 +64,12 @@ def for_task(
         ofs.write(content)
 
 class FastaContainer(object):
- 
+
     def __init__(self, nreads, total, file_name):
         self.nreads = nreads
         self.total = total
         self.file_name = file_name
- 
+
     @staticmethod
     def from_file(file_name):
 #        nreads, total = _compute_values(file_name)
@@ -77,11 +77,11 @@ class FastaContainer(object):
         nreads = len(read_lens)
         total = sum(read_lens)
         return FastaContainer(nreads, total, file_name)
- 
+
     def __str__(self):
         return "N {n} Total {t} File: {f}".format(n=self.nreads, t=self.total, f=self.file_name)
- 
- 
+
+
 def _validate_file(file_name):
     if os.path.isfile(file_name):
         return os.path.abspath(file_name)
@@ -89,7 +89,7 @@ def _validate_file(file_name):
         msg = "Unable to find {f}".format(f=file_name)
         log.error(msg)
         raise IOError(msg)
- 
+
 def produce_report(
         polymerase_read_bases,
         length_cutoff,
@@ -110,7 +110,7 @@ def produce_report(
     attrs.append(Attribute('preassembled_reads', preassembled_reads, name="Pre-Assembled Reads"))
     attrs.append(Attribute('preassembled_readlength', preassembled_readlength, name="Pre-Assembled Reads Length"))
     attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled N50"))
- 
+
     report = Report('preassembly', attributes=attrs)
     return report
 
@@ -121,16 +121,16 @@ def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cut
     subreads = FastaContainer.from_file(filtered_subreads)
     longreads = FastaContainer.from_file(filtered_longreads)
     creads = FastaContainer.from_file(corrected_reads)
- 
+
     fastas = [subreads, longreads, creads]
     for f in fastas:
         log.info(f)
- 
+
     yield_ = creads.total / longreads.total
     rlength = int(creads.total / creads.nreads)
 #    n50 = _compute_n50(corrected_reads, creads.total)
     n50 = compute_n50_from_file(corrected_reads)
- 
+
     return produce_report(
         polymerase_read_bases=subreads.total,
         length_cutoff=length_cutoff,
@@ -141,25 +141,25 @@ def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cut
         preassembled_readlength=rlength,
         preassembled_n50=n50,
     )
- 
- 
+
+
 def args_runner(args):
     filtered_subreads = args.filtered_subreads_fasta
     filtered_longreads = args.filtered_longreads_fasta
     corrected_reads = args.corrected_reads
     length_cutoff = args.length_cutoff
     output_json = args.output_json
- 
+
     log.info("Starting {f}".format(f=os.path.basename(__file__)))
     report = to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=length_cutoff)
     log.info(report)
     with open(output_json, 'w') as f:
         log.info("Writing report to {!r}.".format(output_json))
         f.write(report.to_json())
- 
+
     return 0
- 
- 
+
+
 def get_parser():
     p = argparse.ArgumentParser(version=__version__)
     p.add_argument('filtered_subreads_fasta', type=_validate_file,
@@ -176,18 +176,18 @@ def get_parser():
                    help="Size of genome.")
     p.add_argument("output_json", type=str, default="preassembly_report.json",
                    help="Path to Json Report output.")
- 
+
     p.set_defaults(func=args_runner)
     return p
- 
- 
+
+
 def main(argv=sys.argv):
     """Main point of Entry"""
     log.info("Starting {f} version {v} report generation".format(f=__file__, v=__version__))
     parser = get_parser()
     args = parser.parse_args(argv[1:])
     return args_runner(args)
- 
- 
+
+
 if __name__ == '__main__':
     sys.exit(main())

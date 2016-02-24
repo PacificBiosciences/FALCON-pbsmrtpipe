@@ -157,7 +157,7 @@ def _populate_falcon_options(options):
         if key not in excluded:
             fc['pbsmrtpipe.' + key] = options[key]
     return fc
-    
+
 def _options_dict_with_base_keys(options_dict, prefix='falcon_ns.task_options.'):
     """Remove leading namespaces from key names,
     in a copy of options_dict.

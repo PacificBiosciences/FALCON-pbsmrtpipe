@@ -30,7 +30,7 @@ def _get_parser():
 
 def _run_from_args(args):
     print("_run_from_args(%s)" %repr(args))
-    log.info( "pb-falcon started with configuration %s", args.config ) 
+    log.info( "pb-falcon started with configuration %s", args.config )
     config = support.get_config(support.parse_config(args.config))
     return 0
 
