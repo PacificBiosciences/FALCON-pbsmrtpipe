@@ -23,45 +23,22 @@ Output of Original Report
 #   http://swarm/files/depot/branches/springfield/S2.3/software/smrtanalysis/bioinformatics/tools/pbreports/pbreports/report/preassembly.py
 from __future__ import absolute_import
 from __future__ import division
+from pbcore.io import FastaReader
+from pbreports.model.model import Report, Attribute
+import pbreports.util
+
+import collections
+import itertools
+import json
 import sys
 import os
 import logging
 import argparse
 
-from pbcore.io import FastaReader
-from pbreports.model.model import Report, Attribute
-from pbreports.util import get_fasta_readlengths, \
-                        compute_n50_from_file
-
 log = logging.getLogger(__name__)
 
 __version__ = '0.1'
 
-
-def for_task(
-        i_json_config_fn,
-        i_raw_reads_fofn_fn,
-        i_preads_fofn_fn,
-        o_json_fn,
-    ):
-    """See pbfalcon.tusks
-    """
-    kwds = {}
-    #kwds['length_cutoff'] = get_length_cutoff(cfg)
-    kwds['length_cutoff'] = 40
-    kwds['seed_bases'] = 41
-    kwds['polymerase_read_bases'] = 42
-    kwds['preassembled_bases'] = 43
-    kwds['preassembled_yield'] = 44
-    kwds['preassembled_reads'] = 45
-    kwds['preassembled_readlength'] = 46
-    kwds['preassembled_n50'] = 47
-    report = produce_report(**kwds)
-    log.info(report)
-    with open(o_json_fn, 'w') as ofs:
-        log.info("Writing report to {!r}.".format(o_json_fn))
-        content = report.to_json()
-        ofs.write(content)
 
 class FastaContainer(object):
 
@@ -73,14 +50,13 @@ class FastaContainer(object):
     @staticmethod
     def from_file(file_name):
 #        nreads, total = _compute_values(file_name)
-        read_lens = get_fasta_readlengths(file_name)
+        read_lens = pbreports.util.get_fasta_readlengths(file_name)
         nreads = len(read_lens)
         total = sum(read_lens)
         return FastaContainer(nreads, total, file_name)
 
     def __str__(self):
         return "N {n} Total {t} File: {f}".format(n=self.nreads, t=self.total, f=self.file_name)
-
 
 def _validate_file(file_name):
     if os.path.isfile(file_name):
@@ -89,6 +65,69 @@ def _validate_file(file_name):
         msg = "Unable to find {f}".format(f=file_name)
         log.error(msg)
         raise IOError(msg)
+
+def cutoff_reads(read_lens, min_read_len):
+    return [rl for rl in read_lens if rl >= min_read_len]
+def stats_from_sorted_readlengths(read_lens):
+    nreads = len(read_lens)
+    total = sum(read_lens)
+    target = total // 2
+    subtotal = 0
+    # Reverse-order n50 calculation is faster.
+    for irev, rl in enumerate(reversed(read_lens)):
+        subtotal += rl
+        if subtotal >= target:
+            n50 = rl
+            break
+    #alt_n50 = pbreports.util.compute_n50(read_lens)
+    #log.info('our n50=%s, pbreports=%s' %(n50, alt_n50)) # Ours is more correct when median is between 2 reads.
+    stats = collections.namedtuple('FastaStats', ['nreads', 'total', 'n50'])
+    return stats(nreads=nreads, total=total, n50=n50)
+
+def read_lens_from_fofn(fofn_fn):
+    fns = [fn.strip() for fn in open(fofn_fn) if fn.strip()]
+    # get_fasta_readlengths() returns sorted, so sorting the chain is roughly linear.
+    return list(sorted(itertools.chain.from_iterable(pbreports.util.get_fasta_readlengths(fn) for fn in fns)))
+
+def for_task(
+        i_json_config_fn,
+        i_preads_fofn_fn,
+        i_raw_reads_fofn_fn,
+        o_json_fn,
+    ):
+    """See pbfalcon.tusks
+    """
+    import pprint
+    cfg = json.loads(open(i_json_config_fn).read())
+    log.info('cfg=\n%s' %pprint.pformat(cfg))
+    length_cutoff = int(cfg.get('length_cutoff', '0'))
+    kwds = {}
+    #kwds['length_cutoff'] = get_length_cutoff(cfg)
+    preads = read_lens_from_fofn(i_preads_fofn_fn)
+    stats_preads = stats_from_sorted_readlengths(preads)
+    log.info('stats for preads: %s' %repr(stats_preads))
+    raw_reads = read_lens_from_fofn(i_raw_reads_fofn_fn)
+    stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
+    log.info('stats for raw_reads: %s' %repr(stats_raw_reads))
+    seed_reads = cutoff_reads(raw_reads, length_cutoff)
+    stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
+    log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
+    kwds['length_cutoff'] = length_cutoff
+    kwds['polymerase_read_bases'] = stats_raw_reads.total
+    kwds['seed_bases'] = stats_seed_reads.total
+    kwds['preassembled_bases'] = stats_preads.total
+    kwds['preassembled_yield'] = stats_preads.total / stats_seed_reads.total
+    kwds['preassembled_reads'] = stats_preads.nreads
+    kwds['preassembled_readlength'] = stats_preads.total // stats_preads.nreads
+    kwds['preassembled_n50'] = stats_preads.n50
+    kwds['polymerase_n50'] = stats_raw_reads.n50
+    kwds['seed_n50'] = stats_seed_reads.n50
+    report = produce_report(**kwds)
+    log.info('%r -> %r' %(report, o_json_fn))
+    with open(o_json_fn, 'w') as ofs:
+        log.info("Writing report to {!r}.".format(o_json_fn))
+        content = report.to_json()
+        ofs.write(content)
 
 def produce_report(
         polymerase_read_bases,
@@ -99,17 +138,22 @@ def produce_report(
         preassembled_reads,
         preassembled_readlength,
         preassembled_n50,
+        polymerase_n50,
+        seed_n50,
     ):
+    #preassembled_yield = '{:.3f}'.format(preassembled_yield) # but this would make it a str, unlike the others.
     # Report Attributes
     attrs = []
     attrs.append(Attribute('polymerase_read_bases', polymerase_read_bases, name="Polymerase Read Bases"))
+    attrs.append(Attribute('polymerase_n50', polymerase_n50, name="Polymerase Reads N50"))
     attrs.append(Attribute('length_cutoff', length_cutoff, name="Length Cutoff"))
     attrs.append(Attribute('seed_bases', seed_bases, name="Seed Bases"))
+    attrs.append(Attribute('seed_n50', seed_n50, name="Seed Reads N50"))
     attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Pre-Assembled bases"))
     attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield"))
     attrs.append(Attribute('preassembled_reads', preassembled_reads, name="Pre-Assembled Reads"))
     attrs.append(Attribute('preassembled_readlength', preassembled_readlength, name="Pre-Assembled Reads Length"))
-    attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled N50"))
+    attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled Reads N50"))
 
     report = Report('preassembly', attributes=attrs)
     return report
@@ -129,7 +173,7 @@ def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cut
     yield_ = creads.total / longreads.total
     rlength = int(creads.total / creads.nreads)
 #    n50 = _compute_n50(corrected_reads, creads.total)
-    n50 = compute_n50_from_file(corrected_reads)
+    n50 = pbreports.util.compute_n50_from_file(corrected_reads)
 
     return produce_report(
         polymerase_read_bases=subreads.total,

@@ -413,7 +413,7 @@ def run_hgap(input_files, output_files):
     symlink(final_asm_fn, o_fasta_fn)
 
 def run_report_preassembly_yield(input_files, output_files):
-    i_json_config_fn, i_raw_reads_fofn_fn, i_preads_fofn_fn = input_files
+    i_json_config_fn, i_preads_fofn_fn, i_raw_reads_fofn_fn = input_files
     o_json_fn, = output_files
     kwds = {
         'i_json_config_fn': i_json_config_fn,
