@@ -24,8 +24,7 @@ Output of Original Report
 from __future__ import absolute_import
 from __future__ import division
 from pbcore.io import FastaReader
-from pbreports.model.model import Report, Attribute
-import pbreports.util
+from pbcommand.models.report import Report, Attribute
 
 import collections
 import itertools
@@ -37,7 +36,19 @@ import argparse
 
 log = logging.getLogger(__name__)
 
-__version__ = '0.1'
+# Copied from pbreports/util.py
+# We want to avoid a dependency on pbreports b/c it needs matplotlib.
+def get_fasta_readlengths(fasta_file):
+    """
+    Get a sorted list of contig lengths
+    :return: (tuple)
+    """
+    lens = []
+    with FastaReader(fasta_file) as f:
+        for record in f:
+            lens.append(len(record.sequence))
+    lens.sort()
+    return lens
 
 
 class FastaContainer(object):
@@ -50,7 +61,7 @@ class FastaContainer(object):
     @staticmethod
     def from_file(file_name):
 #        nreads, total = _compute_values(file_name)
-        read_lens = pbreports.util.get_fasta_readlengths(file_name)
+        read_lens = get_fasta_readlengths(file_name)
         nreads = len(read_lens)
         total = sum(read_lens)
         return FastaContainer(nreads, total, file_name)
@@ -87,7 +98,7 @@ def stats_from_sorted_readlengths(read_lens):
 def read_lens_from_fofn(fofn_fn):
     fns = [fn.strip() for fn in open(fofn_fn) if fn.strip()]
     # get_fasta_readlengths() returns sorted, so sorting the chain is roughly linear.
-    return list(sorted(itertools.chain.from_iterable(pbreports.util.get_fasta_readlengths(fn) for fn in fns)))
+    return list(sorted(itertools.chain.from_iterable(get_fasta_readlengths(fn) for fn in fns)))
 
 def for_task(
         i_json_config_fn,
@@ -102,7 +113,6 @@ def for_task(
     log.info('cfg=\n%s' %pprint.pformat(cfg))
     length_cutoff = int(cfg.get('length_cutoff', '0'))
     kwds = {}
-    #kwds['length_cutoff'] = get_length_cutoff(cfg)
     preads = read_lens_from_fofn(i_preads_fofn_fn)
     stats_preads = stats_from_sorted_readlengths(preads)
     log.info('stats for preads: %s' %repr(stats_preads))
@@ -128,6 +138,31 @@ def for_task(
         log.info("Writing report to {!r}.".format(o_json_fn))
         content = report.to_json()
         ofs.write(content)
+
+def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=None):
+    """All inputs are paths to fasta files.
+    """
+    preads = read_lens_from_fofn(corrected_reads)
+    stats_preads = stats_from_sorted_readlengths(preads)
+    log.info('stats for preads: %s' %repr(stats_preads))
+    raw_reads = read_lens_from_fofn(filtered_subreads)
+    stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
+    log.info('stats for raw_reads: %s' %repr(stats_raw_reads))
+    seed_reads = read_lens_from_fofn(filtered_longreads)
+    stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
+    log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
+    kwds = {}
+    kwds['length_cutoff'] = 0 if length_cutoff is None else length_cutoff
+    kwds['polymerase_read_bases'] = stats_raw_reads.total
+    kwds['seed_bases'] = stats_seed_reads.total
+    kwds['preassembled_bases'] = stats_preads.total
+    kwds['preassembled_yield'] = stats_preads.total / stats_seed_reads.total
+    kwds['preassembled_reads'] = stats_preads.nreads
+    kwds['preassembled_readlength'] = stats_preads.total // stats_preads.nreads
+    kwds['preassembled_n50'] = stats_preads.n50
+    kwds['polymerase_n50'] = stats_raw_reads.n50
+    kwds['seed_n50'] = stats_seed_reads.n50
+    return produce_report(**kwds)
 
 def produce_report(
         polymerase_read_bases,
@@ -157,34 +192,6 @@ def produce_report(
 
     report = Report('preassembly', attributes=attrs)
     return report
-
-def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=None):
-    """
-    All inputs are paths to fasta files.
-    """
-    subreads = FastaContainer.from_file(filtered_subreads)
-    longreads = FastaContainer.from_file(filtered_longreads)
-    creads = FastaContainer.from_file(corrected_reads)
-
-    fastas = [subreads, longreads, creads]
-    for f in fastas:
-        log.info(f)
-
-    yield_ = creads.total / longreads.total
-    rlength = int(creads.total / creads.nreads)
-#    n50 = _compute_n50(corrected_reads, creads.total)
-    n50 = pbreports.util.compute_n50_from_file(corrected_reads)
-
-    return produce_report(
-        polymerase_read_bases=subreads.total,
-        length_cutoff=length_cutoff,
-        seed_bases=longreads.total,
-        preassembled_bases=creads.total,
-        preassembled_yield=yield_,
-        preassembled_reads=creads.nreads,
-        preassembled_readlength=rlength,
-        preassembled_n50=n50,
-    )
 
 
 def args_runner(args):

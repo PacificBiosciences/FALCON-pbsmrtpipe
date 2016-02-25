@@ -6,6 +6,9 @@ run-dev:
 run:
 	cd falcon; pbsmrtpipe  pipeline $$(pwd)/workflow_id.xml --debug  -e e_01:$$(pwd)/input.txt --preset-xml=$$(pwd)/preset.xml    --output-dir=$$(pwd)/job_output
 
+utest:
+	nosetests -v utest/
+
 PBFALCON_TC_RUNNERS:= \
 	pbfalcon.cli.gen_config \
 	pbfalcon.cli.hgap_prepare \
@@ -40,4 +43,4 @@ runners: ${PBFALCON_TC_RUNNERS}
 #
 # cd ~/repo/pb/smrtanalysis-client/smrtanalysis/services-ui/scala/services/secondary-smrt-server/src/main/resources/resolved-pipeline-templates
 
-.PHONY: all modules runners update
+.PHONY: all modules runners update utest
