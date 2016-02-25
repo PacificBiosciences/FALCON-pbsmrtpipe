@@ -35,6 +35,8 @@ import logging
 import argparse
 
 log = logging.getLogger(__name__)
+__version__ = '0.1'
+
 
 # Copied from pbreports/util.py
 # We want to avoid a dependency on pbreports b/c it needs matplotlib.
