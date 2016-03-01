@@ -1,6 +1,6 @@
 import pbfalcon.report_preassembly as func
 import StringIO
-from nose.tools import assert_equal, assert_raises
+from nose.tools import assert_equal
 
 
 def test_cutoff_reads():

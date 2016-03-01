@@ -118,12 +118,15 @@ def for_task(
     preads = read_lens_from_fofn(i_preads_fofn_fn)
     stats_preads = stats_from_sorted_readlengths(preads)
     log.info('stats for preads: %s' %repr(stats_preads))
+
     raw_reads = read_lens_from_fofn(i_raw_reads_fofn_fn)
     stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
     log.info('stats for raw_reads: %s' %repr(stats_raw_reads))
+
     seed_reads = cutoff_reads(raw_reads, length_cutoff)
     stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
     log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
+
     kwds['length_cutoff'] = length_cutoff
     kwds['polymerase_read_bases'] = stats_raw_reads.total
     kwds['seed_bases'] = stats_seed_reads.total
@@ -147,12 +150,15 @@ def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cut
     preads = read_lens_from_fofn(corrected_reads)
     stats_preads = stats_from_sorted_readlengths(preads)
     log.info('stats for preads: %s' %repr(stats_preads))
+
     raw_reads = read_lens_from_fofn(filtered_subreads)
     stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
     log.info('stats for raw_reads: %s' %repr(stats_raw_reads))
+
     seed_reads = read_lens_from_fofn(filtered_longreads)
     stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
     log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
+
     kwds = {}
     kwds['length_cutoff'] = 0 if length_cutoff is None else length_cutoff
     kwds['polymerase_read_bases'] = stats_raw_reads.total
