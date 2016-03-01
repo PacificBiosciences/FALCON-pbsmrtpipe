@@ -21,7 +21,7 @@ OPTION_CORES_MAX = 'HGAP_CoresMax_str'
 OPTION_CFG = 'HGAP_FalconAdvanced_str'
 
 defaults_old = """\
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --max_n_read 20000 --n_core 6
 length_cutoff = 1
 length_cutoff_pr = 1
 pa_DBsplit_option = -x5 -s50 -a
@@ -33,7 +33,7 @@ ovlp_DBsplit_option = -x5 -s50 -a
 ovlp_concurrent_jobs = 32
 """
 old_defaults_lambda = """\
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --local_match_count_threshold 2 --max_n_read 200 --n_core 6
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
 length_cutoff = 12000
 length_cutoff_pr = 12000
 pa_DBsplit_option = -x500 -s50
@@ -64,7 +64,7 @@ pa_concurrent_jobs = 32
 defaults_ecoli = """
 length_cutoff = 9000
 length_cutoff_pr = 500
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --local_match_count_threshold 2 --max_n_read 200 --n_core 6
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
 overlap_filtering_setting = --max_diff 200 --max_cov 100 --min_cov 2 --bestn 10 --n_core 4
 ovlp_DBsplit_option = -x500 -s200
 ovlp_HPCdaligner_option = -v -dal24 -t16 -h35 -e.93 -l1000 -s100
@@ -104,7 +104,7 @@ ovlp_HPCdaligner_option = -v -dal128 -t32 -h60 -e.96 -l500 -s1000
 pa_DBsplit_option = -x500 -s400
 ovlp_DBsplit_option = -x500 -s400
 
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --local_match_count_threshold 2 --max_n_read 200 --n_core 16
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 16
 
 overlap_filtering_setting = --max_diff 60 --max_cov 60 --min_cov 2 --n_core 24
 """
@@ -117,7 +117,7 @@ pa_HPCdaligner_option =  -v -dal128 -t16 -H15000 -e0.75 -M24 -l4800 -k18 -h480 -
 ovlp_DBsplit_option = -s400
 ovlp_HPCdaligner_option =  -v -dal128  -M24 -k24 -h1024 -e.96 -l2500 -s100 -H15000
 overlap_filtering_setting = --max_diff 40 --max_cov 80 --min_cov 2 --n_core 12
-falcon_sense_option = --output_multi --output_dformat --min_idt 0.70 --min_cov 4 --max_n_read 400 --n_core 12
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 400 --n_core 12
 falcon_sense_skip_contained = False
 """
 # also see:

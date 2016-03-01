@@ -175,7 +175,7 @@ falcon_test_options = """
 [General]
 #pbsmrtpipe.hgap_coresmax_str = 40
 #pbsmrtpipe.hgap_genomelength_str = 5000000
-falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --local_match_count_threshold 100 --max_n_read 20000 --n_core 6
+falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --max_n_read 20000 --n_core 6
 length_cutoff = 1
 length_cutoff_pr = 1
 overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
