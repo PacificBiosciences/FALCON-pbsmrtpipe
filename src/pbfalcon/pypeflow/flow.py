@@ -154,6 +154,7 @@ INFO:root:OutputService: Generating the output XML file
 def run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_contigset, options):
     """GenomicConsensus
     TODO: Capture log output? Or figure out how to log to a file.
+    Something changed in variantCaller, so we must not pass the contigset .xml
     """
     args = [
         'variantCaller',
@@ -169,7 +170,7 @@ def run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_c
         '--referenceFilename', referenceset,
         '-o', polished_fastq,
         '-o', variants_gff,
-        '-o', consensus_contigset,
+        #'-o', consensus_contigset,
         alignmentset,
     ]
     sys.system(' '.join(args))
@@ -236,7 +237,8 @@ def task_genomic_consensus(self):
     referenceset = fn(self.referenceset)
     polished_fastq = fn(self.polished_fastq)
     variants_gff = fn(self.variants_gff)
-    consensus_contigset = fn(self.consensus_contigset)
+    #consensus_contigset = fn(self.consensus_contigset)
+    consensus_contigset = "DUMMY"
     task_opts = self.parameters['variantCaller']
     options = task_opts.get('options', '')
     run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_contigset, options)
@@ -338,7 +340,7 @@ def flow(config):
             outputs = {
                 "polished_fastq": polished_fastq_pfn,
                 "variants_gff": variants_gff_pfn,
-                "consensus_contigset": consensus_contigset_pfn,
+                #"consensus_contigset": consensus_contigset_pfn,
             },
             parameters = parameters,
             TaskType = PypeThreadTaskBase,
