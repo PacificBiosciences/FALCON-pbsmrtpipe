@@ -127,15 +127,17 @@ DEFAULT_OPTIONS = """
   },
   "falcon": {
     "falcon_sense_option": "--output_multi --min_idt 0.77 --min_cov 10 --max_n_read 2000 --n_core 6",
-    "length_cutoff": "1200",
+    "genome_size": "48500",
+    "length_cutoff": "-1",
     "length_cutoff_pr": "50",
     "overlap_filtering_setting": "--max_diff 1000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4",
     "ovlp_DBsplit_option": "-s50 -a",
     "ovlp_HPCdaligner_option": "-v -k15 -h60 -w6 -e.95 -l40 -s100 -M16",
     "ovlp_concurrent_jobs": "32",
-    "pa_DBsplit_option": "-x1200 -s500 -a",
+    "pa_DBsplit_option": "-x250 -s500 -a",
     "pa_HPCdaligner_option": "-v -k16 -h35 -w7 -e.70 -l40 -s100 -M16",
     "pa_concurrent_jobs": "32",
+    "seed_coverage": "74",
     "~comment": "Overrides for FALCON"
   },
   "pbalign": {
@@ -149,8 +151,8 @@ DEFAULT_OPTIONS = """
     "~comment": "Overrides for genomic consensus (polishing)"
   },
   "pbcoretools.tasks.filterdataset": {
-    "other_filters": "rq >= 0.7",
-    "read_length": 0
+    "other_filters": "rq >= 0.7, length lte 50000",
+    "read_length": 1
   },
   "pbsmrtpipe": {
     "~comment": "Overrides for pbsmrtpipe"
