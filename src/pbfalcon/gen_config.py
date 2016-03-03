@@ -61,7 +61,7 @@ overlap_filtering_setting = --max_diff 1000 --max_cov 100000 --min_cov 0 --bestn
 ovlp_DBsplit_option = -s50 -a
 ovlp_hpcdaligner_option = -v -k15 -h60 -w6 -e.95 -l40 -s100 -M16
 ovlp_concurrent_jobs = 32
-pa_DBsplit_option = -s500 -a
+pa_DBsplit_option = -x250 -s500 -a
 pa_HPCdaligner_option =   -v -k15 -h35 -w7 -e.70 -l40 -s100 -M16
 pa_concurrent_jobs = 32
 """
