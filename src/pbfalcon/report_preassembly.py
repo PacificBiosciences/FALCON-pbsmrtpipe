@@ -102,9 +102,9 @@ def read_lens_from_fofn(fofn_fn):
     # get_fasta_readlengths() returns sorted, so sorting the chain is roughly linear.
     return list(sorted(itertools.chain.from_iterable(get_fasta_readlengths(fn) for fn in fns)))
 
-def _get_length_cutoff_from_somewhere(tasks_dir):
+def _get_length_cutoff_from_somewhere(length_cutoff, tasks_dir):
     if length_cutoff < 0:
-        fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'CUTOFF')
+        fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'length_cutoff')
         try:
             length_cutoff = int(open(fn).read().strip())
             log.info('length_cutoff=%d from %r' %(length_cutoff, fn))
@@ -117,7 +117,7 @@ def _get_cfg(i_json_config_fn):
     cfg = json.loads(open(i_json_config_fn).read())
     log.info('cfg=\n%s' %pprint.pformat(cfg))
     length_cutoff = int(cfg.get('length_cutoff', '0'))
-    length_cutoff = _get_length_cutoff_from_somewhere(length_cutoff, os.path.dirname(i_json_config_fn))
+    length_cutoff = _get_length_cutoff_from_somewhere(length_cutoff, os.path.dirname(os.path.dirname(i_json_config_fn)))
     cfg['length_cutoff'] = length_cutoff
     return cfg
 
@@ -130,6 +130,8 @@ def for_task(
     """See pbfalcon.tusks
     """
     cfg = _get_cfg(i_json_config_fn)
+    genome_length = int(cfg.get('genome_size', 0)) # different name in falcon
+    length_cutoff = cfg['length_cutoff']
     kwds = {}
     preads = read_lens_from_fofn(i_preads_fofn_fn)
     stats_preads = stats_from_sorted_readlengths(preads)
@@ -143,11 +145,13 @@ def for_task(
     stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
     log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
 
+    kwds['genome_length'] = genome_length
     kwds['length_cutoff'] = length_cutoff
     kwds['polymerase_read_bases'] = stats_raw_reads.total
     kwds['seed_bases'] = stats_seed_reads.total
     kwds['preassembled_bases'] = stats_preads.total
     kwds['preassembled_yield'] = stats_preads.total / stats_seed_reads.total
+    kwds['preassembled_coverage'] = stats_preads.total / genome_length
     kwds['preassembled_reads'] = stats_preads.nreads
     kwds['preassembled_readlength'] = stats_preads.total // stats_preads.nreads
     kwds['preassembled_n50'] = stats_preads.n50
@@ -160,7 +164,7 @@ def for_task(
         content = report.to_json()
         ofs.write(content)
 
-def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=None):
+def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=None, genome_length=None):
     """All inputs are paths to fasta files.
     """
     preads = read_lens_from_fofn(corrected_reads)
@@ -176,11 +180,13 @@ def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cut
     log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
 
     kwds = {}
+    kwds['genome_length'] = 0 if genome_length is None else genome_length
     kwds['length_cutoff'] = 0 if length_cutoff is None else length_cutoff
     kwds['polymerase_read_bases'] = stats_raw_reads.total
     kwds['seed_bases'] = stats_seed_reads.total
     kwds['preassembled_bases'] = stats_preads.total
     kwds['preassembled_yield'] = stats_preads.total / stats_seed_reads.total
+    kwds['preassembled_coverage'] = stats_preads.total / genome_length
     kwds['preassembled_reads'] = stats_preads.nreads
     kwds['preassembled_readlength'] = stats_preads.total // stats_preads.nreads
     kwds['preassembled_n50'] = stats_preads.n50
@@ -190,9 +196,11 @@ def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cut
 
 def produce_report(
         polymerase_read_bases,
+        genome_length,
         length_cutoff,
         seed_bases,
         preassembled_bases,
+        preassembled_coverage,
         preassembled_yield,
         preassembled_reads,
         preassembled_readlength,
@@ -203,16 +211,18 @@ def produce_report(
     #preassembled_yield = '{:.3f}'.format(preassembled_yield) # but this would make it a str, unlike the others.
     # Report Attributes
     attrs = []
+    attrs.append(Attribute('genome_length', genome_length, name="Genome Length (user input)"))
     attrs.append(Attribute('polymerase_read_bases', polymerase_read_bases, name="Polymerase Read Bases"))
     attrs.append(Attribute('polymerase_n50', polymerase_n50, name="Polymerase Reads N50"))
-    attrs.append(Attribute('length_cutoff', length_cutoff, name="Length Cutoff"))
+    attrs.append(Attribute('length_cutoff', length_cutoff, name="Length Cutoff (user input or auto-calc)"))
     attrs.append(Attribute('seed_bases', seed_bases, name="Seed Bases"))
     attrs.append(Attribute('seed_n50', seed_n50, name="Seed Reads N50"))
-    attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Pre-Assembled bases"))
-    attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield"))
     attrs.append(Attribute('preassembled_reads', preassembled_reads, name="Pre-Assembled Reads"))
     attrs.append(Attribute('preassembled_readlength', preassembled_readlength, name="Pre-Assembled Reads Length"))
     attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled Reads N50"))
+    attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Pre-Assembled bases"))
+    attrs.append(Attribute('preassembled_coverage', preassembled_coverage, name="Pre-Assembled coverage"))
+    attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield"))
 
     report = Report('preassembly', attributes=attrs)
     return report
@@ -223,10 +233,11 @@ def args_runner(args):
     filtered_longreads = args.filtered_longreads_fasta
     corrected_reads = args.corrected_reads
     length_cutoff = args.length_cutoff
+    genome_length = args.genome_length
     output_json = args.output_json
 
     log.info("Starting {f}".format(f=os.path.basename(__file__)))
-    report = to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=length_cutoff)
+    report = to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=length_cutoff, genome_length=genome_length)
     log.info(report)
     with open(output_json, 'w') as f:
         log.info("Writing report to {!r}.".format(output_json))
@@ -247,8 +258,8 @@ def get_parser():
                    help="Flag to debug to stdout.")
     p.add_argument('--length-cutoff', type=int, metavar="length_cutoff",
                    help="Length cutoff to insert into report.")
-    p.add_argument('--genome-size', metavar="genome_size", type=int,
-                   help="Size of genome.")
+    p.add_argument('--genome-length', metavar="genome_length", type=int,
+                   help="Size of genome (base pairs).")
     p.add_argument("output_json", type=str, default="preassembly_report.json",
                    help="Path to Json Report output.")
 
