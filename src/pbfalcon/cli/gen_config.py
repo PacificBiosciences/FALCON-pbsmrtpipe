@@ -18,9 +18,13 @@ def add_args_and_options(p):
     p.add_output_file_type(FileTypes.TXT, "cfg_out", "INI File", "FALCON cfg (aka 'ini')", 'fc_run.cfg')
     # Option id, label, default value, name, description
     p.add_str("falcon_ns.task_options." + gen_config.OPTION_GENOME_LENGTH, "genome-length", '5000000',
-            "Genome length (base pairs) REQUIRED", "Approx. number of base pairs expected in the genome. We choose other settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
-    p.add_str("falcon_ns.task_options." + gen_config.OPTION_CORES_MAX, "cores-max", '40',
-            "Cores Max IGNORED.", "IGNORE - not currently used")
+            "Genome length", "Approx. number of base pairs expected in the genome. We choose many hidden settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_SEED_COVERAGE, "seed-coverage", '20',
+            "Seed coverage", "A target for the total # of bases in the 'raw' (post primary) reads, divided by the total number in the 'seed' reads.")
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_SEED_LENGTH_CUTOFF, "seed-length-cutoff", '-1',
+            "Seed length cutoff", "Only reads as long as this will be used as 'seeds' for the draft assembly. (Shorter reads will be used for correction and polishing, if they pass the dataset filters.) If '-1', then this will be calculated automatically, such that the total number of seed bases nearly equals GenomeLength*SeedCoverage.")
+    #p.add_str("falcon_ns.task_options." + gen_config.OPTION_CORES_MAX, "cores-max", '40',
+    #        "Cores Max IGNORED.", "IGNORE - not currently used")
     p.add_str("falcon_ns.task_options." + gen_config.OPTION_CFG, "falcon-overrides", '',
             "FALCON cfg overrides", "This is intended to allow support engineers to override the cfg which we will generate from other options. It is a semicolon-separated list of key=val pairs. Newlines are allowed but ignored. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
     return p

@@ -17,6 +17,8 @@ import StringIO
 log = logging.getLogger(__name__)
 #log.setLevel(logging.DEBUG)
 OPTION_GENOME_LENGTH = 'HGAP_GenomeLength_str'
+OPTION_SEED_COVERAGE = 'HGAP_SeedCoverage_str'
+OPTION_SEED_LENGTH_CUTOFF = 'HGAP_SeedLengthCutoff_str'
 OPTION_CORES_MAX = 'HGAP_CoresMax_str'
 OPTION_CFG = 'HGAP_FalconAdvanced_str'
 
@@ -51,7 +53,7 @@ ovlp_concurrent_jobs = 32
 # to update defaults in 3.0.4 for ecoli.
 defaults_lambda = """
 genome_size = 48502
-seed_coverage = 40
+seed_coverage = 80
 falcon_sense_option = --output_multi --min_idt 0.77 --min_cov 10 --max_n_read 2000 --n_core 6
 length_cutoff = -1
 length_cutoff_pr = 50
@@ -165,6 +167,11 @@ def _populate_falcon_options(options):
     for key in options:
         if key not in excluded:
             fc['pbsmrtpipe.' + key] = options[key]
+
+    # Translate some to FALCON options. (Note that names are different in Falcon.)
+    fc['genome_size'] = int(options[OPTION_GENOME_LENGTH])
+    fc['length_cutoff'] = int(options.get(OPTION_SEED_LENGTH_CUTOFF, '-9'))
+    fc['seed_coverage'] = float(options.get(OPTION_SEED_COVERAGE, '21'))
     return fc
 
 def _options_dict_with_base_keys(options_dict, prefix='falcon_ns.task_options.'):
