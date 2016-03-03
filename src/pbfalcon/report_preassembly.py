@@ -102,6 +102,25 @@ def read_lens_from_fofn(fofn_fn):
     # get_fasta_readlengths() returns sorted, so sorting the chain is roughly linear.
     return list(sorted(itertools.chain.from_iterable(get_fasta_readlengths(fn) for fn in fns)))
 
+def _get_length_cutoff_from_somewhere(tasks_dir):
+    if length_cutoff < 0:
+        fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'CUTOFF')
+        try:
+            length_cutoff = int(open(fn).read().strip())
+            log.info('length_cutoff=%d from %r' %(length_cutoff, fn))
+        except Exception:
+            log.exception('Unable to read length_cutoff from "%s".' %fn)
+    return length_cutoff # possibly updated
+
+def _get_cfg(i_json_config_fn):
+    import pprint
+    cfg = json.loads(open(i_json_config_fn).read())
+    log.info('cfg=\n%s' %pprint.pformat(cfg))
+    length_cutoff = int(cfg.get('length_cutoff', '0'))
+    length_cutoff = _get_length_cutoff_from_somewhere(length_cutoff, os.path.dirname(i_json_config_fn))
+    cfg['length_cutoff'] = length_cutoff
+    return cfg
+
 def for_task(
         i_json_config_fn,
         i_preads_fofn_fn,
@@ -110,10 +129,7 @@ def for_task(
     ):
     """See pbfalcon.tusks
     """
-    import pprint
-    cfg = json.loads(open(i_json_config_fn).read())
-    log.info('cfg=\n%s' %pprint.pformat(cfg))
-    length_cutoff = int(cfg.get('length_cutoff', '0'))
+    cfg = _get_cfg(i_json_config_fn)
     kwds = {}
     preads = read_lens_from_fofn(i_preads_fofn_fn)
     stats_preads = stats_from_sorted_readlengths(preads)
