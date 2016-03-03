@@ -158,8 +158,8 @@ def run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_c
     """
     args = [
         'variantCaller',
-        '--verbose',
         '--log-level INFO',
+        #'--verbose',
         #'--debug', # requires 'ipdb'
         #'-j NWORKERS',
         #'--algorithm quiver',
