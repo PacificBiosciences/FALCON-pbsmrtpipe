@@ -41,6 +41,8 @@ def run_falcon_config_get_fasta(input_files, output_files):
         o_fofn_fn, = output_files
         config = _get_config(i_config_fn)
         i_fofn_fn = config['input_fofn']
+        if not os.path.isabs(i_fofn_fn):
+            i_fofn_fn = os.path.join(os.path.dirname(i_config_fn), i_fofn_fn)
         msg = '%r -> %r' %(i_fofn_fn, o_fofn_fn)
         say(msg)
         with cd(os.path.dirname(i_fofn_fn)):

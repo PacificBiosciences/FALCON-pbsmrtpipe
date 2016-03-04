@@ -186,7 +186,7 @@ def run_filterbam(ifn, ofn, config):
     other_filters = config.get('other_filters', 'rq >= 0.7')
     read_length = config.get('read_length', 0)
     from pbcoretools.tasks.filters import run_filter_dataset
-    log.warning('RUNNING filterbam: %r %r' %(read_length, other_filters))
+    log.warning('RUNNING filterbam: %r %r\n%r\n%r' %(read_length, other_filters, ifn, ofn))
     rc = run_filter_dataset(ifn, ofn, read_length=read_length, other_filters=other_filters)
     log.warning('FINISHED filterbam(rc=%r): %r %r' %(rc, read_length, other_filters))
 def task_filterbam(self):
