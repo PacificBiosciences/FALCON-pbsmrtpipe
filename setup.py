@@ -30,7 +30,7 @@ def _get_requirements(file_name):
 setup(
     name='FALCON-pbsmrtpipe',
     version=version,
-    package_dir={'': 'src'},
+    package_dir={'': '.'},
     packages=['pbfalcon', 'pbfalcon.tasks',
         'pbfalcon.cli',
         'pbfalcon.pypeflow', # might be moved to FALCON someday
