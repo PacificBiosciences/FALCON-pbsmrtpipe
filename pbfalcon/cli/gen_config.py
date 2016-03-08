@@ -15,7 +15,7 @@ def add_args_and_options(p):
     # FileType, label, name, description
     p.add_input_file_type(FileTypes.FOFN, "fofn_in", "FileOfFileNames", "FOFN for fasta files")
     # File Type, label, name, description, default file name
-    p.add_output_file_type(FileTypes.TXT, "cfg_out", "INI File", "FALCON cfg (aka 'ini')", 'fc_run.cfg')
+    p.add_output_file_type(FileTypes.CFG, "cfg_out", "INI File", "FALCON cfg (aka 'ini')", 'fc_run')
     # Option id, label, default value, name, description
     p.add_str("falcon_ns.task_options." + gen_config.OPTION_GENOME_LENGTH, "genome-length", '5000000',
             "Genome length", "Approx. number of base pairs expected in the genome. We choose many hidden settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")

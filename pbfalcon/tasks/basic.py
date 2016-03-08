@@ -21,7 +21,7 @@ registry = registry_builder(TOOL_NAMESPACE, DRIVER_BASE)
 # FT_FOFN = FileType(to_file_ns("generic_fofn"), "generic", "fofn", 'text/plain')
 FT_FOFN = FileTypes.FOFN
 FT_JSON = FileTypes.JSON
-FT_CFG = FileTypes.TXT
+FT_CFG = FileTypes.CFG
 FT_BASH = FileTypes.TXT
 FT_DUMMY = FileTypes.TXT
 FT_SUBREADS = FileTypes.DS_SUBREADS
@@ -108,7 +108,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_hgap(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_FOFN], [FT(FT_JSON, 'preassembly_yield.json')], is_distributed=False)
+@registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_FOFN], [FT(FT_JSON, 'preassembly_yield')], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_report_preassembly_yield(rtc.task.input_files, rtc.task.output_files)
