@@ -26,7 +26,7 @@ def get_contract_parser():
 
     p.add_output_file_type(FileTypes.FOFN, "fofn_out", "FOFN LAS maybe?",
                            "FOFN Not Sure Yet",
-                           "file_gathered.fofn")
+                           "file_gathered")
 
     # FIXME. There's an a bit of friction between the TC and the argrunning
     # layer here. For nproc and nchunks, chunk-key, the values are a bit
