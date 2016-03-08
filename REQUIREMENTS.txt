@@ -1,2 +1,3 @@
 falcon_kit
 pbsmrtpipe
+pbcommand >= 0.3.20
