@@ -3,6 +3,7 @@ from pbcommand.utils import setup_log
 from pbcommand.models import (ResourceTypes, FileTypes, SymbolTypes)
 from pbcommand.models.parser import get_pbparser
 from .. import hgap_prepare
+from .. import gen_config # for some option names
 import sys
 import logging
 
@@ -35,6 +36,12 @@ def add_args_and_options(p):
     p.add_output_file_type(FileTypes.JSON, "hgap-cfg-out", "HGAP JSON file", "Output: Actual configuration to be used by HGAP, in a 2-level dictionary.", 'hgap-cfg')
     p.add_output_file_type(FileTypes.JSON, "logging-cfg-out", "Python logging.config JSON file", "Output: Standard Python logging.config (for the task, not pbsmrtpipe)", 'logging-cfg')
     # Option id, label, default value, name, description
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_GENOME_LENGTH, "genome-length", '5000000',
+            "Genome length", "Approx. number of base pairs expected in the genome. We choose many hidden settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_SEED_COVERAGE, "seed-coverage", '20',
+            "Seed coverage", "A target for the total # of bases in the 'raw' (post primary) reads, divided by the total number in the 'seed' reads.")
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_SEED_LENGTH_CUTOFF, "seed-length-cutoff", '-1',
+            "Seed length cutoff", "Only reads as long as this will be used as 'seeds' for the draft assembly. (Shorter reads will be used for correction and polishing, if they pass the dataset filters.) If '-1', then this will be calculated automatically, such that the total number of seed bases nearly equals GenomeLength*SeedCoverage.")
     p.add_str("falcon_ns.task_options." + hgap_prepare.OPTION_CFG, "advanced-overrides",
             default_HGAP_Options,
             "Experimental HGAP.5 config overrides.",
