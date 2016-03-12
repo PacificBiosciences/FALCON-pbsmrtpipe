@@ -193,12 +193,17 @@ pa_concurrent_jobs = 32
 """
 
 def update2(start, updates):
+    # Skip '~comment' entries.
     for key1, val1 in updates.iteritems():
+        if key1.startswith('~'):
+            continue
         if key1 not in start:
             start[key1] = copy.deepcopy(val1)
             continue
-        assert isinstance(start[key1], dict)
+        assert isinstance(start[key1], dict), "%s %s" %(repr(key1), repr(start))
         for key2, val2 in val1.iteritems():
+            if key2.startswith('~'):
+                continue
             start[key1][key2] = copy.deepcopy(val2)
 
 def run(input_config_fn, logging_config_fn=None):
