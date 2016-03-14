@@ -98,11 +98,6 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falconx', '0.0.0', [FT_JSON, FT_FOFN], [FT_FASTA], is_distributed=False)
-def run_rtc(rtc):
-  with cd(os.path.dirname(rtc.task.output_files[0])):
-    return pbfalcon.run_falconx(rtc.task.input_files, rtc.task.output_files)
-
 @registry('task_hgap_run', '0.0.0', [FT_JSON, FT_JSON, FT_SUBREADS], [FT_FASTA], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
