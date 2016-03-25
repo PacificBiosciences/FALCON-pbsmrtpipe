@@ -26,6 +26,7 @@ FT_BASH = FileTypes.TXT
 FT_DUMMY = FileTypes.TXT
 FT_SUBREADS = FileTypes.DS_SUBREADS
 FT_FASTA = FileTypes.FASTA
+FT_REPORT = FileTypes.REPORT
 
 def FT(file_type, basename):
     return OutputFileType(file_type.file_type_id,
@@ -103,7 +104,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_hgap(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_FOFN], [FT(FT_JSON, 'preassembly_yield')], is_distributed=False)
+@registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_FOFN], [FT(FT_REPORT, 'preassembly_yield')], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_report_preassembly_yield(rtc.task.input_files, rtc.task.output_files)
