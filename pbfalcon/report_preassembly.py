@@ -212,17 +212,17 @@ def produce_report(
     # Report Attributes
     attrs = []
     attrs.append(Attribute('genome_length', genome_length, name="Genome Length (user input)"))
-    attrs.append(Attribute('polymerase_read_bases', polymerase_read_bases, name="Polymerase Read Bases"))
-    attrs.append(Attribute('polymerase_n50', polymerase_n50, name="Polymerase Reads N50"))
+    attrs.append(Attribute('polymerase_n50', polymerase_n50, name="Raw Read Lengths (N50)"))
+    attrs.append(Attribute('polymerase_read_bases', polymerase_read_bases, name="Raw Bases (sum)"))
     attrs.append(Attribute('length_cutoff', length_cutoff, name="Length Cutoff (user input or auto-calc)"))
-    attrs.append(Attribute('seed_bases', seed_bases, name="Seed Bases"))
-    attrs.append(Attribute('seed_n50', seed_n50, name="Seed Reads N50"))
-    attrs.append(Attribute('preassembled_reads', preassembled_reads, name="Pre-Assembled Reads"))
-    attrs.append(Attribute('preassembled_readlength', preassembled_readlength, name="Pre-Assembled Reads Length"))
-    attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled Reads N50"))
-    attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Pre-Assembled bases"))
-    attrs.append(Attribute('preassembled_coverage', preassembled_coverage, name="Pre-Assembled coverage"))
-    attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield"))
+    attrs.append(Attribute('seed_n50', seed_n50, name="Seed Read Lengths (N50)"))
+    attrs.append(Attribute('seed_bases', seed_bases, name="Seed Bases (sum)"))
+    attrs.append(Attribute('preassembled_reads', preassembled_reads, name="Pre-Assembled Reads (count)"))
+    attrs.append(Attribute('preassembled_readlength', preassembled_readlength, name="Pre-Assembled Read Lengths (mean)"))
+    attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled Read Lengths (N50)"))
+    attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Pre-Assembled Bases (sum)"))
+    attrs.append(Attribute('preassembled_coverage', preassembled_coverage, name="Pre-Assembled Coverage (bases/genome_size)"))
+    attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield (bases/seed_bases)"))
 
     report = Report('preassembly', attributes=attrs)
     return report
