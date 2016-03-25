@@ -132,97 +132,83 @@ def for_task(
     cfg = _get_cfg(i_json_config_fn)
     genome_length = int(cfg.get('genome_size', 0)) # different name in falcon
     length_cutoff = cfg['length_cutoff']
-    kwds = {}
-    preads = read_lens_from_fofn(i_preads_fofn_fn)
-    stats_preads = stats_from_sorted_readlengths(preads)
-    log.info('stats for preads: %s' %repr(stats_preads))
 
     raw_reads = read_lens_from_fofn(i_raw_reads_fofn_fn)
     stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
-    log.info('stats for raw_reads: %s' %repr(stats_raw_reads))
 
     seed_reads = cutoff_reads(raw_reads, length_cutoff)
     stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
-    log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
 
-    kwds['genome_length'] = genome_length
-    kwds['length_cutoff'] = length_cutoff
-    kwds['polymerase_read_bases'] = stats_raw_reads.total
-    kwds['seed_bases'] = stats_seed_reads.total
-    kwds['preassembled_bases'] = stats_preads.total
-    kwds['preassembled_yield'] = stats_preads.total / stats_seed_reads.total
-    kwds['preassembled_coverage'] = stats_preads.total / genome_length
-    kwds['preassembled_reads'] = stats_preads.nreads
-    kwds['preassembled_readlength'] = stats_preads.total // stats_preads.nreads
-    kwds['preassembled_n50'] = stats_preads.n50
-    kwds['polymerase_n50'] = stats_raw_reads.n50
-    kwds['seed_n50'] = stats_seed_reads.n50
-    report = produce_report(**kwds)
+    preads = read_lens_from_fofn(i_preads_fofn_fn)
+    stats_preads = stats_from_sorted_readlengths(preads)
+
+    report = to_report(stats_raw_reads, stats_seed_reads, stats_preads, genome_length, length_cutoff)
     log.info('%r -> %r' %(report, o_json_fn))
     with open(o_json_fn, 'w') as ofs:
         log.info("Writing report to {!r}.".format(o_json_fn))
         content = report.to_json()
         ofs.write(content)
 
-def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=None, genome_length=None):
+def to_report(stats_raw_reads, stats_seed_reads, stats_corrected_reads, length_cutoff=None, genome_length=None):
     """All inputs are paths to fasta files.
     """
-    preads = read_lens_from_fofn(corrected_reads)
-    stats_preads = stats_from_sorted_readlengths(preads)
-    log.info('stats for preads: %s' %repr(stats_preads))
-
-    raw_reads = read_lens_from_fofn(filtered_subreads)
-    stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
-    log.info('stats for raw_reads: %s' %repr(stats_raw_reads))
-
-    seed_reads = read_lens_from_fofn(filtered_longreads)
-    stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
-    log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
+    log.info('stats for raw reads:       %s' %repr(stats_raw_reads))
+    log.info('stats for seed reads:      %s' %repr(stats_seed_reads))
+    log.info('stats for corrected reads: %s' %repr(stats_corrected_reads))
 
     kwds = {}
     kwds['genome_length'] = 0 if genome_length is None else genome_length
     kwds['length_cutoff'] = 0 if length_cutoff is None else length_cutoff
-    kwds['polymerase_read_bases'] = stats_raw_reads.total
+    kwds['raw_reads'] = stats_raw_reads.nreads
+    kwds['raw_bases'] = stats_raw_reads.total
+    kwds['raw_n50'] = stats_raw_reads.n50
+    kwds['raw_coverage'] = stats_raw_reads.total / genome_length
+    kwds['seed_reads'] = stats_seed_reads.nreads
     kwds['seed_bases'] = stats_seed_reads.total
-    kwds['preassembled_bases'] = stats_preads.total
-    kwds['preassembled_yield'] = stats_preads.total / stats_seed_reads.total
-    kwds['preassembled_coverage'] = stats_preads.total / genome_length
-    kwds['preassembled_reads'] = stats_preads.nreads
-    kwds['preassembled_readlength'] = stats_preads.total // stats_preads.nreads
-    kwds['preassembled_n50'] = stats_preads.n50
-    kwds['polymerase_n50'] = stats_raw_reads.n50
     kwds['seed_n50'] = stats_seed_reads.n50
+    kwds['seed_coverage'] = stats_seed_reads.total / genome_length
+    kwds['preassembled_reads'] = stats_corrected_reads.nreads
+    kwds['preassembled_bases'] = stats_corrected_reads.total
+    kwds['preassembled_n50'] = stats_corrected_reads.n50
+    kwds['preassembled_coverage'] = stats_corrected_reads.total / genome_length
+    kwds['preassembled_yield'] = stats_corrected_reads.total / stats_seed_reads.total
     return produce_report(**kwds)
 
 def produce_report(
-        polymerase_read_bases,
         genome_length,
+        raw_reads,
+        raw_n50,
+        raw_bases,
+        raw_coverage,
         length_cutoff,
+        seed_reads,
         seed_bases,
+        seed_n50,
+        seed_coverage,
+        preassembled_reads,
+        preassembled_n50,
         preassembled_bases,
         preassembled_coverage,
         preassembled_yield,
-        preassembled_reads,
-        preassembled_readlength,
-        preassembled_n50,
-        polymerase_n50,
-        seed_n50,
     ):
     #preassembled_yield = '{:.3f}'.format(preassembled_yield) # but this would make it a str, unlike the others.
     # Report Attributes
     attrs = []
     attrs.append(Attribute('genome_length', genome_length, name="Genome Length (user input)"))
-    attrs.append(Attribute('polymerase_read_bases', polymerase_read_bases, name="Polymerase Read Bases"))
-    attrs.append(Attribute('polymerase_n50', polymerase_n50, name="Polymerase Reads N50"))
+    attrs.append(Attribute('raw_reads', raw_reads, name="Raw Reads (count)"))
+    attrs.append(Attribute('raw_n50', raw_n50, name="Raw Read Lengths (N50)"))
+    attrs.append(Attribute('raw_bases', raw_bases, name="Raw Bases (sum)"))
+    attrs.append(Attribute('raw_coverage', raw_coverage, name="Raw Coverage (bases/genome_size)"))
     attrs.append(Attribute('length_cutoff', length_cutoff, name="Length Cutoff (user input or auto-calc)"))
-    attrs.append(Attribute('seed_bases', seed_bases, name="Seed Bases"))
-    attrs.append(Attribute('seed_n50', seed_n50, name="Seed Reads N50"))
-    attrs.append(Attribute('preassembled_reads', preassembled_reads, name="Pre-Assembled Reads"))
-    attrs.append(Attribute('preassembled_readlength', preassembled_readlength, name="Pre-Assembled Reads Length"))
-    attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled Reads N50"))
-    attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Pre-Assembled bases"))
-    attrs.append(Attribute('preassembled_coverage', preassembled_coverage, name="Pre-Assembled coverage"))
-    attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield"))
+    attrs.append(Attribute('seed_reads', seed_reads, name="Seed Reads (count)"))
+    attrs.append(Attribute('seed_n50', seed_n50, name="Seed Read Lengths (N50)"))
+    attrs.append(Attribute('seed_bases', seed_bases, name="Seed Bases (sum)"))
+    attrs.append(Attribute('seed_coverage', seed_coverage, name="Seed Coverage (bases/genome_size)"))
+    attrs.append(Attribute('preassembled_reads', preassembled_reads, name="Pre-Assembled Reads (count)"))
+    attrs.append(Attribute('preassembled_n50', preassembled_n50, name="Pre-Assembled Read Lengths (N50)"))
+    attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Pre-Assembled Bases (sum)"))
+    attrs.append(Attribute('preassembled_coverage', preassembled_coverage, name="Pre-Assembled Coverage (bases/genome_size)"))
+    attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield (bases/seed_bases)"))
 
     report = Report('preassembly', attributes=attrs)
     return report
@@ -237,7 +223,18 @@ def args_runner(args):
     output_json = args.output_json
 
     log.info("Starting {f}".format(f=os.path.basename(__file__)))
-    report = to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=length_cutoff, genome_length=genome_length)
+
+    raw_reads = read_lens_from_fofn(filtered_subreads)
+    stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
+
+    seed_reads = read_lens_from_fofn(filtered_longreads)
+    stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
+
+    preads = read_lens_from_fofn(corrected_reads)
+    stats_preads = stats_from_sorted_readlengths(preads)
+
+    report = to_report(stats_raw_reads, stats_seed_reads, stats_preads, genome_length, length_cutoff)
+
     log.info(report)
     with open(output_json, 'w') as f:
         log.info("Writing report to {!r}.".format(output_json))
