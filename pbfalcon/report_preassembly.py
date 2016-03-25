@@ -133,55 +133,28 @@ def for_task(
     genome_length = int(cfg.get('genome_size', 0)) # different name in falcon
     length_cutoff = cfg['length_cutoff']
 
-    preads = read_lens_from_fofn(i_preads_fofn_fn)
-    stats_preads = stats_from_sorted_readlengths(preads)
-    log.info('stats for preads: %s' %repr(stats_preads))
-
     raw_reads = read_lens_from_fofn(i_raw_reads_fofn_fn)
     stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
-    log.info('stats for raw_reads: %s' %repr(stats_raw_reads))
 
     seed_reads = cutoff_reads(raw_reads, length_cutoff)
     stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
-    log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
 
-    kwds = {}
-    kwds['genome_length'] = 0 if genome_length is None else genome_length
-    kwds['length_cutoff'] = 0 if length_cutoff is None else length_cutoff
-    kwds['raw_reads'] = stats_raw_reads.nreads
-    kwds['raw_bases'] = stats_raw_reads.total
-    kwds['raw_n50'] = stats_raw_reads.n50
-    kwds['raw_coverage'] = stats_raw_reads.total / genome_length
-    kwds['seed_reads'] = stats_seed_reads.nreads
-    kwds['seed_bases'] = stats_seed_reads.total
-    kwds['seed_n50'] = stats_seed_reads.n50
-    kwds['seed_coverage'] = stats_seed_reads.total / genome_length
-    kwds['preassembled_reads'] = stats_preads.nreads
-    kwds['preassembled_bases'] = stats_preads.total
-    kwds['preassembled_n50'] = stats_preads.n50
-    kwds['preassembled_coverage'] = stats_preads.total / genome_length
-    kwds['preassembled_yield'] = stats_preads.total / stats_seed_reads.total
-    report = produce_report(**kwds)
+    preads = read_lens_from_fofn(i_preads_fofn_fn)
+    stats_preads = stats_from_sorted_readlengths(preads)
+
+    report = to_report(stats_raw_reads, stats_seed_reads, stats_preads, genome_length, length_cutoff)
     log.info('%r -> %r' %(report, o_json_fn))
     with open(o_json_fn, 'w') as ofs:
         log.info("Writing report to {!r}.".format(o_json_fn))
         content = report.to_json()
         ofs.write(content)
 
-def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=None, genome_length=None):
+def to_report(stats_raw_reads, stats_seed_reads, stats_corrected_reads, length_cutoff=None, genome_length=None):
     """All inputs are paths to fasta files.
     """
-    preads = read_lens_from_fofn(corrected_reads)
-    stats_preads = stats_from_sorted_readlengths(preads)
-    log.info('stats for preads: %s' %repr(stats_preads))
-
-    raw_reads = read_lens_from_fofn(filtered_subreads)
-    stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
-    log.info('stats for raw_reads: %s' %repr(stats_raw_reads))
-
-    seed_reads = read_lens_from_fofn(filtered_longreads)
-    stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
-    log.info('stats for seed_reads: %s' %repr(stats_seed_reads))
+    log.info('stats for raw reads:       %s' %repr(stats_raw_reads))
+    log.info('stats for seed reads:      %s' %repr(stats_seed_reads))
+    log.info('stats for corrected reads: %s' %repr(stats_corrected_reads))
 
     kwds = {}
     kwds['genome_length'] = 0 if genome_length is None else genome_length
@@ -194,11 +167,11 @@ def to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cut
     kwds['seed_bases'] = stats_seed_reads.total
     kwds['seed_n50'] = stats_seed_reads.n50
     kwds['seed_coverage'] = stats_seed_reads.total / genome_length
-    kwds['preassembled_reads'] = stats_preads.nreads
-    kwds['preassembled_bases'] = stats_preads.total
-    kwds['preassembled_n50'] = stats_preads.n50
-    kwds['preassembled_coverage'] = stats_preads.total / genome_length
-    kwds['preassembled_yield'] = stats_preads.total / stats_seed_reads.total
+    kwds['preassembled_reads'] = stats_corrected_reads.nreads
+    kwds['preassembled_bases'] = stats_corrected_reads.total
+    kwds['preassembled_n50'] = stats_corrected_reads.n50
+    kwds['preassembled_coverage'] = stats_corrected_reads.total / genome_length
+    kwds['preassembled_yield'] = stats_corrected_reads.total / stats_seed_reads.total
     return produce_report(**kwds)
 
 def produce_report(
@@ -250,7 +223,18 @@ def args_runner(args):
     output_json = args.output_json
 
     log.info("Starting {f}".format(f=os.path.basename(__file__)))
-    report = to_report(filtered_subreads, filtered_longreads, corrected_reads, length_cutoff=length_cutoff, genome_length=genome_length)
+
+    raw_reads = read_lens_from_fofn(filtered_subreads)
+    stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
+
+    seed_reads = read_lens_from_fofn(filtered_longreads)
+    stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
+
+    preads = read_lens_from_fofn(corrected_reads)
+    stats_preads = stats_from_sorted_readlengths(preads)
+
+    report = to_report(stats_raw_reads, stats_seed_reads, stats_preads, genome_length, length_cutoff)
+
     log.info(report)
     with open(output_json, 'w') as f:
         log.info("Writing report to {!r}.".format(output_json))
