@@ -47,6 +47,7 @@ def run_falcon_config_get_fasta(input_files, output_files):
         say(msg)
         with cd(os.path.dirname(i_fofn_fn)):
             return support.make_fofn_abs(i_fofn_fn, o_fofn_fn)
+        return 0
 
 def run_falcon_config(input_files, output_files):
         i_config_fn, i_fasta_fofn = input_files
@@ -62,6 +63,7 @@ def run_falcon_config(input_files, output_files):
         with open(o_json_fn, 'w') as ofs:
             ofs.write(output)
         #return run_cmd('echo hi', open(hello, 'w'), sys.stderr, shell=False)
+        return 0
 
 def run_falcon_make_fofn_abs(input_files, output_files):
         i_json_fn, = input_files
@@ -76,6 +78,7 @@ def run_falcon_make_fofn_abs(input_files, output_files):
         say(msg)
         with cd(os.path.dirname(i_fofn_fn)):
             return support.make_fofn_abs(i_fofn_fn, o_fofn_fn)
+        return 0
 
 def read_fns(fofn):
     print('read from fofn:%s' %repr(fofn))
@@ -106,6 +109,7 @@ def run_falcon_build_rdb(input_files, output_files):
     job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'raw_reads')
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
+    return 0
 
 def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
     print('run_daligner_jobs: %s %s' %(repr(input_files), repr(output_files)))
@@ -131,6 +135,7 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
             run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
             odirs.append(os.path.dirname(script_fn))
     write_fns(o_fofn_fn, itertools.chain.from_iterable(glob.glob('%s/*.las' %d) for d in odirs))
+    return 0
 
 #    def scripts_daligner(run_jobs_fn, db_prefix, rdb_build_done, pread_aln=False):
 def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln = False):
@@ -211,6 +216,7 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
     assert_nonzero('preads4falcon.fasta')
     assert_nonzero(o_fofn_fn)
+    return 0
 
 merged_las_fofn_bfn = 'merged_las.fofn'
 #DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -350,6 +356,7 @@ def run_falcon_build_pdb(input_files, output_files):
     job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'preads')
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
+    return 0
 
 def _linewrap_fasta(ifn, ofn):
     """For the pbsmrtpipe validator.
@@ -393,6 +400,7 @@ def run_falcon_asm(input_files, output_files):
         # Really, we want to detect 0 base-length, but I do not know how yet.
         raise Exception("No records found in primary contigs: '%s'" %os.path.abspath(p_ctg))
     say('Finished run_falcon_asm(%s, %s)' %(repr(input_files), repr(output_files)))
+    return 0
 
 def run_falconx(input_files, output_files):
     i_json_config_fn, i_fofn_fn = input_files
@@ -413,6 +421,7 @@ def run_hgap(input_files, output_files):
     system(cmd)
     # Link the output fasta to the final assembly of HGAP.
     symlink(final_asm_fn, o_fasta_fn)
+    return 0
 
 def run_report_preassembly_yield(input_files, output_files):
     i_json_config_fn, i_preads_fofn_fn, i_raw_reads_fofn_fn = input_files
@@ -424,6 +433,7 @@ def run_report_preassembly_yield(input_files, output_files):
         'o_json_fn': o_json_fn,
     }
     report_preassembly.for_task(**kwds)
+    return 0
 
 def assert_nonzero(fn):
     if filesize(fn) == 0:
