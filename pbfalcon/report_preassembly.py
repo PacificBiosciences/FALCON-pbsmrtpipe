@@ -149,7 +149,7 @@ def for_task(
         content = report.to_json()
         ofs.write(content)
 
-def to_report(stats_raw_reads, stats_seed_reads, stats_corrected_reads, length_cutoff=None, genome_length=None):
+def to_report(stats_raw_reads, stats_seed_reads, stats_corrected_reads, genome_length=None, length_cutoff=None):
     """All inputs are paths to fasta files.
     """
     log.info('stats for raw reads:       %s' %repr(stats_raw_reads))
