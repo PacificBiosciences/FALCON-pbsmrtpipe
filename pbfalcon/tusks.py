@@ -402,12 +402,6 @@ def run_falcon_asm(input_files, output_files):
     say('Finished run_falcon_asm(%s, %s)' %(repr(input_files), repr(output_files)))
     return 0
 
-def run_falconx(input_files, output_files):
-    i_json_config_fn, i_fofn_fn = input_files
-    o_fasta_fn, = output_files
-    run_cmd('touch %s' %o_fasta_fn, sys.stdout, sys.stderr, shell=False)
-    say('Finished run_falconx(%s, %s)' %(repr(input_files), repr(output_files)))
-
 def run_hgap(input_files, output_files):
     i_cfg_fn, i_logging_fn, i_subreadset_fn = input_files
     o_fasta_fn, = output_files
