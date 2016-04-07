@@ -52,7 +52,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_make_fofn_abs(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon0_build_rdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ, FT(FT_DUMMY, 'job.done')], is_distributed=False)
+@registry('task_falcon0_build_rdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ, FT(FT_DUMMY, 'job.done')], is_distributed=True)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_build_rdb(rtc.task.input_files, rtc.task.output_files)
@@ -94,7 +94,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
-@registry('task_falcon2_run_asm', '0.0.0', [FT_JSON, FT_FOFN], [FT_FASTA], is_distributed=False)
+@registry('task_falcon2_run_asm', '0.0.0', [FT_JSON, FT_FOFN], [FT_FASTA], is_distributed=True)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
