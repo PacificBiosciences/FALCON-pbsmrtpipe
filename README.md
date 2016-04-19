@@ -1,4 +1,6 @@
 # FALCON using pbsmrtpipe for workflow
+**pbsmrtpipe** would be used to run the tasks and to update the tool-contracts,
+but otherwise it is not really needed here.
 
 # Utilities
 ## canonical.py
