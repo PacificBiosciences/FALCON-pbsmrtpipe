@@ -68,15 +68,15 @@ pa_concurrent_jobs = 32
 # ecoli based on Jim's run: http://smrtlink-beta:8080/#/analysis-job/2437
 defaults_ecoli = """
 genome_size = 4500000
-seed_coverage = 20.5
+seed_coverage = 27
 length_cutoff = -1
 length_cutoff_pr = 500
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
-overlap_filtering_setting = --max_diff 200 --max_cov 100 --min_cov 2 --bestn 10 --n_core 4
-ovlp_DBsplit_option = -x500 -s100
-ovlp_HPCdaligner_option = -v -dal24 -M16 -h35 -e.93 -l1000 -s100
-pa_DBsplit_option = -x500 -s100
-pa_HPCdaligner_option =   -v -dal24 -M16 -h35 -e.70 -l1000 -s100
+overlap_filtering_setting = --max_diff 60 --max_cov 100 --min_cov 4 --bestn 10 --n_core 4
+ovlp_dbsplit_option = -x500 -s200
+ovlp_hpcdaligner_option = -v -dal24 -t16 -h35 -e.93 -l1000 -s100 -k25
+pa_dbsplit_option =   -x500 -s200
+pa_hpcdaligner_option =   -v -dal24 -t14 -h70 -e.75 -l1000 -s100 -k18
 """
 defaults_yeast = """
 genome_size = 12000000
