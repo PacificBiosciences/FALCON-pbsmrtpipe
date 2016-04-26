@@ -110,4 +110,6 @@ def run_rtc(rtc):
     return pbfalcon.run_report_preassembly_yield(rtc.task.input_files, rtc.task.output_files)
 
 if __name__ == '__main__':
+    from falcon_kit import run_support
+    run_support.logger = logging.getLogger("fc_run")
     sys.exit(registry_runner(registry, sys.argv[1:]))
