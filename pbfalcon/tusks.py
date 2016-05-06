@@ -328,8 +328,8 @@ def create_merge_tasks(i_fofn_fn, run_jobs_fn, wd, db_prefix, config):
         out_file_fn = os.path.abspath("%s/preads/%s" %(wd, fasta_bfn))
         #out_done = makePypeLocalFile(os.path.abspath( "%s/preads/c_%05d_done" % (wd, p_id)  ))
         parameters =  {
-                       "db_fn": '../{}'.format(db_prefix),
-                       "las_fn": '../{}/{}'.format(merge_subdir, las_bfn), # assuming merge ran in merge_dir
+                       "db_fn": '{}/{}'.format(os.getcwd(), db_prefix),
+                       "las_fn": '{}/{}/{}'.format(os.getcwd(), merge_subdir, las_bfn), # assuming merge ran in merge_dir
                        "out_file_fn": out_file_fn,
                        #"out_done": out_done,
                        "config": config}
