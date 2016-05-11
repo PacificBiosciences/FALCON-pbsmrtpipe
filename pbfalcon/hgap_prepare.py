@@ -33,6 +33,13 @@ DEFAULT_LOGGING_CFG = {
     'filters': {
     },
     'handlers': {
+        'handler_file_all': {
+            'class': 'logging.FileHandler',
+            'level': 'DEBUG',
+            'formatter': 'format_full',
+            'filename': 'all.log',
+            'mode': 'w',
+        },
         'handler_file_pypeflow': {
             'class': 'logging.FileHandler',
             'level': 'INFO',
@@ -67,7 +74,7 @@ DEFAULT_LOGGING_CFG = {
         },
     },
     'root': {
-        'handlers': ['handler_stream'],
+        'handlers': ['handler_stream', 'handler_file_all'],
         'level': 'NOTSET',
     },
     'disable_existing_loggers': False
