@@ -3,6 +3,7 @@ from .. import sys
 
 from pbcore.io import (SubreadSet, HdfSubreadSet, FastaReader, FastaWriter,
                        FastqReader, FastqWriter)
+from pypeflow.pwatcher_bridge import PypeProcWatcherWorkflow, MyFakePypeThreadTaskBase
 from pypeflow.controller import PypeThreadWorkflow
 from pypeflow.data import PypeLocalFile, makePypeLocalFile, fn
 from pypeflow.task import PypeTask, PypeThreadTaskBase
@@ -13,6 +14,11 @@ import os
 import cStringIO
 
 log = logging.getLogger(__name__)
+
+#PypeWorkflow = PypeThreadWorkflow
+#PypeTaskBase = PypeThreadTaskBase
+PypeWorkflow = PypeProcWatcherWorkflow
+PypeTaskBase = MyFakePypeThreadTaskBase
 
 def say(x):
     log.warning(x)
@@ -257,7 +263,10 @@ def flow(config):
     #wf.refreshTargets(exitOnFailure=exitOnFailure)
     #concurrent_jobs = config["pa_concurrent_jobs"]
     #PypeThreadWorkflow.setNumThreadAllowed(concurrent_jobs, concurrent_jobs)
-    wf = PypeThreadWorkflow()
+    #wf = PypeThreadWorkflow()
+    #wf = PypeWorkflow()
+    #wf = PypeWorkflow(job_type='local')
+    wf = PypeWorkflow(job_type=config['job_type'])
 
     dataset_pfn = makePypeLocalFile(config['pbsmrtpipe']['input_files'][0])
     fdataset_pfn = makePypeLocalFile('filtered.subreadset.xml')
@@ -266,7 +275,7 @@ def flow(config):
             inputs = {"i_dataset": dataset_pfn,},
             outputs = {"o_dataset": fdataset_pfn,},
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/filterbam")
     task = make_task(task_filterbam)
     wf.addTask(task)
@@ -277,7 +286,7 @@ def flow(config):
             inputs = {"dataset": fdataset_pfn,},
             outputs =  {"fasta": orig_fasta_pfn,},
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/bam2fasta")
     task = make_task(task_bam2fasta)
     wf.addTask(task)
@@ -289,7 +298,7 @@ def flow(config):
             inputs =  {"orig_fasta": orig_fasta_pfn,},
             outputs =  {"asm_fasta": asm_fasta_pfn,},
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/falcon")
     #task = make_task(task_falcon)
     #wf.addTask(task)
@@ -302,7 +311,7 @@ def flow(config):
             inputs =  {"fasta": asm_fasta_pfn,},
             outputs = {"referenceset": referenceset_pfn,},
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/fasta2referenceset")
     task = make_task(task_fasta2referenceset)
     wf.addTask(task)
@@ -320,7 +329,7 @@ def flow(config):
                       "referenceset": referenceset_pfn,},
             outputs = {"alignmentset": alignmentset_pfn,},
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/pbalign")
     task = make_task(task_pbalign)
     wf.addTask(task)
@@ -343,7 +352,7 @@ def flow(config):
                 #"consensus_contigset": consensus_contigset_pfn,
             },
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/genomic_consensus")
     task = make_task(task_genomic_consensus)
     wf.addTask(task)
@@ -363,7 +372,7 @@ def flow(config):
                       "gathered_alignmentset": gathered_alignmentset_pfn,},
             outputs = {"alignment_summary_gff": alignment_summary_gff_pfn,},
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/summarize_coverage")
     task = make_task(task_summarize_coverage)
     #wf.addTask(task)
@@ -375,7 +384,7 @@ def flow(config):
                       #"gathered_fastq": gathered_fastq_pfn,},
             outputs = {"polished_assembly_report_json": polished_assembly_report_json_pfn,},
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/polished_assembly_report")
     task = make_task(task_polished_assembly_report)
     #wf.addTask(task)
@@ -392,7 +401,7 @@ def flow(config):
             inputs = {"foo1": foo_fn1,},
             outputs =  {"foo2": foo_fn2,},
             parameters = parameters,
-            TaskType = PypeThreadTaskBase,
+            TaskType = PypeTaskBase,
             URL = "task://localhost/foo")
     task = make_task(task_foo)
     wf.addTask(task)
