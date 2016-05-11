@@ -3,6 +3,7 @@ from .. import sys
 
 from pbcore.io import (SubreadSet, HdfSubreadSet, FastaReader, FastaWriter,
                        FastqReader, FastqWriter)
+from pbcoretools.tasks.converters import run_bam_to_fasta
 from pypeflow.pwatcher_bridge import PypeProcWatcherWorkflow, MyFakePypeThreadTaskBase
 from pypeflow.controller import PypeThreadWorkflow
 from pypeflow.data import PypeLocalFile, makePypeLocalFile, fn
@@ -23,11 +24,13 @@ PypeTaskBase = MyFakePypeThreadTaskBase
 def say(x):
     log.warning(x)
     print 'IN FLOW!'
-def run_bam_to_fastx(program_name, fastx_reader, fastx_writer,
+def HOLD_run_bam_to_fastx(program_name, fastx_reader, fastx_writer,
                      input_file_name, output_file_name,
                      min_subread_length=0):
     """Copied from pbsmrtpipe/pb_tasks/pacbio.py,
     with minor changes.
+    That was later moved to pbcoretools/tasks/converters.py,
+    and that was recently changed enough that something here is completely broken.
     """
     # XXX this is really annoying; bam2fastx needs a --no-gzip feature
     #tmp_out_prefix = tempfile.NamedTemporaryFile().name
@@ -212,9 +215,10 @@ def task_bam2fasta(self):
     #sys.system('touch {}'.format(fn(self.fasta)))
     input_file_name = fn(self.dataset)
     output_file_name = fn(self.fasta)
-    run_bam_to_fastx('bam2fasta', FastaReader, FastaWriter,
-                     input_file_name, output_file_name,
-                     min_subread_length=0)
+    #run_bam_to_fastx('bam2fasta', FastaReader, FastaWriter,
+    #                 input_file_name, output_file_name,
+    #                 min_subread_length=0)
+    run_bam_to_fasta(input_file_name, output_file_name)
 def task_falcon(self):
     input_file_name = fn(self.orig_fasta)
     output_file_name = fn(self.asm_fasta)
