@@ -4,14 +4,17 @@ from .. import sys
 from pbcore.io import (SubreadSet, HdfSubreadSet, FastaReader, FastaWriter,
                        FastqReader, FastqWriter)
 from pbcoretools.tasks.converters import run_bam_to_fasta
+from pbcoretools.chunking.gather import gather_alignmentset
 from pypeflow.pwatcher_bridge import PypeProcWatcherWorkflow, MyFakePypeThreadTaskBase
 from pypeflow.controller import PypeThreadWorkflow
 from pypeflow.data import PypeLocalFile, makePypeLocalFile, fn
 from pypeflow.task import PypeTask, PypeThreadTaskBase
 import contextlib
 import gzip
+import json
 import logging
 import os
+import pprint
 import cStringIO
 
 log = logging.getLogger(__name__)
@@ -111,6 +114,21 @@ def run_falcon(i_fasta_fn, o_fasta_fn, config_falcon):
     sys.system(cmd)
     sys.system('ln {} {}'.format(
         '2-asm-falcon/p_ctg.fa', o_fasta_fn))
+def run_pbalign_scatter(subreads, ds_reference, cjson_out):
+    args = ['python -m pbcoretools.tasks.scatter_subread_reference',
+        '-v',
+        '--max_nchunks=5',
+        subreads,
+        ds_reference,
+        cjson_out,
+    ]
+    sys.system(' '.join(args))
+def run_pbalign_gather(alignmentsets, ds_out):
+    #'python -m pbcoretools.tasks.gather_alignments cjson_in ds_out'
+    input_files = alignmentsets
+    output_file = fn(ds_out) #alignmentset
+    args = ['python -c "from pbcoretools.chunking.gather import gather_alignmentset; gather_alignmentset(input_files, output_file)"']
+    gather_alignmentset(input_files, output_file)
 def run_pbalign(reads, asm, alignmentset, options, algorithmOptions):
     """
  BlasrService: Align reads to references using blasr.
@@ -122,26 +140,6 @@ def run_pbalign(reads, asm, alignmentset, options, algorithmOptions):
  BamPostService: Call "samtools index /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/pbalign.tasks.pbalign-0/aligned.subreads.alignmentset.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/pbalign.tasks.pbalign-0/aligned.subreads.alignmentset.bam.bai"
  BamPostService: Call "pbindex /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/polished-falcon-lambda-007-tiny/job_output/tasks/pbalign.tasks.pbalign-0/aligned.subreads.alignmentset.bam"
 ] OutputService: Generating the output XML file
-    """
-    """
-INFO:root:BlasrService: Align reads to references using blasr.
-[INFO] 2016-02-04 14:50:25,434Z [root run 178] BlasrService: Align reads to references using blasr.
-INFO:root:BlasrService: Call "blasr /pbi/dept/secondary/siv/testdata/SA3-DS/lambda/2372215/0007_tiny/Analysis_Results/m150404_101626_42267_c100807920800000001823174110291514_s1_p0.all.subreadset.xml /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/asm.fasta -out /scratch/tmpwWCCmy/YrpIw_.bam  -bam  -bestn 10 -minMatch 12  -nproc 16  -minSubreadLength 50 -minAlnLength 50  -minPctSimilarity 70 -minPctAccuracy 70 -hitPolicy randombest  -randomSeed 1  -minPctSimilarity 70.0 "
-[INFO] 2016-02-04 14:50:25,435Z [root Execute 63] BlasrService: Call "blasr /pbi/dept/secondary/siv/testdata/SA3-DS/lambda/2372215/0007_tiny/Analysis_Results/m150404_101626_42267_c100807920800000001823174110291514_s1_p0.all.subreadset.xml /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/asm.fasta -out /scratch/tmpwWCCmy/YrpIw_.bam  -bam  -bestn 10 -minMatch 12  -nproc 16  -minSubreadLength 50 -minAlnLength 50  -minPctSimilarity 70 -minPctAccuracy 70 -hitPolicy randombest  -randomSeed 1  -minPctSimilarity 70.0 "
-INFO:root:FilterService: Filter alignments using samFilter.
-[INFO] 2016-02-04 14:51:00,543Z [root run 150] FilterService: Filter alignments using samFilter.
-INFO:root:FilterService: Call "rm -f /scratch/tmpwWCCmy/Ba3axn.bam && ln -s /scratch/tmpwWCCmy/YrpIw_.bam /scratch/tmpwWCCmy/Ba3axn.bam"
-[INFO] 2016-02-04 14:51:00,544Z [root Execute 63] FilterService: Call "rm -f /scratch/tmpwWCCmy/Ba3axn.bam && ln -s /scratch/tmpwWCCmy/YrpIw_.bam /scratch/tmpwWCCmy/Ba3axn.bam"
-INFO:root:BamPostService: Sort and build index for a bam file.
-[INFO] 2016-02-04 14:51:00,692Z [root run 100] BamPostService: Sort and build index for a bam file.
-INFO:root:BamPostService: Call "samtools sort -m 4G /scratch/tmpwWCCmy/Ba3axn.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset"
-[INFO] 2016-02-04 14:51:00,692Z [root Execute 63] BamPostService: Call "samtools sort -m 4G /scratch/tmpwWCCmy/Ba3axn.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset"
-INFO:root:BamPostService: Call "samtools index /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam.bai"
-[INFO] 2016-02-04 14:51:10,610Z [root Execute 63] BamPostService: Call "samtools index /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam.bai"
-INFO:root:BamPostService: Call "pbindex /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam"
-[INFO] 2016-02-04 14:51:12,162Z [root Execute 63] BamPostService: Call "pbindex /home/UNIXHOME/cdunn/repo/pb/smrtanalysis-client/smrtanalysis/siv/testkit-jobs/sa3_pipelines/hgap_lean-lambda-007-tiny/job_output/tasks/falcon_ns.tasks.task_hgap_prepare-0/aligned.subreads.alignmentset.bam"
-INFO:root:OutputService: Generating the output XML file
-[INFO] 2016-02-04 14:51:13,239Z [root _output 228] OutputService: Generating the output XML file
     """
     args = [
         'pbalign',
@@ -234,6 +232,11 @@ def task_fasta2referenceset(self):
     cmd = 'dataset create --type ReferenceSet --generateIndices {} {}'.format(
             output_file_name, input_file_name)
     sys.system(cmd)
+def task_pbalign_scatter(self):
+    reads = fn(self.dataset)
+    referenceset = fn(self.referenceset)
+    out_json = fn(self.out_json)
+    run_pbalign_scatter(subreads=reads, ds_reference=referenceset, cjson_out=out_json)
 def task_pbalign(self):
     reads = fn(self.dataset)
     referenceset = fn(self.referenceset)
@@ -270,7 +273,8 @@ def flow(config):
     #wf = PypeThreadWorkflow()
     #wf = PypeWorkflow()
     #wf = PypeWorkflow(job_type='local')
-    wf = PypeWorkflow(job_type=config['job_type'])
+    log.debug('config=\n{}'.format(pprint.pformat(config)))
+    wf = PypeWorkflow(job_type=config['hgap']['job_type'])
 
     dataset_pfn = makePypeLocalFile(config['pbsmrtpipe']['input_files'][0])
     fdataset_pfn = makePypeLocalFile('filtered.subreadset.xml')
@@ -321,23 +325,54 @@ def flow(config):
     wf.addTask(task)
     wf.refreshTargets()
 
-    # pbalign (TODO: Look into chunking.)
-    alignmentset_pfn = makePypeLocalFile('aligned.subreads.alignmentset.xml')
-    """Also produces:
-    aligned.subreads.alignmentset.bam
-    aligned.subreads.alignmentset.bam.bai
-    aligned.subreads.alignmentset.bam.pbi
+    # scatter the subreads for pbalign
+    """Produces:
+    pbalign_chunk.json
+    chunk_subreadset_*.subreadset.xml
     """
+    pbalign_chunk_json_pfn = makePypeLocalFile('pbalign_chunk.json')
     make_task = PypeTask(
             inputs = {"dataset": dataset_pfn,
                       "referenceset": referenceset_pfn,},
-            outputs = {"alignmentset": alignmentset_pfn,},
+            outputs = {"out_json": pbalign_chunk_json,},
             parameters = parameters,
             TaskType = PypeTaskBase,
-            URL = "task://localhost/pbalign")
-    task = make_task(task_pbalign)
+            URL = "task://localhost/pbalign_scatter")
+    task = make_task(task_pbalign_scatter)
     wf.addTask(task)
     wf.refreshTargets()
+
+    # After scattering, we can specify the pbalign jobs.
+    tasks = create_tasks_pbalign(fn(pbalign_chunk_json_pfn))
+    wf.addTasks(tasks)
+    wf.refreshTargets()
+def yield_pipeline_chunk_names_from_json(ifs, key):
+    d = json.loads(ifs.read())
+    for cs in d['chunks']:
+        #chunk_id = cs['chunk_id']
+        chunk_datum = cs['chunk']
+        yield chunk_datum[key]
+def create_tasks_pbalign(chunk_json_fn):
+    tasks = []
+    fn = []
+    for subreadset_fn in yield_pipeline_chunk_names_from_json(open(chunk_json_fn), ''):
+        # pbalign (TODO: Look into chunking.)
+        alignmentset_pfn = makePypeLocalFile('aligned.subreads.alignmentset.xml')
+        """Also produces:
+        aligned.subreads.alignmentset.bam
+        aligned.subreads.alignmentset.bam.bai
+        aligned.subreads.alignmentset.bam.pbi
+        """
+        make_task = PypeTask(
+                inputs = {"dataset": dataset_pfn,
+                        "referenceset": referenceset_pfn,},
+                outputs = {"alignmentset": alignmentset_pfn,},
+                parameters = parameters,
+                TaskType = PypeTaskBase,
+                URL = "task://localhost/pbalign")
+        task = make_task(task_pbalign)
+        return task
+    run_pbalign_gather
 
     # genomic_consensus.tasks.variantcaller-0 (TODO: Look into chunking.)
     polished_fastq_pfn = makePypeLocalFile('consensus.fastq')

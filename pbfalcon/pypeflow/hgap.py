@@ -123,6 +123,7 @@ DEFAULT_OPTIONS = """
     "SuppressAuto": true,
     "GenomeSize": 8000,
     "min_length_cutoff": 1,
+    "job_type": "local",
     "~comment": "Overrides for full HGAP pipeline"
   },
   "falcon": {
