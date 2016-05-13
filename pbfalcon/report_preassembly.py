@@ -52,6 +52,22 @@ def get_fasta_readlengths(fasta_file):
     lens.sort()
     return lens
 
+def get_fasta_readlengths_a(fasta_file):
+    """Assume we ran 'DBsplit -a',
+    so we must ignore all but the short of any read.
+    """
+    lens = []
+    zmw2len = dict()
+    with FastaReader(fasta_file) as f:
+        for record in f:
+            l = len(record.sequence)
+            zmw = record.id.split('/')[1]
+            best_len = zmw2len.get(zmw)
+            if best_len is None or best_len < l:
+                zmw2len[zmw] = l
+    lens = list(zmw2len.values())
+    lens.sort()
+    return lens
 
 class FastaContainer(object):
 
@@ -108,6 +124,14 @@ def read_lens_from_fofn(fofn_fn):
     # get_fasta_readlengths() returns sorted, so sorting the chain is roughly linear.
     return list(sorted(itertools.chain.from_iterable(get_fasta_readlengths(fn) for fn in fns)))
 
+def read_lens_from_fofn_a(fofn_fn):
+    """Assume we ran 'DBsplit -a',
+    so we must ignore all but the short of any read.
+    """
+    fns = [fn.strip() for fn in open(fofn_fn) if fn.strip()]
+    # get_fasta_readlengths() returns sorted, so sorting the chain is roughly linear.
+    return list(sorted(itertools.chain.from_iterable(get_fasta_readlengths_a(fn) for fn in fns)))
+
 def _get_length_cutoff_from_somewhere(length_cutoff, tasks_dir):
     if length_cutoff < 0:
         fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'length_cutoff')
@@ -141,8 +165,11 @@ def for_task(
 
     raw_reads = read_lens_from_fofn(i_raw_reads_fofn_fn)
     stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
+    del raw_reads
 
-    seed_reads = cutoff_reads(raw_reads, length_cutoff)
+    uniq_raw_reads = read_lens_from_fofn_a(i_raw_reads_fofn_fn)
+    seed_reads = cutoff_reads(uniq_raw_reads, length_cutoff)
+    del uniq_raw_reads
     stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
 
     preads = read_lens_from_fofn(i_preads_fofn_fn)
