@@ -126,7 +126,7 @@ def run_pbalign_scatter(subreads, ds_reference, cjson_out):
 def run_pbalign_gather(alignmentsets, ds_out):
     #'python -m pbcoretools.tasks.gather_alignments cjson_in ds_out'
     input_files = alignmentsets
-    output_file = fn(ds_out) #alignmentset
+    output_file = ds_out #alignmentset
     args = ['python -c "from pbcoretools.chunking.gather import gather_alignmentset; gather_alignmentset(input_files, output_file)"']
     gather_alignmentset(input_files, output_file)
 def run_pbalign(reads, asm, alignmentset, options, algorithmOptions):
@@ -237,6 +237,11 @@ def task_pbalign_scatter(self):
     referenceset = fn(self.referenceset)
     out_json = fn(self.out_json)
     run_pbalign_scatter(subreads=reads, ds_reference=referenceset, cjson_out=out_json)
+def task_pbalign_gather(self):
+    ds_out = fn(self.ds_out)
+    dos = self.inputDataObjs
+    alignmentsets = [fn(v) for k,v in dos.items() if k.startswith('align')]
+    run_pbalign_gather(alignmentsets, ds_out)
 def task_pbalign(self):
     reads = fn(self.dataset)
     referenceset = fn(self.referenceset)
@@ -263,6 +268,46 @@ def task_foo(self):
     log.debug('WARNME1 {!r}'.format(__name__))
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
     sys.system('touch {}'.format(fn(self.foo2)))
+
+def yield_pipeline_chunk_names_from_json(ifs, key):
+    d = json.loads(ifs.read())
+    for cs in d['chunks']:
+        #chunk_id = cs['chunk_id']
+        chunk_datum = cs['chunk']
+        yield chunk_datum[key]
+def create_tasks_pbalign(chunk_json_pfn, referenceset_pfn, parameters):
+    tasks = list()
+    alignmentsets = dict()
+    for i, subreadset_fn in enumerate(sorted(yield_pipeline_chunk_names_from_json(open(fn(chunk_json_pfn)), '$chunk.subreadset_id'))):
+        subreadset_pfn = makePypeLocalFile(subreadset_fn)
+        alignmentset_pfn = makePypeLocalFile('aligned.subreads.alignmentset.{}.xml'.format(i))
+        alignmentsets['align%d'%i] = alignmentset_pfn
+        """Also produces:
+        aligned.subreads.alignmentset.bam
+        aligned.subreads.alignmentset.bam.bai
+        aligned.subreads.alignmentset.bam.pbi
+        """
+        make_task = PypeTask(
+                inputs = {"chunk_json": chunk_json_pfn,
+                          "dataset": subreadset_pfn,
+                          "referenceset": referenceset_pfn,},
+                outputs = {"alignmentset": alignmentset_pfn,},
+                parameters = parameters,
+                TaskType = PypeTaskBase,
+                URL = "task://localhost/pbalign/{}".format(os.path.basename(subreadset_fn)))
+        task = make_task(task_pbalign)
+        tasks.append(task)
+    alignmentset_pfn = makePypeLocalFile('aligned.subreads.alignmentset.xml')
+    log.debug('alis:{}'.format(repr(alignmentsets)))
+    make_task = PypeTask(
+            inputs = alignmentsets,
+            outputs = {"ds_out": alignmentset_pfn,},
+            parameters = parameters,
+            TaskType = PypeTaskBase,
+            URL = "task://localhost/pbalign_gather")
+    task = make_task(task_pbalign_gather)
+    tasks.append(task)
+    return tasks, alignmentset_pfn
 
 def flow(config):
     parameters = config
@@ -334,7 +379,7 @@ def flow(config):
     make_task = PypeTask(
             inputs = {"dataset": dataset_pfn,
                       "referenceset": referenceset_pfn,},
-            outputs = {"out_json": pbalign_chunk_json,},
+            outputs = {"out_json": pbalign_chunk_json_pfn,},
             parameters = parameters,
             TaskType = PypeTaskBase,
             URL = "task://localhost/pbalign_scatter")
@@ -343,36 +388,11 @@ def flow(config):
     wf.refreshTargets()
 
     # After scattering, we can specify the pbalign jobs.
-    tasks = create_tasks_pbalign(fn(pbalign_chunk_json_pfn))
-    wf.addTasks(tasks)
+    tasks, alignmentset_pfn = create_tasks_pbalign(pbalign_chunk_json_pfn, referenceset_pfn, parameters)
+    #wf.addTasks(tasks)
+    for task in tasks:
+        wf.addTask(task)
     wf.refreshTargets()
-def yield_pipeline_chunk_names_from_json(ifs, key):
-    d = json.loads(ifs.read())
-    for cs in d['chunks']:
-        #chunk_id = cs['chunk_id']
-        chunk_datum = cs['chunk']
-        yield chunk_datum[key]
-def create_tasks_pbalign(chunk_json_fn):
-    tasks = []
-    fn = []
-    for subreadset_fn in yield_pipeline_chunk_names_from_json(open(chunk_json_fn), ''):
-        # pbalign (TODO: Look into chunking.)
-        alignmentset_pfn = makePypeLocalFile('aligned.subreads.alignmentset.xml')
-        """Also produces:
-        aligned.subreads.alignmentset.bam
-        aligned.subreads.alignmentset.bam.bai
-        aligned.subreads.alignmentset.bam.pbi
-        """
-        make_task = PypeTask(
-                inputs = {"dataset": dataset_pfn,
-                        "referenceset": referenceset_pfn,},
-                outputs = {"alignmentset": alignmentset_pfn,},
-                parameters = parameters,
-                TaskType = PypeTaskBase,
-                URL = "task://localhost/pbalign")
-        task = make_task(task_pbalign)
-        return task
-    run_pbalign_gather
 
     # genomic_consensus.tasks.variantcaller-0 (TODO: Look into chunking.)
     polished_fastq_pfn = makePypeLocalFile('consensus.fastq')
