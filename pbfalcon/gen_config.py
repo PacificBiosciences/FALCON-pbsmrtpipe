@@ -39,12 +39,12 @@ genome_size = 48000
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
 length_cutoff = -1
 length_cutoff_pr = 12000
-pa_DBsplit_option = -x500 -s50
+pa_DBsplit_option = -x500 -s50 -a
 pa_HPCdaligner_option = -v -dal4 -t16 -e.70 -l1000 -s1000
 pa_concurrent_jobs = 32
 overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24
 ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
-ovlp_DBsplit_option = -x500 -s50
+ovlp_DBsplit_option = -x500 -s50 -a
 ovlp_concurrent_jobs = 32
 """
 # These values will need more adjusting, but at least they worked on some dataset.
@@ -73,9 +73,9 @@ length_cutoff = -1
 length_cutoff_pr = 500
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 6
 overlap_filtering_setting = --max_diff 60 --max_cov 100 --min_cov 4 --bestn 10 --n_core 4
-ovlp_dbsplit_option = -x500 -s200
+ovlp_dbsplit_option = -x500 -s200 -a
 ovlp_hpcdaligner_option = -v -dal24 -t16 -h35 -e.93 -l1000 -s100 -k25
-pa_dbsplit_option =   -x500 -s200
+pa_dbsplit_option =   -x500 -s200 -a
 pa_hpcdaligner_option =   -v -dal24 -t14 -h70 -e.75 -l1000 -s100 -k18
 """
 defaults_yeast = """
