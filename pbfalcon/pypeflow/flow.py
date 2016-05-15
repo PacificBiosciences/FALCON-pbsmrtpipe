@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from .. import sys
 
 from pbcore.io import (SubreadSet, HdfSubreadSet, FastaReader, FastaWriter,
+                       AlignmentSet, ReferenceSet, ContigSet,
                        FastqReader, FastqWriter)
 from pbcoretools.tasks.converters import run_bam_to_fasta
 from pbcoretools.chunking.gather import gather_alignmentset
@@ -9,12 +10,15 @@ from pypeflow.pwatcher_bridge import PypeProcWatcherWorkflow, MyFakePypeThreadTa
 from pypeflow.controller import PypeThreadWorkflow
 from pypeflow.data import PypeLocalFile, makePypeLocalFile, fn
 from pypeflow.task import PypeTask, PypeThreadTaskBase
+import pysam
+
 import contextlib
 import gzip
 import json
 import logging
 import os
 import pprint
+import re
 import cStringIO
 
 log = logging.getLogger(__name__)
@@ -125,10 +129,54 @@ def run_pbalign_scatter(subreads, ds_reference, cjson_out):
     sys.system(' '.join(args))
 def run_pbalign_gather(alignmentsets, ds_out):
     #'python -m pbcoretools.tasks.gather_alignments cjson_in ds_out'
+    #args = ['python -c "from pbcoretools.chunking.gather import gather_alignmentset; gather_alignmentset(input_files, output_file)"']
     input_files = alignmentsets
     output_file = ds_out #alignmentset
-    args = ['python -c "from pbcoretools.chunking.gather import gather_alignmentset; gather_alignmentset(input_files, output_file)"']
     gather_alignmentset(input_files, output_file)
+def run_gc_scatter(alignmentset_fn, referenceset_fn, chunks_fofn_fn):
+    #'python -m pbcoretools.tasks.scatter_alignments_reference alignment_ds ds_reference json_out'
+    dir_name = os.getcwd()
+    dset = AlignmentSet(alignmentset_fn, strict=True)
+    maxChunks = 2
+    dset_chunks = dset.split(contigs=True, maxChunks=maxChunks, breakContigs=True)
+
+    # referenceset is used only for sanity checking.
+    ReferenceSet(referenceset_fn, strict=True)
+
+    chunk_fns = []
+    for i, dset in enumerate(dset_chunks):
+        chunk_name = 'chunk_alignmentset_{}.alignmentset.xml'.format(i)
+        chunk_fn = os.path.join(dir_name, chunk_name)
+        dset.write(chunk_fn)
+        chunk_fns.append(chunk_fn)
+    with open(chunks_fofn_fn, 'w') as ofs:
+        for fn in chunk_fns:
+            ofs.write('{}\n'.format(fn))
+    log.info('Wrote {} chunks into "{}"'.format(len(dset_chunks), chunks_fofn_fn))
+def __gather_contigset(input_files, output_file, new_resource_file):
+    """Copied from pbcoretools.chunking.gather:__gather_contigset()
+    """
+    skip_empty = True
+    if skip_empty:
+        _input_files = []
+        for file_name in input_files:
+            cs = ContigSet(file_name)
+            if len(cs.toExternalFiles()) > 0:
+                _input_files.append(file_name)
+        input_files = _input_files
+    tbr = ContigSet(*input_files)
+    tbr.consolidate(new_resource_file)
+    tbr.newUuid()
+    tbr.write(output_file)
+    return output_file
+def run_gc_gather(dset_fns, ds_out_fn):
+    """Gather contigsets/fasta into 1 contigset/fasta.
+    """
+    # python -m pbcoretools.tasks.gather_contigs --rtc
+    log.info('Gathering {!r} from chunks {!r}'.format(ds_out_fn, dset_fns))
+    assert ds_out_fn.endswith('xml')
+    new_resource_fn = os.path.splitext(ds_out_fn)[0] + '.fasta'
+    __gather_contigset(dset_fns, ds_out_fn, new_resource_fn)
 def run_pbalign(reads, asm, alignmentset, options, algorithmOptions):
     """
  BlasrService: Align reads to references using blasr.
@@ -160,12 +208,18 @@ def run_pbalign(reads, asm, alignmentset, options, algorithmOptions):
     sys.system(' '.join(args))
 def run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_contigset, options):
     """GenomicConsensus
+    Note: GenomicConsensus outputs .fasta instead of .contigset.xml, so
+    there is weird code in its resolved_tool_contract_runner() which substitutes
+    a filename and later converts .fasta to a contigset. That does not exist
+    for the non-pbcommand entry-point, so we copy that code here.
     TODO: Capture log output? Or figure out how to log to a file.
-    Something changed in variantCaller, so we must not pass the contigset .xml
     """
+    dataset_path = consensus_contigset
+    fasta_path = re.sub(".contigset.xml", ".fasta", dataset_path)
     args = [
         'variantCaller',
-        '--log-level INFO',
+        '--log-level DEBUG',
+        #'--log-file foo.log',
         #'--verbose',
         #'--debug', # requires 'ipdb'
         #'-j NWORKERS',
@@ -173,14 +227,20 @@ def run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_c
         #'--diploid', # binary
         #'--minConfidence 40',
         #'--minCoverage 5',
+        ' --alignmentSetRefWindows',
         options,
         '--referenceFilename', referenceset,
         '-o', polished_fastq,
         '-o', variants_gff,
-        #'-o', consensus_contigset,
+        '-o', fasta_path,
         alignmentset,
     ]
     sys.system(' '.join(args))
+
+    # Convert to contigset.xml
+    pysam.faidx(fasta_path)
+    ds = ContigSet(fasta_path, strict=True)
+    ds.write(dataset_path)
 def run_filterbam(ifn, ofn, config):
     """
     pbcoretools.tasks.filterdataset
@@ -233,33 +293,43 @@ def task_fasta2referenceset(self):
             output_file_name, input_file_name)
     sys.system(cmd)
 def task_pbalign_scatter(self):
-    reads = fn(self.dataset)
-    referenceset = fn(self.referenceset)
-    out_json = fn(self.out_json)
-    run_pbalign_scatter(subreads=reads, ds_reference=referenceset, cjson_out=out_json)
+    reads_fn = fn(self.dataset)
+    referenceset_fn = fn(self.referenceset)
+    out_json_fn = fn(self.out_json)
+    run_pbalign_scatter(subreads=reads_fn, ds_reference=referenceset_fn, cjson_out=out_json_fn)
 def task_pbalign_gather(self):
-    ds_out = fn(self.ds_out)
+    ds_out_fn = fn(self.ds_out)
     dos = self.inputDataObjs
-    alignmentsets = [fn(v) for k,v in dos.items() if k.startswith('align')]
-    run_pbalign_gather(alignmentsets, ds_out)
+    dset_fns = [fn(v) for k,v in dos.items() if k.startswith('alignmentset')]
+    run_pbalign_gather(dset_fns, ds_out_fn)
 def task_pbalign(self):
-    reads = fn(self.dataset)
-    referenceset = fn(self.referenceset)
-    alignmentset = fn(self.alignmentset)
+    reads_fn = fn(self.dataset)
+    referenceset_fn = fn(self.referenceset)
+    alignmentset_fn = fn(self.alignmentset)
     task_opts = self.parameters['pbalign']
     options = task_opts.get('options', '')
     algorithmOptions = task_opts.get('algorithmOptions', '')
-    run_pbalign(reads, referenceset, alignmentset, options, algorithmOptions)
+    run_pbalign(reads_fn, referenceset_fn, alignmentset_fn, options, algorithmOptions)
+def task_gc_scatter(self):
+    alignmentset_fn = fn(self.alignmentset)
+    referenceset_fn = fn(self.referenceset)
+    chunks_fofn_fn = fn(self.out_fofn)
+    run_gc_scatter(alignmentset_fn, referenceset_fn, chunks_fofn_fn)
+def task_gc_gather(self):
+    ds_out_fn = fn(self.ds_out)
+    dos = self.inputDataObjs
+    dset_fns = [fn(v) for k,v in dos.items() if k.startswith('contigset')]
+    run_gc_gather(dset_fns, ds_out_fn)
 def task_genomic_consensus(self):
-    alignmentset = fn(self.alignmentset)
-    referenceset = fn(self.referenceset)
-    polished_fastq = fn(self.polished_fastq)
-    variants_gff = fn(self.variants_gff)
-    #consensus_contigset = fn(self.consensus_contigset)
-    consensus_contigset = "DUMMY"
+    alignmentset_fn = fn(self.alignmentset)
+    referenceset_fn = fn(self.referenceset)
+    polished_fastq_fn = fn(self.polished_fastq)
+    variants_gff_fn = fn(self.variants_gff)
+    consensus_contigset_fn = fn(self.consensus_contigset)
+    #consensus_contigset_fn = "DUMMY"
     task_opts = self.parameters['variantCaller']
     options = task_opts.get('options', '')
-    run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_contigset, options)
+    run_gc(alignmentset_fn, referenceset_fn, polished_fastq_fn, variants_gff_fn, consensus_contigset_fn, options)
 def task_summarize_coverage(self):
     pass
 def task_polished_assembly_report(self):
@@ -276,12 +346,14 @@ def yield_pipeline_chunk_names_from_json(ifs, key):
         chunk_datum = cs['chunk']
         yield chunk_datum[key]
 def create_tasks_pbalign(chunk_json_pfn, referenceset_pfn, parameters):
+    """Create a pbalign task for each chunk, plus a gathering task.
+    """
     tasks = list()
     alignmentsets = dict()
     for i, subreadset_fn in enumerate(sorted(yield_pipeline_chunk_names_from_json(open(fn(chunk_json_pfn)), '$chunk.subreadset_id'))):
         subreadset_pfn = makePypeLocalFile(subreadset_fn)
-        alignmentset_pfn = makePypeLocalFile('aligned.subreads.alignmentset.{}.xml'.format(i))
-        alignmentsets['align%d'%i] = alignmentset_pfn
+        alignmentset_pfn = makePypeLocalFile('align.subreads.{:02d}.alignmentset.xml'.format(i))
+        alignmentsets['alignmentsets_{:02d}'.format(i)] = alignmentset_pfn
         """Also produces:
         aligned.subreads.alignmentset.bam
         aligned.subreads.alignmentset.bam.bai
@@ -308,6 +380,62 @@ def create_tasks_pbalign(chunk_json_pfn, referenceset_pfn, parameters):
     task = make_task(task_pbalign_gather)
     tasks.append(task)
     return tasks, alignmentset_pfn
+def mkdirs(d):
+    log.debug('mkdir -p {}'.format(d))
+    if not os.path.isdir(d):
+        os.makedirs(d)
+def create_tasks_gc(fofn_pfn, referenceset_pfn, parameters):
+    """Create a gc task for each chunk, plus a gathering task.
+    Here is the convoluted workflow:
+    1. For each gc instance "chunk":
+      A. variantCaller writes .fasta
+      B. We create a contigset for the .fasta
+    2. We keep the contigset output filenames in a FOFN (from run_gc_scatter)
+       and pass that to run_gc_gather().
+    3. We read each contigset and add them to a gathered ContigSet.
+    4. We "consolidate" their underlying .fasta "resources",
+       assuming their filenames match except extenion.
+    5. Finally, we write the gathered contigset.
+    Whew!
+    """
+    tasks = list()
+    contigsets = dict()
+    for i, alignmentset_fn in enumerate(open(fn(fofn_pfn)).read().split()):
+        wdir = 'gc-{:02}'.format(i)
+        mkdirs(wdir) # Assume CWD is correct.
+        alignmentset_pfn = makePypeLocalFile(alignmentset_fn) # New pfn cuz it was not pfn before.
+        polished_fastq_pfn = makePypeLocalFile(os.path.join(wdir, 'consensus.fastq'))
+        variants_gff_pfn = makePypeLocalFile(os.path.join(wdir, 'variants.gff'))
+        consensus_contigset_pfn = makePypeLocalFile(os.path.join(wdir, 'consensus.contigset.contigset.xml'))
+        """Also produces:
+        consensus.contigset.fasta
+        consensus.contigset.fasta.fai
+        """
+        contigsets['contigset_{:02d}'.format(i)] = consensus_contigset_pfn
+        make_task = PypeTask(
+                inputs = {"alignmentset": alignmentset_pfn,
+                          "referenceset": referenceset_pfn,},
+                outputs = {
+                    "polished_fastq": polished_fastq_pfn,
+                    "variants_gff": variants_gff_pfn,
+                    "consensus_contigset": consensus_contigset_pfn,
+                },
+                parameters = parameters,
+                TaskType = PypeTaskBase,
+                URL = "task://localhost/genomic_consensus/{}".format(os.path.basename(alignmentset_fn)))
+        task = make_task(task_genomic_consensus)
+        tasks.append(task)
+    contigset_pfn = makePypeLocalFile('contigset.xml')
+    log.debug('contigsets:{}'.format(repr(contigsets)))
+    make_task = PypeTask(
+            inputs = contigsets,
+            outputs = {"ds_out": contigset_pfn,},
+            parameters = parameters,
+            TaskType = PypeTaskBase,
+            URL = "task://localhost/gc_gather")
+    task = make_task(task_gc_gather)
+    tasks.append(task)
+    return tasks, contigset_pfn
 
 def flow(config):
     parameters = config
@@ -394,27 +522,27 @@ def flow(config):
         wf.addTask(task)
     wf.refreshTargets()
 
-    # genomic_consensus.tasks.variantcaller-0 (TODO: Look into chunking.)
-    polished_fastq_pfn = makePypeLocalFile('consensus.fastq')
-    variants_gff_pfn = makePypeLocalFile('variants.gff')
-    consensus_contigset_pfn = makePypeLocalFile('consensus.contigset.contigset.xml')
-    """Also produces:
-    consensus.contigset.fasta
-    consensus.contigset.fasta.fai
+    # scatter the alignmentset for genomic_consensus (variantCaller)
+    """Produces:
+    gc.chunks.fofn
+    ???*.congitset.xml ???
     """
+    gc_chunks_fofn_pfn = makePypeLocalFile('gc.chunks.fofn')
     make_task = PypeTask(
             inputs = {"alignmentset": alignmentset_pfn,
                       "referenceset": referenceset_pfn,},
-            outputs = {
-                "polished_fastq": polished_fastq_pfn,
-                "variants_gff": variants_gff_pfn,
-                #"consensus_contigset": consensus_contigset_pfn,
-            },
+            outputs = {"out_fofn": gc_chunks_fofn_pfn,},
             parameters = parameters,
             TaskType = PypeTaskBase,
-            URL = "task://localhost/genomic_consensus")
-    task = make_task(task_genomic_consensus)
+            URL = "task://localhost/gc_scatter")
+    task = make_task(task_gc_scatter)
     wf.addTask(task)
+    wf.refreshTargets()
+
+    tasks, contigset_pfn = create_tasks_gc(gc_chunks_fofn_pfn, referenceset_pfn, parameters)
+    #wf.addTasks(tasks)
+    for task in tasks:
+        wf.addTask(task)
     wf.refreshTargets()
 
     # Gathering
