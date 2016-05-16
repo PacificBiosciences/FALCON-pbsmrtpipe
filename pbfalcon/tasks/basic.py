@@ -28,24 +28,26 @@ FT_SUBREADS = FileTypes.DS_SUBREADS
 FT_FASTA = FileTypes.FASTA
 FT_REPORT = FileTypes.REPORT
 
-def FT(file_type, basename):
+def FT(file_type, basename, file_label=None):
+    if file_label is None:
+        file_label = repr(file_type)
     return OutputFileType(file_type.file_type_id,
                           "Label " + file_type.file_type_id,
-                          repr(file_type),
+                          file_label,
                           "description for {f}".format(f=file_type),
                           basename)
-RDJ = FT(FT_BASH, 'run_daligner_jobs.sh')
+RDJ = FT(FT_BASH, 'run_daligner_jobs.sh', "Shell script")
 FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
                              "FOFN file",
                              "Input file list",
                              "List of input file names",
-                             "file.fofn")
+                             "file")
 FT_JSON_OUT = OutputFileType(FileTypes.JSON.file_type_id,
                              "JSON file", "JSON file", "JSON file",
-                             "file.json")
+                             "file")
 FT_FASTA_OUT = OutputFileType(FileTypes.FASTA.file_type_id,
                               "FASTA file", "FASTA sequences",
-                              "FASTA sequences", "reads.fasta")
+                              "FASTA sequences", "reads")
 
 @registry('task_falcon_config_get_fasta', '0.0.0', [FT_CFG], [FT_FOFN_OUT], is_distributed=False)
 def run_rtc(rtc):
@@ -62,7 +64,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_make_fofn_abs(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon0_build_rdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ, FT(FT_DUMMY, 'job.done')], is_distributed=True)
+@registry('task_falcon0_build_rdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ, FT(FT_DUMMY, 'job.done', "Status file")], is_distributed=True)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_build_rdb(rtc.task.input_files, rtc.task.output_files)
@@ -114,7 +116,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_hgap(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_FOFN], [FT(FT_REPORT, 'preassembly_yield')], is_distributed=False)
+@registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_FOFN], [FT(FT_REPORT, 'preassembly_yield', "Preassembly report")], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_report_preassembly_yield(rtc.task.input_files, rtc.task.output_files)
