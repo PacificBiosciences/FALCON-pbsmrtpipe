@@ -28,26 +28,28 @@ FT_SUBREADS = FileTypes.DS_SUBREADS
 FT_FASTA = FileTypes.FASTA
 FT_REPORT = FileTypes.REPORT
 
-def FT(file_type, basename, file_label=None):
-    if file_label is None:
-        file_label = repr(file_type)
+def FT(file_type, basename, title):
     return OutputFileType(file_type.file_type_id,
-                          "Label " + file_type.file_type_id,
-                          file_label,
+                          basename + '_id',
+                          title,
                           "description for {f}".format(f=file_type),
                           basename)
 RDJ = FT(FT_BASH, 'run_daligner_jobs.sh', "Shell script")
 FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
-                             "FOFN file",
-                             "Input file list",
-                             "List of input file names",
+                             "fofn_id",
+                             "FOFN",
+                             "Generic file of file names",
                              "file")
 FT_JSON_OUT = OutputFileType(FileTypes.JSON.file_type_id,
-                             "JSON file", "JSON file", "JSON file",
+                             "json_id",
+                             "JSON",
+                             "Generic JSON file",
                              "file")
 FT_FASTA_OUT = OutputFileType(FileTypes.FASTA.file_type_id,
-                              "FASTA file", "FASTA sequences",
-                              "FASTA sequences", "reads")
+                              "fasta_id",
+                              "FASTA",
+                              "FASTA sequences",
+                              "reads")
 
 @registry('task_falcon_config_get_fasta', '0.0.0', [FT_CFG], [FT_FOFN_OUT], is_distributed=False)
 def run_rtc(rtc):
@@ -99,8 +101,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_daligner_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
-# Actually, this skips consensus.
-# TODO: Split this into 2 in pipelines, maybe. (But consider running in /tmp.)
+# Actually, this skips consensus, unlike falcon0_run_merge
 @registry('task_falcon1_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ, FT_FOFN], [FT_FOFN_OUT], is_distributed=True, nproc=1)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
@@ -111,7 +112,13 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_hgap_run', '0.0.0', [FT_JSON, FT_JSON, FT_SUBREADS], [FT_FASTA_OUT], is_distributed=False)
+@registry('task_hgap_run', '0.0.0',
+        [FT_JSON, FT_JSON, FT_SUBREADS],
+        [FT_FASTA_OUT,
+            #FT(FT_REPORT, 'preassembly_rpt', "Preassembly report"),
+            #FT(FT_REPORT, 'polished_assembly', "Preassembly report"),
+        ],
+        is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_hgap(rtc.task.input_files, rtc.task.output_files)
