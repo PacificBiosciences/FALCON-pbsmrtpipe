@@ -29,6 +29,7 @@ FT_FASTA = FileTypes.FASTA
 FT_REPORT = FileTypes.REPORT
 
 def FT(file_type, basename, title):
+    # (file_type_id, label, display_name, description, default_name)
     return OutputFileType(file_type.file_type_id,
                           basename + '_id',
                           title,
@@ -115,8 +116,8 @@ def run_rtc(rtc):
 @registry('task_hgap_run', '0.0.0',
         [FT_JSON, FT_JSON, FT_SUBREADS],
         [FT_FASTA_OUT,
-            #FT(FT_REPORT, 'preassembly_rpt', "Preassembly report"),
-            #FT(FT_REPORT, 'polished_assembly', "Preassembly report"),
+         FT(FT_REPORT, 'preassembly_rpt', "Preassembly report"),
+         FT(FT_REPORT, 'polished_assembly_rpt', "Polished aassembly report"),
         ],
         is_distributed=False)
 def run_rtc(rtc):

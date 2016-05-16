@@ -211,8 +211,8 @@ def update2(start, updates):
                 continue
             start[key1][key2] = copy.deepcopy(val2)
 
-def run(input_config_fn, logging_config_fn=None):
-    global log
+def run(input_config_fn, logging_config_fn):
+    #global log
     #import logging_tree
     #logging_tree.printout()
     setup_logger(logging_config_fn)

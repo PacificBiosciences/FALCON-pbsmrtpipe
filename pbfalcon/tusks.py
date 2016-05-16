@@ -404,17 +404,15 @@ def run_falcon_asm(input_files, output_files):
 
 def run_hgap(input_files, output_files):
     i_cfg_fn, i_logging_fn, i_subreadset_fn = input_files
-    o_fasta_fn, = output_files
-    # Update the cfg with our subreadset.
+    o_contigset_fn, o_preass_json_fn, o_polass_json_fn, = output_files
+    # Update the cfg with our subreadset. (Inside hgap_run?)
     # Run pypeflow.hgap.main.
-    cmd = 'python -m pbfalcon.cli.hgap_run --logging {} {}'.format(i_logging_fn, i_cfg_fn)
-    #cmd = 'python -m pbfalcon.cli.hgap_run {}'.format(i_cfg_fn)
+    cmd = 'python -m pbfalcon.cli.hgap_run --logging {i_logging_fn} {i_cfg_fn}'.format(**locals())
     system(cmd)
-    final_asm_fn = os.path.join('2-asm-falcon', 'p_ctg.fa') # TODO: Polish!
-    cmd = 'mkdir -p %s; touch %s' %(os.path.dirname(final_asm_fn), final_asm_fn)
-    system(cmd)
-    # Link the output fasta to the final assembly of HGAP.
-    symlink(final_asm_fn, o_fasta_fn)
+    # Symlink expected outputs, by convention.
+    symlink('contigset.xml', o_contigset_fn)
+    symlink('pre_assembly_report.json', o_preass_json_fn)
+    symlink('polished_assembly_report.json', o_polass_json_fn)
     return 0
 
 def run_report_preassembly_yield(input_files, output_files):
