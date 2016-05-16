@@ -171,12 +171,21 @@ def __gather_contigset(input_files, output_file, new_resource_file):
     return output_file
 def run_gc_gather(dset_fns, ds_out_fn):
     """Gather contigsets/fasta into 1 contigset/fasta.
+    For some reason, we do not bother with fastq. That
+    is handled elsewhere, but using this contigset implicitly.
     """
     # python -m pbcoretools.tasks.gather_contigs --rtc
     log.info('Gathering {!r} from chunks {!r}'.format(ds_out_fn, dset_fns))
     assert ds_out_fn.endswith('xml')
     new_resource_fn = os.path.splitext(ds_out_fn)[0] + '.fasta'
     __gather_contigset(dset_fns, ds_out_fn, new_resource_fn)
+def run_gc_gather_fastq(fastq_fns, fastq_fn):
+    """Also writes fastq.contigset.xml
+    """
+    from pbcoretools.chunking.gather import gather_fastq_contigset
+    log.info('gc_gather_fastq({!r}, {!r})'.format(fastq_fns, fastq_fn))
+    assert fastq_fns, 'Empty list. gather_fastq_contigset() would produce nothing.'
+    gather_fastq_contigset(fastq_fns, fastq_fn)
 def run_pbalign(reads, asm, alignmentset, options, algorithmOptions):
     """
  BlasrService: Align reads to references using blasr.
@@ -241,6 +250,27 @@ def run_gc(alignmentset, referenceset, polished_fastq, variants_gff, consensus_c
     pysam.faidx(fasta_path)
     ds = ContigSet(fasta_path, strict=True)
     ds.write(dataset_path)
+def run_summarize_coverage(gathered_alignmentset_fn, referenceset_fn, alignment_summary_gff_fn, options):
+    """
+    from pbreports.report.summarize_coverage.summarize_coverage import summarize_coverage
+    summarize_coverage(args.aln_set, args.aln_summ_gff, args.ref_set,
+                       args.num_regions, args.region_size,
+                       args.force_num_regions)
+    """
+    args = ['python -m pbreports.report.summarize_coverage.summarize_coverage',
+        options,
+        gathered_alignmentset_fn,
+        referenceset_fn,
+        alignment_summary_gff_fn,
+    ]
+    sys.system(' '.join(args))
+def run_polished_assembly_report(alignment_summary_gff_fn, polished_fastq_fn, report_fn):
+    args = ['python -m pbreports.report.polished_assembly',
+        alignment_summary_gff_fn,
+        polished_fastq_fn,
+        report_fn,
+    ]
+    sys.system(' '.join(args))
 def run_filterbam(ifn, ofn, config):
     """
     pbcoretools.tasks.filterdataset
@@ -320,6 +350,11 @@ def task_gc_gather(self):
     dos = self.inputDataObjs
     dset_fns = [fn(v) for k,v in dos.items() if k.startswith('contigset')]
     run_gc_gather(dset_fns, ds_out_fn)
+def task_gc_gather_fastq(self):
+    fastq_out_fn = fn(self.fastq_out)
+    dos = self.inputDataObjs
+    dset_fns = [fn(v) for k,v in dos.items()]
+    run_gc_gather_fastq(dset_fns, fastq_out_fn)
 def task_genomic_consensus(self):
     alignmentset_fn = fn(self.alignmentset)
     referenceset_fn = fn(self.referenceset)
@@ -331,9 +366,17 @@ def task_genomic_consensus(self):
     options = task_opts.get('options', '')
     run_gc(alignmentset_fn, referenceset_fn, polished_fastq_fn, variants_gff_fn, consensus_contigset_fn, options)
 def task_summarize_coverage(self):
-    pass
+    gathered_alignmentset_fn = fn(self.gathered_alignmentset)
+    referenceset_fn = fn(self.referenceset)
+    alignment_summary_gff_fn = fn(self.alignment_summary_gff)
+    task_opts = self.parameters['pbreports.tasks.summarize_coverage']
+    options = task_opts.get('options', '')
+    run_summarize_coverage(gathered_alignmentset_fn, referenceset_fn, alignment_summary_gff_fn, options)
 def task_polished_assembly_report(self):
-    pass
+    alignment_summary_gff_fn = fn(self.alignment_summary_gff)
+    polished_fastq_fn = fn(self.polished_fastq)
+    report_fn = fn(self.report_json)
+    run_polished_assembly_report(alignment_summary_gff_fn, polished_fastq_fn, report_fn)
 def task_foo(self):
     log.debug('WARNME1 {!r}'.format(__name__))
     #print repr(self.parameters), repr(self.URL), repr(self.foo1)
@@ -397,21 +440,27 @@ def create_tasks_gc(fofn_pfn, referenceset_pfn, parameters):
        assuming their filenames match except extenion.
     5. Finally, we write the gathered contigset.
     Whew!
+    We also gather fastq here, for convenience.
     """
     tasks = list()
     contigsets = dict()
+    fastqs = dict()
     for i, alignmentset_fn in enumerate(open(fn(fofn_pfn)).read().split()):
         wdir = 'gc-{:02}'.format(i)
         mkdirs(wdir) # Assume CWD is correct.
         alignmentset_pfn = makePypeLocalFile(alignmentset_fn) # New pfn cuz it was not pfn before.
         polished_fastq_pfn = makePypeLocalFile(os.path.join(wdir, 'consensus.fastq'))
         variants_gff_pfn = makePypeLocalFile(os.path.join(wdir, 'variants.gff'))
-        consensus_contigset_pfn = makePypeLocalFile(os.path.join(wdir, 'consensus.contigset.contigset.xml'))
+        consensus_contigset_pfn = makePypeLocalFile(os.path.join(wdir, 'consensus.contigset.xml'))
         """Also produces:
-        consensus.contigset.fasta
-        consensus.contigset.fasta.fai
+        consensus.fasta
+        consensus.fasta.fai
+
+        And note that these files names are important, as pbcoretools gathering expects
+        a particular pattern.
         """
         contigsets['contigset_{:02d}'.format(i)] = consensus_contigset_pfn
+        fastqs['fastq_{:02d}'.format(i)] = polished_fastq_pfn
         make_task = PypeTask(
                 inputs = {"alignmentset": alignmentset_pfn,
                           "referenceset": referenceset_pfn,},
@@ -429,13 +478,24 @@ def create_tasks_gc(fofn_pfn, referenceset_pfn, parameters):
     log.debug('contigsets:{}'.format(repr(contigsets)))
     make_task = PypeTask(
             inputs = contigsets,
-            outputs = {"ds_out": contigset_pfn,},
+            outputs = {"ds_out": contigset_pfn, },
             parameters = parameters,
             TaskType = PypeTaskBase,
             URL = "task://localhost/gc_gather")
     task = make_task(task_gc_gather)
     tasks.append(task)
-    return tasks, contigset_pfn
+
+    gathered_fastq_pfn = makePypeLocalFile("gathered.fastq")
+    make_task = PypeTask(
+            inputs = fastqs,
+            outputs = {"fastq_out": gathered_fastq_pfn, },
+            parameters = parameters,
+            TaskType = PypeTaskBase,
+            URL = "task://localhost/gc_gather_fastq")
+    task = make_task(task_gc_gather_fastq)
+    tasks.append(task)
+
+    return tasks, contigset_pfn, gathered_fastq_pfn
 
 def flow(config):
     parameters = config
@@ -539,44 +599,38 @@ def flow(config):
     wf.addTask(task)
     wf.refreshTargets()
 
-    tasks, contigset_pfn = create_tasks_gc(gc_chunks_fofn_pfn, referenceset_pfn, parameters)
+    tasks, contigset_pfn, gathered_fastq_pfn = create_tasks_gc(gc_chunks_fofn_pfn, referenceset_pfn, parameters)
     #wf.addTasks(tasks)
     for task in tasks:
         wf.addTask(task)
     wf.refreshTargets()
 
-    # Gathering
-    gathered_fastq_pfn = makePypeLocalFile("tasks/pbcoretools.tasks.gather_fastq-1/file.fastq")
-    gathered_alignmentset_pfn = makePypeLocalFile("tasks/pbcoretools.tasks.gather_alignmentset-1/file.alignmentset.xml")
-    #pbcoretools.tasks.gather_gff-1
-    #pbcoretools.tasks.gather_fastq-1
 
-    # pbreports
+    # reports
 
-    alignment_summary_gff_pfn = makePypeLocalFile("tasks/pbreports.tasks.summarize_coverage-0/alignment_summary.gff")
+    alignment_summary_gff_pfn = makePypeLocalFile("alignment_summary.gff")
     make_task = PypeTask(
             inputs = {"referenceset": referenceset_pfn,
-                      "gathered_alignmentset": gathered_alignmentset_pfn,},
+                      "gathered_alignmentset": alignmentset_pfn,},
             outputs = {"alignment_summary_gff": alignment_summary_gff_pfn,},
             parameters = parameters,
             TaskType = PypeTaskBase,
             URL = "task://localhost/summarize_coverage")
     task = make_task(task_summarize_coverage)
-    #wf.addTask(task)
+    wf.addTask(task)
 
     polished_assembly_report_json_pfn = makePypeLocalFile('polished_assembly_report.json')
     make_task = PypeTask(
             inputs = {"alignment_summary_gff": alignment_summary_gff_pfn,
-                      "polished_fastq": polished_fastq_pfn,},
-                      #"gathered_fastq": gathered_fastq_pfn,},
-            outputs = {"polished_assembly_report_json": polished_assembly_report_json_pfn,},
+                      "polished_fastq": gathered_fastq_pfn,},
+            outputs = {"report_json": polished_assembly_report_json_pfn,},
             parameters = parameters,
             TaskType = PypeTaskBase,
             URL = "task://localhost/polished_assembly_report")
     task = make_task(task_polished_assembly_report)
-    #wf.addTask(task)
-    #wf.refreshTargets()
+    wf.addTask(task)
 
+    wf.refreshTargets()
     #return
     ##############
 

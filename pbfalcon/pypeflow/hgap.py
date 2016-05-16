@@ -155,6 +155,10 @@ DEFAULT_OPTIONS = """
     "other_filters": "rq >= 0.7, length lte 50000",
     "read_length": 1
   },
+  "pbreports.tasks.summarize_coverage": {
+    "options": "--num_regions 1000 --region_size 0",
+    "~comment": "--force_num_regions"
+  },
   "pbsmrtpipe": {
     "~comment": "Overrides for pbsmrtpipe"
   },
