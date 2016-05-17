@@ -26,11 +26,18 @@ def symlink(actual, symbolic=None):
     symbolic name is basename(actual) if not provided.
     """
     symbolic = os.path.basename(actual) if not symbolic else symbolic
+    assert os.path.abspath(actual) != os.path.abspath(symbolic), '{!r} == {!r}'.format(actual, symbolic)
     rel = os.path.relpath(actual)
     lg('ln -s %s %s' %(rel, symbolic))
     if os.path.lexists(symbolic):
         os.unlink(symbolic)
     os.symlink(rel, symbolic)
+
+def unlink(*fns):
+    for fn in fns:
+        if os.path.lexists(fn):
+            #lg('rm -f {}'.format(fn))
+            os.unlink(fn)
 
 def system(cmd):
     lg('system(%s)' %repr(cmd))

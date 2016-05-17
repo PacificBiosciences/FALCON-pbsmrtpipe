@@ -25,6 +25,7 @@ FT_CFG = FileTypes.CFG
 FT_BASH = FileTypes.TXT
 FT_DUMMY = FileTypes.TXT
 FT_SUBREADS = FileTypes.DS_SUBREADS
+FT_CONTIGS = FileTypes.DS_CONTIG
 FT_FASTA = FileTypes.FASTA
 FT_REPORT = FileTypes.REPORT
 
@@ -51,6 +52,11 @@ FT_FASTA_OUT = OutputFileType(FileTypes.FASTA.file_type_id,
                               "FASTA",
                               "FASTA sequences",
                               "reads")
+FT_CONTIGS_OUT = OutputFileType(FileTypes.DS_CONTIG.file_type_id,
+                              "contig_id",
+                              "contigset",
+                              "Contigset of polished FASTA sequences",
+                              "polished.contigset")
 
 @registry('task_falcon_config_get_fasta', '0.0.0', [FT_CFG], [FT_FOFN_OUT], is_distributed=False)
 def run_rtc(rtc):
@@ -115,7 +121,7 @@ def run_rtc(rtc):
 
 @registry('task_hgap_run', '0.0.0',
         [FT_JSON, FT_JSON, FT_SUBREADS],
-        [FT_FASTA_OUT,
+        [FT_CONTIGS_OUT,
          FT(FT_REPORT, 'preassembly_rpt', "Preassembly report"),
          FT(FT_REPORT, 'polished_assembly_rpt', "Polished aassembly report"),
         ],

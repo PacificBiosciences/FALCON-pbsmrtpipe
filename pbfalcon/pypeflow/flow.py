@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from .. import sys
+from .. import report_preassembly
 
 from pbcore.io import (SubreadSet, HdfSubreadSet, FastaReader, FastaWriter,
                        AlignmentSet, ReferenceSet, ContigSet,
@@ -62,7 +63,7 @@ def HOLD_run_bam_to_fastx(program_name, fastx_reader, fastx_writer,
                     if (min_subread_length < 1 or
                         min_subread_length < len(rec.sequence)):
                         fastx_out.writeRecord(rec)
-def dict2ini(ofs, options_dict):
+def updated_cfg(options_dict):
     opts = dict()
     for key, val in options_dict.iteritems():
         # Drop comments (keys w/ leading ~).
@@ -74,7 +75,7 @@ def dict2ini(ofs, options_dict):
     def add(key, val):
         if not key in opts:
             opts[key] = val
-    add('input_fofn', 'NA')
+    add('input_fofn', 'NA') # actually, we do not need this anymore
     add('target', 'assembly')
     add('sge_option_da', 'NA')
     add('sge_option_la', 'NA')
@@ -82,9 +83,14 @@ def dict2ini(ofs, options_dict):
     add('sge_option_pla', 'NA')
     add('sge_option_fc', 'NA')
     add('sge_option_cns', 'NA')
+    return opts
+def dict2ini(ofs, options_dict):
     ofs.write('[General]\n')
-    for key, val in sorted(opts.items()):
+    for key, val in sorted(options_dict.items()):
         ofs.write('{} = {}\n'.format(key, val))
+def dict2json(ofs, options_dict):
+    content = json.dumps(options_dict, sort_keys=True, indent=4, separators=(',', ': '))
+    ofs.write(content + '\n')
 
 @contextlib.contextmanager
 def ContentUpdater(fn):
@@ -101,23 +107,31 @@ def ContentUpdater(fn):
     if new_content != old_content:
         with open(fn, 'w') as f:
             f.write(new_content)
-def run_falcon(i_fasta_fn, o_fasta_fn, config_falcon):
-    sys.system('rm -f {}'.format(
-        o_fasta_fn))
-    input_fofn_fn = 'input.fofn'
+def run_prepare_falcon(falcon_parameters, i_fasta_fn, fc_cfg_fn, fc_json_config_fn, input_fofn_fn):
     with ContentUpdater(input_fofn_fn) as f:
         f.write('{}\n'.format(i_fasta_fn))
+    config_falcon = updated_cfg(dict(falcon_parameters))
     config_falcon['input_fofn'] = input_fofn_fn
-    # Write fc.cfg for FALCON.
-    fc_cfg_fn = 'fc.cfg'
     with ContentUpdater(fc_cfg_fn) as f:
         dict2ini(f, config_falcon)
+    with ContentUpdater(fc_json_config_fn) as f:
+        dict2json(f, config_falcon)
+def run_falcon(fc_cfg_fn, o_fasta_fn, preads_fofn_fn):
+    sys.unlink(o_fasta_fn, preads_fofn_fn)
     #TODO: Let falcon use logging.json?
     cmd = 'fc_run {}'.format(
         fc_cfg_fn)
     sys.system(cmd)
-    sys.system('ln {} {}'.format(
-        '2-asm-falcon/p_ctg.fa', o_fasta_fn))
+    sys.symlink('2-asm-falcon/p_ctg.fa', o_fasta_fn)
+    sys.symlink('1-preads_ovl/input_preads.fofn', preads_fofn_fn)
+def run_report_pre_assembly(i_json_config_fn, i_raw_reads_fofn_fn, i_preads_fofn_fn, o_json_fn):
+    kwds = {
+        'i_json_config_fn': i_json_config_fn,
+        'i_raw_reads_fofn_fn': i_raw_reads_fofn_fn,
+        'i_preads_fofn_fn': i_preads_fofn_fn,
+        'o_json_fn': o_json_fn,
+    }
+    report_preassembly.for_task(**kwds)
 def run_pbalign_scatter(subreads, ds_reference, cjson_out):
     args = ['python -m pbcoretools.tasks.scatter_subread_reference',
         '-v',
@@ -307,10 +321,24 @@ def task_bam2fasta(self):
     #                 input_file_name, output_file_name,
     #                 min_subread_length=0)
     run_bam_to_fasta(input_file_name, output_file_name)
+def task_prepare_falcon(self):
+    i_fasta_fn = fn(self.fasta)
+    input_fofn_fn = fn(self.input_fofn)
+    fc_cfg_fn = fn(self.fc_cfg)
+    fc_json_config_fn = fn(self.fc_json_config)
+    config_falcon = self.parameters['falcon']
+    run_prepare_falcon(config_falcon, i_fasta_fn, fc_cfg_fn, fc_json_config_fn, input_fofn_fn)
 def task_falcon(self):
-    input_file_name = fn(self.orig_fasta)
-    output_file_name = fn(self.asm_fasta)
-    run_falcon(input_file_name, output_file_name, self.parameters['falcon'])
+    fc_cfg_fn = fn(self.fc_cfg)
+    fasta_fn = fn(self.asm_fasta)
+    preads_fofn_fn = fn(self.preads_fofn)
+    run_falcon(fc_cfg_fn, fasta_fn, preads_fofn_fn)
+def task_report_pre_assembly(self):
+    i_json_config_fn = fn(self.json_config)
+    i_raw_reads_fofn_fn = fn(self.raw_reads_fofn)
+    i_preads_fofn_fn = fn(self.preads_fofn)
+    o_json_fn = fn(self.pre_assembly_report)
+    report = run_report_pre_assembly(i_json_config_fn, i_raw_reads_fofn_fn, i_preads_fofn_fn, o_json_fn)
 def task_fasta2referenceset(self):
     """Copied from pbsmrtpipe/pb_tasks/pacbio.py:run_fasta_to_referenceset()
     """
@@ -522,10 +550,9 @@ def flow(config):
     wf.addTask(task)
     wf.refreshTargets()
 
-    orig_fasta_pfn = makePypeLocalFile('input.fasta')
     make_task = PypeTask(
-            inputs = {"dataset": fdataset_pfn,},
-            outputs =  {"fasta": orig_fasta_pfn,},
+            inputs = {"dataset": fdataset_pfn, },
+            outputs =  {"fasta": orig_fasta_pfn, },
             parameters = parameters,
             TaskType = PypeTaskBase,
             URL = "task://localhost/bam2fasta")
@@ -533,18 +560,47 @@ def flow(config):
     wf.addTask(task)
     wf.refreshTargets()
 
-    # We could integrate the FALCON workflow here, but for now we will just execute it.
-    asm_fasta_pfn = makePypeLocalFile('asm.fasta')
+    input_fofn_pfn = makePypeLocalFile('raw_reads.fofn')
+    fc_cfg_pfn = makePypeLocalFile('fc.cfg')
+    fc_json_config_pfn = makePypeLocalFile("fc.json")
     make_task = PypeTask(
-            inputs =  {"orig_fasta": orig_fasta_pfn,},
-            outputs =  {"asm_fasta": asm_fasta_pfn,},
+            inputs = {"fasta": orig_fasta_pfn, },
+            outputs = {"fc_cfg": fc_cfg_pfn,
+                       "fc_json_config": fc_json_config_pfn,
+                       "input_fofn": input_fofn_pfn, },
+            parameters = parameters,
+            TaskType = PypeTaskBase,
+            URL = "task://localhost/prepare_falcon")
+    task = make_task(task_prepare_falcon)
+    wf.addTask(task)
+    wf.refreshTargets()
+
+    # We could integrate the FALCON workflow here, but for now we will just execute it,
+    # so we can repeat the sub-flow easily.
+    asm_fasta_pfn = makePypeLocalFile('asm.fasta')
+    preads_fofn_pfn = makePypeLocalFile('preads.fofn') # for the preassembly report
+    make_task = PypeTask(
+            inputs = {"fc_cfg": fc_cfg_pfn,},
+            outputs = {"asm_fasta": asm_fasta_pfn,
+                       "preads_fofn": preads_fofn_pfn, },
             parameters = parameters,
             TaskType = PypeTaskBase,
             URL = "task://localhost/falcon")
-    #task = make_task(task_falcon)
-    #wf.addTask(task)
-    #wf.refreshTargets()
-    run_falcon(fn(orig_fasta_pfn), fn(asm_fasta_pfn), config['falcon'])
+    task = make_task(task_falcon)
+    wf.addTask(task)
+
+    pre_assembly_report_pfn = makePypeLocalFile("pre_assembly_report.json")
+    make_task = PypeTask(
+            inputs = {"json_config": fc_json_config_pfn,
+                      "raw_reads_fofn": input_fofn_pfn,
+                      "preads_fofn": preads_fofn_pfn, },
+            outputs = {"pre_assembly_report": pre_assembly_report_pfn, },
+            parameters = parameters,
+            TaskType = PypeTaskBase,
+            URL = "task://localhost/report_pre_assembly")
+    task = make_task(task_report_pre_assembly)
+    wf.addTask(task)
+    wf.refreshTargets()
 
     # The reset of the workflow will operate on datasets, not fasta directly.
     referenceset_pfn = makePypeLocalFile('asm.referenceset.xml')
