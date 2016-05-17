@@ -123,6 +123,7 @@ DEFAULT_OPTIONS = """
     "SuppressAuto": true,
     "GenomeSize": 8000,
     "min_length_cutoff": 1,
+    "job_type": "local",
     "~comment": "Overrides for full HGAP pipeline"
   },
   "falcon": {
@@ -142,7 +143,7 @@ DEFAULT_OPTIONS = """
   },
   "pbalign": {
     "options": "--hitPolicy randombest --minAccuracy 70.0 --minLength 50 --algorithm=blasr",
-    "algorithmOptions": "-minMatch 12 -bestn 10 -minPctSimilarity 70.0",
+    "algorithmOptions": "--minMatch 12 --bestn 10 --minPctSimilarity 70.0",
     "_jdnotes": "--maxHits 1 --minAnchorSize 12 --maxDivergence=30 --minAccuracy=0.75 --minLength=50 --hitPolicy=random --seed=1",
     "~comment": "Overrides for blasr alignment (prior to polishing)"
   },
@@ -153,6 +154,10 @@ DEFAULT_OPTIONS = """
   "pbcoretools.tasks.filterdataset": {
     "other_filters": "rq >= 0.7, length lte 50000",
     "read_length": 1
+  },
+  "pbreports.tasks.summarize_coverage": {
+    "options": "--num_regions 1000 --region_size 0",
+    "~comment": "--force_num_regions"
   },
   "pbsmrtpipe": {
     "~comment": "Overrides for pbsmrtpipe"
@@ -206,8 +211,8 @@ def update2(start, updates):
                 continue
             start[key1][key2] = copy.deepcopy(val2)
 
-def run(input_config_fn, logging_config_fn=None):
-    global log
+def run(input_config_fn, logging_config_fn):
+    #global log
     #import logging_tree
     #logging_tree.printout()
     setup_logger(logging_config_fn)
