@@ -119,7 +119,7 @@ def run_prepare_falcon(falcon_parameters, i_fasta_fn, fc_cfg_fn, fc_json_config_
 def run_falcon(fc_cfg_fn, o_fasta_fn, preads_fofn_fn):
     sys.unlink(o_fasta_fn, preads_fofn_fn)
     #TODO: Let falcon use logging.json?
-    cmd = 'fc_run {}'.format(
+    cmd = 'fc_run1 {}'.format(
         fc_cfg_fn)
     sys.system(cmd)
     sys.symlink('2-asm-falcon/p_ctg.fa', o_fasta_fn)
