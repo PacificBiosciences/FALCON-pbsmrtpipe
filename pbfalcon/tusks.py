@@ -410,9 +410,9 @@ def run_hgap(input_files, output_files):
     cmd = 'python -m pbfalcon.cli.hgap_run --logging {i_logging_fn} {i_cfg_fn}'.format(**locals())
     system(cmd)
     # Symlink expected outputs, by convention.
-    symlink('contigset.xml', o_contigset_fn)
+    symlink('run-gc-gather/contigset.xml', o_contigset_fn)
     symlink('pre_assembly_report.json', o_preass_json_fn)
-    symlink('polished_assembly_report.json', o_polass_json_fn)
+    symlink('run-polished-assembly-report/polished_assembly_report.json', o_polass_json_fn)
     return 0
 
 def run_report_preassembly_yield(input_files, output_files):
