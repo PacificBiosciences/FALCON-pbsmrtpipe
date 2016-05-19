@@ -2,9 +2,6 @@ from __future__ import absolute_import
 from .. import sys
 from .. import report_preassembly
 
-from pbcore.io import (SubreadSet, HdfSubreadSet, FastaReader, FastaWriter,
-                       FastqReader, FastqWriter)
-from pbcoretools.chunking.gather import gather_alignmentset
 from pypeflow.pwatcher_bridge import PypeProcWatcherWorkflow, MyFakePypeThreadTaskBase
 from pypeflow.controller import PypeThreadWorkflow
 from pypeflow.data import PypeLocalFile, makePypeLocalFile, fn
@@ -194,8 +191,18 @@ def task_pbalign_gather(self):
     ds_out_fn = fn(self.ds_out)
     dos = self.inputDataObjs
     dset_fns = [fn(v) for k,v in dos.items() if k.startswith('alignmentset')]
-    mkdirs(os.path.dirname(ds_out_fn))
-    gather_alignmentset(dset_fns, ds_out_fn)
+    wdir = os.path.dirname(ds_out_fn)
+    mkdirs(wdir)
+    ds_fofn_fn = os.path.join(wdir, 'gathered.alignmentsets.fofn')
+    open(ds_fofn_fn, 'w').write('\n'.join(dset_fns) + '\n')
+    bash = r"""
+python -m pbfalcon.mains.run_pbalign_gather \
+        {ds_fofn_fn} \
+        {ds_out_fn}
+""".format(**locals())
+    bash_fn = os.path.join(wdir, 'run_pbalign_gather.sh')
+    open(bash_fn, 'w').write(bash)
+    self.generated_script_fn = bash_fn
 def task_pbalign(self):
     """pbalign will eventually call blasr, like this:
  BlasrService: Align reads to references using blasr.
