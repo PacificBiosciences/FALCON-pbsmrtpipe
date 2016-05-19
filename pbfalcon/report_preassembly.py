@@ -23,16 +23,18 @@ Output of Original Report
 #   http://swarm/files/depot/branches/springfield/S2.3/software/smrtanalysis/bioinformatics/tools/pbreports/pbreports/report/preassembly.py
 from __future__ import absolute_import
 from __future__ import division
+from .functional import stricter_json
 from pbcore.io import FastaReader
 from pbcommand.models.report import Report, Attribute
 
+import argparse
 import collections
 import itertools
 import json
-import sys
-import os
 import logging
-import argparse
+import os
+import pprint
+import sys
 
 log = logging.getLogger(__name__)
 __version__ = '0.1'
@@ -119,8 +121,7 @@ def _get_length_cutoff_from_somewhere(length_cutoff, tasks_dir):
     return length_cutoff # possibly updated
 
 def _get_cfg(i_json_config_fn):
-    import pprint
-    cfg = json.loads(open(i_json_config_fn).read())
+    cfg = json.loads(stricter_json(open(i_json_config_fn).read()))
     log.info('cfg=\n%s' %pprint.pformat(cfg))
     length_cutoff = int(cfg.get('length_cutoff', '0'))
     length_cutoff = _get_length_cutoff_from_somewhere(length_cutoff, os.path.dirname(os.path.dirname(i_json_config_fn)))

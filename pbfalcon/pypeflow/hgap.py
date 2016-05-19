@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from . import flow
+from ..functional import stricter_json
 import copy
 import json
 import logging
@@ -102,7 +103,7 @@ def setup_logger(logging_config_fn):
     #return
     if logging_config_fn:
         if logging_config_fn.endswith('.json'):
-            logging.config.dictConfig(json.loads(open(logging_config_fn).read()))
+            logging.config.dictConfig(json.loads(stricter_json(open(logging_config_fn).read())))
             #print repr(logging.Logger.manager.loggerDict) # to debug
             return
         logger_fileobj = open(logging_config_fn)
@@ -162,10 +163,10 @@ DEFAULT_OPTIONS = """
   "pbsmrtpipe": {
     "~comment": "Overrides for pbsmrtpipe"
   },
-  "~comment": "https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/HGAP"
+  "~comment": "https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/HGAP",
 }
 """
-DEFAULT_OPTIONS = json.loads(DEFAULT_OPTIONS)
+DEFAULT_OPTIONS = json.loads(stricter_json(DEFAULT_OPTIONS))
 
 falcon_lambda_defaults = """
 [General]
@@ -221,7 +222,7 @@ def run(input_config_fn, logging_config_fn):
     log.info('Read logging config from {!r}'.format(logging_config_fn))
     log.info('Reading HGAP config from {!r}'.format(input_config_fn))
     if input_config_fn.endswith('.json'):
-        config = json.loads(open(input_config_fn).read())
+        config = json.loads(stricter_json(open(input_config_fn).read()))
     else:
         config = cfg2dict(open(input_config_fn))
     log.info('config=\n{}'.format(pprint.pformat(config)))

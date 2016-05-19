@@ -2,6 +2,7 @@
 
 (Of course, these might exhaust input iterators.)
 """
+import re
 
 def total_length(pairs):
     return sum(length*count for (length, count) in pairs)
@@ -39,3 +40,14 @@ def joined_strs(pieces, olen):
         yield ''.join(pieces[ilen-rem : n+ilen-rem])
         rem -= n
         olen -= 1
+
+def stricter_json(json_str):
+    """Remove trailing commas.
+    This works except in highly unlikely cases.
+    http://stackoverflow.com/a/23705538
+    >>> stricter_json('{"foo": "bar",}')
+    '{"foo": "bar"}'
+    """
+    json_str = re.sub(r',\s*}', '}', json_str)
+    json_str = re.sub(r',\s*]', ']', json_str)
+    return json_str

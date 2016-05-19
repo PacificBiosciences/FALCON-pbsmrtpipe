@@ -4,6 +4,7 @@ We plan to generate cfg in a complicated way.
 But for now, we just use a look-up table,
 based on ranges of the length of a genome.
 """
+from .functional import stricter_json
 from falcon_kit import run_support as support
 import ConfigParser as configparser
 import json
@@ -110,7 +111,7 @@ def run_hgap_prepare(input_files, output_files, options):
     cfg_json = options[TASK_HGAP_PREPARE_CFG].strip()
     if not cfg_json:
         cfg_json = '{}'
-    all_cfg = json.loads(cfg_json)
+    all_cfg = json.loads(stricter_json(cfg_json))
     log.info('Parsed {!r}:\n{}'.format(
         TASK_HGAP_PREPARE_CFG, all_cfg))
 
