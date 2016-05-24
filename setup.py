@@ -31,10 +31,10 @@ setup(
     name='FALCON-pbsmrtpipe',
     version=version,
     package_dir={'': '.'},
-    packages=['pbfalcon', 'pbfalcon.tasks',
+    packages=[
+        'pbfalcon',
+        'pbfalcon.tasks',
         'pbfalcon.cli',
-        'pbfalcon.mains',
-        'pbfalcon.pypeflow', # might be moved to FALCON someday
     ],
     license='See LICENSE file.',
     author='PacBio',

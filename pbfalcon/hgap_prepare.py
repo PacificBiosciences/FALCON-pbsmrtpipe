@@ -4,7 +4,7 @@ We plan to generate cfg in a complicated way.
 But for now, we just use a look-up table,
 based on ranges of the length of a genome.
 """
-from .functional import stricter_json
+from falcon_polish.functional import stricter_json
 from falcon_kit import run_support as support
 import ConfigParser as configparser
 import json

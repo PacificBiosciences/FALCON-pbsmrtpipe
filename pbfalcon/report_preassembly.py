@@ -22,14 +22,12 @@ Output of Original Report
 # Copied from
 #   http://swarm/files/depot/branches/springfield/S2.3/software/smrtanalysis/bioinformatics/tools/pbreports/pbreports/report/preassembly.py
 from __future__ import absolute_import
-from __future__ import division
-from .functional import stricter_json
-from pbcore.io import FastaReader
 from pbcommand.models.report import Report, Attribute
+from falcon_polish.functional import stricter_json
+from falcon_polish.pypeflow.flow import get_length_cutoff
 
+import falcon_polish.stats_preassembly
 import argparse
-import collections
-import itertools
 import json
 import logging
 import os
@@ -40,91 +38,11 @@ log = logging.getLogger(__name__)
 __version__ = '0.1'
 
 
-# Copied from pbreports/util.py
-# We want to avoid a dependency on pbreports b/c it needs matplotlib.
-def get_fasta_readlengths(fasta_file):
-    """
-    Get a sorted list of contig lengths
-    :return: (tuple)
-    """
-    lens = []
-    with FastaReader(fasta_file) as f:
-        for record in f:
-            lens.append(len(record.sequence))
-    lens.sort()
-    return lens
-
-
-class FastaContainer(object):
-
-    def __init__(self, nreads, total, file_name):
-        self.nreads = nreads
-        self.total = total
-        self.file_name = file_name
-
-    @staticmethod
-    def from_file(file_name):
-#        nreads, total = _compute_values(file_name)
-        read_lens = get_fasta_readlengths(file_name)
-        nreads = len(read_lens)
-        total = sum(read_lens)
-        return FastaContainer(nreads, total, file_name)
-
-    def __str__(self):
-        return "N {n} Total {t} File: {f}".format(n=self.nreads, t=self.total, f=self.file_name)
-
-def _validate_file(file_name):
-    if os.path.isfile(file_name):
-        return os.path.abspath(file_name)
-    else:
-        msg = "Unable to find {f}".format(f=file_name)
-        log.error(msg)
-        raise IOError(msg)
-
-def cutoff_reads(read_lens, min_read_len):
-    return [rl for rl in read_lens if rl >= min_read_len]
-
-def read_len_above(read_lens, threshold):
-    subtotal = 0
-    # Reverse-order calculation is faster.
-    for irev, rl in enumerate(reversed(read_lens)):
-        subtotal += rl
-        if subtotal >= threshold:
-            return rl
-
-def percentile(read_lens, p):
-    return read_lens[int(len(read_lens)*p)]
-
-def stats_from_sorted_readlengths(read_lens):
-    nreads = len(read_lens)
-    total = sum(read_lens)
-    n50 = read_len_above(read_lens, int(total * 0.50))
-    p95 = percentile(read_lens, 0.95)
-    #alt_n50 = pbreports.util.compute_n50(read_lens)
-    #log.info('our n50=%s, pbreports=%s' %(n50, alt_n50)) # Ours is more correct when median is between 2 reads.
-    stats = collections.namedtuple('FastaStats', ['nreads', 'total', 'n50', 'p95'])
-    return stats(nreads=nreads, total=total, n50=n50, p95=p95)
-
-def read_lens_from_fofn(fofn_fn):
-    fns = [fn.strip() for fn in open(fofn_fn) if fn.strip()]
-    # get_fasta_readlengths() returns sorted, so sorting the chain is roughly linear.
-    return list(sorted(itertools.chain.from_iterable(get_fasta_readlengths(fn) for fn in fns)))
-
-def _get_length_cutoff_from_somewhere(length_cutoff, tasks_dir):
-    if length_cutoff < 0:
-        fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'length_cutoff')
-        try:
-            length_cutoff = int(open(fn).read().strip())
-            log.info('length_cutoff=%d from %r' %(length_cutoff, fn))
-        except Exception:
-            log.exception('Unable to read length_cutoff from "%s".' %fn)
-    return length_cutoff # possibly updated
-
-def _get_cfg(i_json_config_fn):
+def _get_cfg(i_json_config_fn, i_length_cutoff_fn):
     cfg = json.loads(stricter_json(open(i_json_config_fn).read()))
     log.info('cfg=\n%s' %pprint.pformat(cfg))
     length_cutoff = int(cfg.get('length_cutoff', '0'))
-    length_cutoff = _get_length_cutoff_from_somewhere(length_cutoff, os.path.dirname(os.path.dirname(i_json_config_fn)))
+    length_cutoff = get_length_cutoff(length_cutoff, i_length_cutoff_fn)
     cfg['length_cutoff'] = length_cutoff
     return cfg
 
@@ -136,62 +54,24 @@ def for_task(
     ):
     """See pbfalcon.tusks
     """
-    cfg = _get_cfg(i_json_config_fn)
+    tasks_dir = os.path.dirname(os.path.dirname(i_json_config_fn))
+    i_length_cutoff_fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'length_cutoff')
+    cfg = _get_cfg(i_json_config_fn, i_length_cutoff_fn)
     genome_length = int(cfg.get('genome_size', 0)) # different name in falcon
     length_cutoff = cfg['length_cutoff']
 
-    raw_reads = read_lens_from_fofn(i_raw_reads_fofn_fn)
-    stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
-
-    seed_reads = cutoff_reads(raw_reads, length_cutoff)
-    stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
-
-    preads = read_lens_from_fofn(i_preads_fofn_fn)
-    stats_preads = stats_from_sorted_readlengths(preads)
-
-    report = to_report(
-            stats_raw_reads=stats_raw_reads,
-            stats_seed_reads=stats_seed_reads,
-            stats_corrected_reads=stats_preads,
-            genome_length=genome_length,
-            length_cutoff=length_cutoff,
+    report_dict = falcon_polish.stats_preassembly.make_dict(
+        i_preads_fofn_fn,
+        i_raw_reads_fofn_fn,
+        genome_length,
+        length_cutoff,
     )
+    report = produce_report(**report_dict)
     log.info('%r -> %r' %(report, o_json_fn))
     with open(o_json_fn, 'w') as ofs:
         log.info("Writing report to {!r}.".format(o_json_fn))
         content = report.to_json()
         ofs.write(content)
-
-def to_report(stats_raw_reads, stats_seed_reads, stats_corrected_reads, genome_length=None, length_cutoff=None):
-    """All inputs are paths to fasta files.
-    """
-    log.info('stats for raw reads:       %s' %repr(stats_raw_reads))
-    log.info('stats for seed reads:      %s' %repr(stats_seed_reads))
-    log.info('stats for corrected reads: %s' %repr(stats_corrected_reads))
-
-    kwds = {}
-    kwds['genome_length'] = 0 if genome_length is None else genome_length
-    kwds['length_cutoff'] = 0 if length_cutoff is None else length_cutoff
-    kwds['raw_reads'] = stats_raw_reads.nreads
-    kwds['raw_bases'] = stats_raw_reads.total
-    kwds['raw_mean'] = stats_raw_reads.total / stats_raw_reads.nreads
-    kwds['raw_n50'] = stats_raw_reads.n50
-    kwds['raw_p95'] = stats_raw_reads.p95
-    kwds['raw_coverage'] = stats_raw_reads.total / genome_length
-    kwds['seed_reads'] = stats_seed_reads.nreads
-    kwds['seed_bases'] = stats_seed_reads.total
-    kwds['seed_mean'] = stats_seed_reads.total / stats_seed_reads.nreads
-    kwds['seed_n50'] = stats_seed_reads.n50
-    kwds['seed_p95'] = stats_seed_reads.p95
-    kwds['seed_coverage'] = stats_seed_reads.total / genome_length
-    kwds['preassembled_reads'] = stats_corrected_reads.nreads
-    kwds['preassembled_bases'] = stats_corrected_reads.total
-    kwds['preassembled_mean'] = stats_corrected_reads.total / stats_corrected_reads.nreads
-    kwds['preassembled_n50'] = stats_corrected_reads.n50
-    kwds['preassembled_p95'] = stats_corrected_reads.p95
-    kwds['preassembled_coverage'] = stats_corrected_reads.total / genome_length
-    kwds['preassembled_yield'] = stats_corrected_reads.total / stats_seed_reads.total
-    return produce_report(**kwds)
 
 def produce_report(
         genome_length,
@@ -215,6 +95,7 @@ def produce_report(
         preassembled_bases,
         preassembled_coverage,
         preassembled_yield,
+        **ignored
     ):
     #preassembled_yield = '{:.3f}'.format(preassembled_yield) # but this would make it a str, unlike the others.
     # Report Attributes
@@ -244,33 +125,32 @@ def produce_report(
     report = Report('preassembly', title='Pre-assembly', attributes=attrs)
     return report
 
+def write_report_from_stats(stats_ifs, report_ofs):
+    stats = json.loads(stricter_json(stats_ifs.read()))
+    report = produce_report(**stats)
+    content = report.to_json()
+    report_ofs.write(content)
 
 def args_runner(args):
+    # UNTESTED -- but never used anyway
+    log.info("Starting {f}".format(f=os.path.basename(__file__)))
     filtered_subreads = args.filtered_subreads_fasta
-    filtered_longreads = args.filtered_longreads_fasta
+    filtered_longreads = args.filtered_longreads_fasta #???
     corrected_reads = args.corrected_reads
     length_cutoff = args.length_cutoff
     genome_length = args.genome_length
     output_json = args.output_json
+    cfg = {
+        'length_cutoff': length_cutoff,
+    }
 
-    log.info("Starting {f}".format(f=os.path.basename(__file__)))
-
-    raw_reads = read_lens_from_fofn(filtered_subreads)
-    stats_raw_reads = stats_from_sorted_readlengths(raw_reads)
-
-    seed_reads = read_lens_from_fofn(filtered_longreads)
-    stats_seed_reads = stats_from_sorted_readlengths(seed_reads)
-
-    preads = read_lens_from_fofn(corrected_reads)
-    stats_preads = stats_from_sorted_readlengths(preads)
-
-    report = to_report(
-            stats_raw_reads=stats_raw_reads,
-            stats_seed_reads=stats_seed_reads,
-            stats_corrected_reads=stats_preads,
-            genome_length=genome_length,
-            length_cutoff=length_cutoff,
+    report_dict = falcon_polish.stats_preassembly.make_dict(
+        corrected_reads,
+        filtered_subreads,
+        genome_length,
+        length_cutoff,
     )
+    report = produce_report(**report_dict)
     log.info('%r -> %r' %(report, o_json_fn))
 
     log.info(report)

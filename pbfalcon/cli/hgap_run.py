@@ -1,4 +1,4 @@
-from ..pypeflow import hgap
+from falcon_polish.pypeflow import hgap
 import argparse
 import sys
 

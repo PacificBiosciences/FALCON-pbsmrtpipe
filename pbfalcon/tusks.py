@@ -409,9 +409,12 @@ def run_hgap(input_files, output_files):
     # Run pypeflow.hgap.main.
     cmd = 'python -m pbfalcon.cli.hgap_run --logging {i_logging_fn} {i_cfg_fn}'.format(**locals())
     system(cmd)
+    # Write Reports
+    with open('pre_assembly_stats.json') as stats_ifs: # by convention
+        with open(o_preass_json_fn, 'w') as report_ofs:
+            report_preassembly.write_report_from_stats(stats_ifs, report_ofs)
     # Symlink expected outputs, by convention.
     symlink('run-gc-gather/contigset.xml', o_contigset_fn)
-    symlink('pre_assembly_report.json', o_preass_json_fn)
     symlink('run-polished-assembly-report/polished_assembly_report.json', o_polass_json_fn)
     return 0
 
