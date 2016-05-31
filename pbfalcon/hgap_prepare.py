@@ -63,6 +63,15 @@ DEFAULT_LOGGING_CFG = {
         },
     },
     'loggers': {
+    },
+    'root': {
+        'handlers': ['handler_stream', 'handler_file_all'],
+        'level': 'NOTSET',
+    },
+    'disable_existing_loggers': False
+}
+"""
+    'loggers': {
         'pypeflow': {
             'level': 'NOTSET',
             'propagate': 1,
@@ -74,12 +83,7 @@ DEFAULT_LOGGING_CFG = {
             'handlers': ['handler_file_pbfalcon'],
         },
     },
-    'root': {
-        'handlers': ['handler_stream', 'handler_file_all'],
-        'level': 'NOTSET',
-    },
-    'disable_existing_loggers': False
-}
+"""
 OPTION_SECTION_HGAP = 'hgap'
 OPTION_SECTION_PBALIGN = 'pbalign'
 OPTION_SECTION_VARIANTCALLER = 'variantcaller'

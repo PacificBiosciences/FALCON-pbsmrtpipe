@@ -123,7 +123,7 @@ def run_rtc(rtc):
         [FT_JSON, FT_JSON, FT_SUBREADS],
         [FT_CONTIGS_OUT,
          FT(FT_REPORT, 'preassembly_rpt', "Preassembly report"),
-         FT(FT_REPORT, 'polished_assembly_rpt', "Polished aassembly report"),
+         FT(FT_REPORT, 'polished_assembly_rpt', "Polished assembly report"),
         ],
         is_distributed=False)
 def run_rtc(rtc):
