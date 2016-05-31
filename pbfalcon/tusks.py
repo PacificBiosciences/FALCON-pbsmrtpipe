@@ -410,7 +410,7 @@ def run_hgap(input_files, output_files):
     cmd = 'python -m pbfalcon.cli.hgap_run --logging {i_logging_fn} {i_cfg_fn}'.format(**locals())
     system(cmd)
     # Write Reports
-    with open('pre_assembly_stats.json') as stats_ifs: # by convention
+    with open('run-falcon/0-rawreads/pre_assembly_stats.json') as stats_ifs: # by convention
         with open(o_preass_json_fn, 'w') as report_ofs:
             report_preassembly.write_report_from_stats(stats_ifs, report_ofs)
     # Symlink expected outputs, by convention.

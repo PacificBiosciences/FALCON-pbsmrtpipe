@@ -24,9 +24,8 @@ Output of Original Report
 from __future__ import absolute_import
 from pbcommand.models.report import Report, Attribute
 from falcon_polish.functional import stricter_json
-from falcon_polish.pypeflow.flow import get_length_cutoff
-
-import falcon_polish.stats_preassembly
+from falcon_kit.run_support import get_length_cutoff
+from falcon_kit import stats_preassembly
 import argparse
 import json
 import logging
@@ -60,7 +59,7 @@ def for_task(
     genome_length = int(cfg.get('genome_size', 0)) # different name in falcon
     length_cutoff = cfg['length_cutoff']
 
-    report_dict = falcon_polish.stats_preassembly.make_dict(
+    report_dict = stats_preassembly.make_dict(
         i_preads_fofn_fn,
         i_raw_reads_fofn_fn,
         genome_length,
