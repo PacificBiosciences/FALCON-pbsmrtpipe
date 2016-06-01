@@ -4,7 +4,6 @@ from falcon_polish.sys import symlink, cd, say, system, filesize
 from pbcore.io import FastaIO
 from pbcommand.engine import run_cmd as pb_run_cmd
 from falcon_kit import run_support as support
-from falcon_kit.mains import run as support2
 import falcon_kit.functional
 import glob
 import hashlib
