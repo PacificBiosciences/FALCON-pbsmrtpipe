@@ -193,7 +193,7 @@ def _options_dict_with_base_keys(options_dict, prefix='falcon_ns.task_options.')
 def _gen_config(options_dict):
     """Generate ConfigParser object from dict.
     """
-    cfg = support.parse_config('')
+    cfg = configparser.ConfigParser()
     sec = "General"
     cfg.add_section(sec)
     for key, val in options_dict.items():
