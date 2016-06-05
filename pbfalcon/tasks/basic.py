@@ -37,6 +37,7 @@ def FT(file_type, basename, title):
                           "description for {f}".format(f=file_type),
                           basename)
 RDJ = FT(FT_BASH, 'run_daligner_jobs.sh', "Shell script")
+FT_DB = FT(FT_DUMMY, 'dazzler.db', "DAZZ_DB (implies dot-files too)")
 FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
                              "fofn_id",
                              "FOFN",
@@ -73,7 +74,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_make_fofn_abs(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon0_build_rdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ, FT(FT_DUMMY, 'job.done', "Status file")], is_distributed=True)
+@registry('task_falcon0_build_rdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ, FT_DB, FT(FT_DUMMY, 'job.done', "Status file")], is_distributed=True)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_build_rdb(rtc.task.input_files, rtc.task.output_files)
@@ -130,7 +131,7 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_hgap(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_FOFN], [FT(FT_REPORT, 'preassembly_yield', "Preassembly report")], is_distributed=False)
+@registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_DB], [FT(FT_REPORT, 'preassembly_yield', "Preassembly report")], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_report_preassembly_yield(rtc.task.input_files, rtc.task.output_files)

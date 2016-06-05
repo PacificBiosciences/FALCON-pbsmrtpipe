@@ -99,7 +99,7 @@ def run_falcon_build_rdb(input_files, output_files):
             raise Exception('%r != %r' %(cwd, odir))
     i_json_config_fn, i_fofn_fn = input_files
     print('output_files: %s' %repr(output_files))
-    run_daligner_jobs_fn, job_done_fn = output_files
+    run_daligner_jobs_fn, raw_reads_db_fn, job_done_fn = output_files
     config = _get_config_from_json_fileobj(open(i_json_config_fn))
     script_fn = os.path.join(odir, 'prepare_rdb.sh') # implies run-dir too
     #job_done_fn = os.path.join(odir, 'job.done') # not needed in pbsmrtpipe today tho
@@ -108,6 +108,7 @@ def run_falcon_build_rdb(input_files, output_files):
     job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'raw_reads')
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
+    symlink('raw_reads.db', raw_reads_db_fn)
     return 0
 
 def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
@@ -418,11 +419,11 @@ def run_hgap(input_files, output_files):
     return 0
 
 def run_report_preassembly_yield(input_files, output_files):
-    i_json_config_fn, i_preads_fofn_fn, i_raw_reads_fofn_fn = input_files
+    i_json_config_fn, i_preads_fofn_fn, i_raw_reads_db_fn = input_files
     o_json_fn, = output_files
     kwds = {
         'i_json_config_fn': i_json_config_fn,
-        'i_raw_reads_fofn_fn': i_raw_reads_fofn_fn,
+        'i_raw_reads_db_fn': i_raw_reads_db_fn,
         'i_preads_fofn_fn': i_preads_fofn_fn,
         'o_json_fn': o_json_fn,
     }

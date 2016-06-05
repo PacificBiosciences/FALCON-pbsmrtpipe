@@ -48,7 +48,7 @@ def _get_cfg(i_json_config_fn, i_length_cutoff_fn):
 def for_task(
         i_json_config_fn,
         i_preads_fofn_fn,
-        i_raw_reads_fofn_fn,
+        i_raw_reads_db_fn, # maybe symlinked
         o_json_fn,
     ):
     """See pbfalcon.tusks
@@ -59,9 +59,10 @@ def for_task(
     genome_length = int(cfg.get('genome_size', 0)) # different name in falcon
     length_cutoff = cfg['length_cutoff']
 
-    report_dict = stats_preassembly.make_dict(
+    i_raw_reads_db_fn = os.path.realpath(i_raw_reads_db_fn)
+    report_dict = stats_preassembly.calc_dict(
         i_preads_fofn_fn,
-        i_raw_reads_fofn_fn,
+        i_raw_reads_db_fn,
         genome_length,
         length_cutoff,
     )
@@ -131,7 +132,7 @@ def write_report_from_stats(stats_ifs, report_ofs):
     report_ofs.write(content)
 
 def args_runner(args):
-    # UNTESTED -- but never used anyway
+    # UNTESTED -- and needs update for DAZZ_DB -- but never used anyway
     log.info("Starting {f}".format(f=os.path.basename(__file__)))
     filtered_subreads = args.filtered_subreads_fasta
     filtered_longreads = args.filtered_longreads_fasta #???
