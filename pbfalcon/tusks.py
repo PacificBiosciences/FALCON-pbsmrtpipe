@@ -161,6 +161,12 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
         job_done = os.path.abspath("%s/job_%s_done" %(jobd, job_uid))
         if pread_aln:
             bash = re_daligner.sub("daligner_p", bash)
+        bash += """
+rm -f *.C?.las
+rm -f *.N?.las
+rm -f *.C?.S.las
+rm -f *.N?.S.las
+"""
         script_fn = os.path.join(jobd , "rj_%s.sh"% (job_uid)) # also implies run-dir
         args = {
             'daligner_script': bash,
