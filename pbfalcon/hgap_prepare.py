@@ -13,6 +13,7 @@ import os
 import pprint
 import re
 import StringIO
+import sys
 
 
 #logging.basicConfig()
@@ -36,7 +37,7 @@ DEFAULT_LOGGING_CFG = {
     'handlers': {
         'handler_file_all': {
             'class': 'logging.FileHandler',
-            'level': 'DEBUG',
+            'level': 'INFO',
             'formatter': 'format_full',
             'filename': 'all.log',
             'mode': 'w',
@@ -89,6 +90,10 @@ OPTION_SECTION_PBALIGN = 'pbalign'
 OPTION_SECTION_VARIANTCALLER = 'variantcaller'
 OPTION_SECTION_PBSMRTPIPE = 'pbsmrtpipe'
 
+def say(msg):
+    sys.stderr.write('Im just sayin:' + msg + '\n') # since pbsmrtpipe suppresses our logging
+    log.info(msg)
+
 def get_pbsmrtpipe_opts(d):
     with open(os.path.join(d, 'resolved-tool-contract.json')) as f:
         rtc = json.loads(f.read())
@@ -106,9 +111,9 @@ def dump_as_json(data, ofs):
 def run_hgap_prepare(input_files, output_files, options):
     """Generate a config-file from options.
     """
-    log.info('options to run_hgap_prepare:\n{}'.format(pprint.pformat(options)))
+    say('options to run_hgap_prepare:\n{}'.format(pprint.pformat(options)))
     i_subreadset_fn, = input_files
-    o_hgap_cfg_fn, o_logging_cfg_fn = output_files
+    o_hgap_cfg_fn, o_logging_cfg_fn, o_log_fn = output_files
     run_dir = os.path.dirname(o_hgap_cfg_fn)
 
     # For now, ignore all but OPTION_CFG
@@ -116,7 +121,7 @@ def run_hgap_prepare(input_files, output_files, options):
     if not cfg_json:
         cfg_json = '{}'
     all_cfg = json.loads(stricter_json(cfg_json))
-    log.info('Parsed {!r}:\n{}'.format(
+    say('Parsed {!r}:\n{}'.format(
         TASK_HGAP_PREPARE_CFG, all_cfg))
 
     # Get options from pbsmrtpipe.

@@ -27,7 +27,10 @@ default_variantCaller_section = """
 """
 # See "Minimal Options" at:
 #   https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/blob/master/HGAP/defaults.md
-default_HGAP_Options = ""
+default_HGAP_Options = """{
+    "~for_now_see": "https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/blob/master/HGAP/defaults.md"
+}
+"""
 
 def add_args_and_options(p):
     # FileType, label, name, description
@@ -35,6 +38,7 @@ def add_args_and_options(p):
     # File Type, label, name, description, default file name
     p.add_output_file_type(FileTypes.JSON, "hgap-cfg-out", "HGAP JSON file", "Output: Actual configuration to be used by HGAP, in a 2-level dictionary.", 'hgap-cfg')
     p.add_output_file_type(FileTypes.JSON, "logging-cfg-out", "Python logging.config JSON file", "Output: Standard Python logging.config (for the task, not pbsmrtpipe)", 'logging-cfg')
+    p.add_output_file_type(FileTypes.LOG, "out", "Log-file from Python logger", "Output: log-file", 'out1')
     # Option id, label, default value, name, description
     p.add_str("falcon_ns.task_options." + gen_config.OPTION_GENOME_LENGTH, "genome-length", '5000000',
             "Genome length", "Approx. number of base pairs expected in the genome. We choose many hidden settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
