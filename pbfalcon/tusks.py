@@ -404,10 +404,16 @@ def run_falcon_asm(input_files, output_files):
 
 def run_hgap(input_files, output_files):
     i_cfg_fn, i_logging_fn, i_subreadset_fn = input_files
-    o_contigset_fn, o_preass_json_fn, o_polass_json_fn, = output_files
+    o_contigset_fn, o_preass_json_fn, o_polass_json_fn, o_log_fn, = output_files
+    # Update the logging-cfg with our log-file.
+    logging_cfg = json.loads(open(i_logging_fn).read())
+    logging_cfg['handlers']['handler_file_all']['filename'] = o_log_fn
+    logging_fn = 'logging.json'
+    with open(logging_fn, 'w') as ofs:
+        ofs.write(json.dumps(logging_cfg))
     # Update the cfg with our subreadset. (Inside hgap_run?)
     # Run pypeflow.hgap.main.
-    cmd = 'python -m pbfalcon.cli.hgap_run --logging {i_logging_fn} {i_cfg_fn}'.format(**locals())
+    cmd = 'python -m pbfalcon.cli.hgap_run --logging {logging_fn} {i_cfg_fn}'.format(**locals())
     system(cmd)
     # Write Reports
     with open('run-falcon/0-rawreads/pre_assembly_stats.json') as stats_ifs: # by convention

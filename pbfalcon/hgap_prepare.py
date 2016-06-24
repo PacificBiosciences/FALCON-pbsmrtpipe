@@ -38,23 +38,9 @@ DEFAULT_LOGGING_CFG = {
     'handlers': {
         'handler_file_all': {
             'class': 'logging.FileHandler',
-            'level': 'INFO',
-            'formatter': 'format_full',
-            'filename': 'all.log',
-            'mode': 'w',
-        },
-        'handler_file_pypeflow': {
-            'class': 'logging.FileHandler',
-            'level': 'INFO',
-            'formatter': 'format_full',
-            'filename': 'pypeflow.log',
-            'mode': 'w',
-        },
-        'handler_file_pbfalcon': {
-            'class': 'logging.FileHandler',
             'level': 'DEBUG',
             'formatter': 'format_full',
-            'filename': 'pbfalcon.log',
+            'filename': 'all.log',
             'mode': 'w',
         },
         'handler_stream': {
@@ -73,6 +59,22 @@ DEFAULT_LOGGING_CFG = {
     'disable_existing_loggers': False
 }
 """
+    'handlers': {
+        'handler_file_pypeflow': {
+            'class': 'logging.FileHandler',
+            'level': 'INFO',
+            'formatter': 'format_full',
+            'filename': 'pypeflow.log',
+            'mode': 'w',
+        },
+        'handler_file_pbfalcon': {
+            'class': 'logging.FileHandler',
+            'level': 'DEBUG',
+            'formatter': 'format_full',
+            'filename': 'pbfalcon.log',
+            'mode': 'w',
+        }
+    },
     'loggers': {
         'pypeflow': {
             'level': 'NOTSET',

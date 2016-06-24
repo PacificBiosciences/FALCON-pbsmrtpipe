@@ -28,6 +28,7 @@ FT_SUBREADS = FileTypes.DS_SUBREADS
 FT_CONTIGS = FileTypes.DS_CONTIG
 FT_FASTA = FileTypes.FASTA
 FT_REPORT = FileTypes.REPORT
+FT_LOG = FileTypes.LOG
 
 def FT(file_type, basename, title):
     # (file_type_id, label, display_name, description, default_name)
@@ -125,6 +126,7 @@ def run_rtc(rtc):
         [FT_CONTIGS_OUT,
          FT(FT_REPORT, 'preassembly_rpt', "Preassembly report"),
          FT(FT_REPORT, 'polished_assembly_rpt', "Polished assembly report"),
+         FT(FT_LOG, 'out2', "Another log output, experimentally"),
         ],
         is_distributed=False)
 def run_rtc(rtc):
