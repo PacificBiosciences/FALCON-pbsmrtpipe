@@ -5,6 +5,7 @@ But for now, we just use a look-up table,
 based on ranges of the length of a genome.
 """
 from falcon_polish.functional import stricter_json
+from falcon_polish.sys import symlink
 from falcon_kit import run_support as support
 import ConfigParser as configparser
 import json
@@ -115,6 +116,7 @@ def run_hgap_prepare(input_files, output_files, options):
     i_subreadset_fn, = input_files
     o_hgap_cfg_fn, o_logging_cfg_fn, o_log_fn = output_files
     run_dir = os.path.dirname(o_hgap_cfg_fn)
+    symlink(os.path.join(run_dir, 'stderr'), o_log_fn)
 
     # For now, ignore all but OPTION_CFG
     cfg_json = options[TASK_HGAP_PREPARE_CFG].strip()
