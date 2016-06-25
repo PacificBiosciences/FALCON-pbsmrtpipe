@@ -6,9 +6,12 @@ based on ranges of the length of a genome.
 """
 from falcon_polish.functional import stricter_json
 from falcon_polish.sys import symlink
+from falcon_polish.pypeflow.hgap import update2
 from falcon_kit import run_support as support
 from . import gen_config # for some option names
+import collections
 import ConfigParser as configparser
+import copy
 import json
 import logging
 import os
@@ -118,6 +121,8 @@ def get_pbsmrtpipe_opts(d):
 
 def dump_as_json(data, ofs):
     as_json = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
+    say('Dumping JSON:\n{}'.format(
+        as_json))
     ofs.write(as_json)
 
 def run_hgap_prepare(input_files, output_files, options):
@@ -129,13 +134,16 @@ def run_hgap_prepare(input_files, output_files, options):
     run_dir = os.path.dirname(o_hgap_cfg_fn)
     symlink(os.path.join(run_dir, 'stderr'), o_log_fn)
 
-    # For now, ignore all but HGAP_OPTIONS
+    # This will be the cfg we pass to hgap_run.
+    all_cfg = collections.defaultdict(lambda: collections.defaultdict(str))
+    all_cfg[OPTION_SECTION_FALCON]['genome_size'] = options[TASK_HGAP_GENOME_LENGTH].strip()
+    all_cfg[OPTION_SECTION_FALCON]['length_cutoff'] = options[TASK_HGAP_SEED_LENGTH_CUTOFF].strip()
+    all_cfg[OPTION_SECTION_FALCON]['seed_coverage'] = options[TASK_HGAP_SEED_COVERAGE].strip()
     cfg_json = options[TASK_HGAP_OPTIONS].strip()
     if not cfg_json:
         cfg_json = '{}'
-    all_cfg = json.loads(stricter_json(cfg_json))
-    say('Parsed {!r}:\n{}'.format(
-        TASK_HGAP_OPTIONS, all_cfg))
+    override_cfg = json.loads(stricter_json(cfg_json))
+    update2(all_cfg, override_cfg)
 
     # Get options from pbsmrtpipe.
     pbsmrtpipe_opts = get_pbsmrtpipe_opts(run_dir)
@@ -145,10 +153,12 @@ def run_hgap_prepare(input_files, output_files, options):
     all_cfg[OPTION_SECTION_PBSMRTPIPE] = pbsmrtpipe_opts
 
     # Dump all_cfg.
+    say('Dumping to {}'.format(repr(o_hgap_cfg_fn)))
     dump_as_json(all_cfg, open(o_hgap_cfg_fn, 'w'))
 
     # Get logging cfg.
     logging_cfg = DEFAULT_LOGGING_CFG
 
     # Dump logging cfg.
+    say('Dumping to {}'.format(repr(o_logging_cfg_fn)))
     dump_as_json(logging_cfg, open(o_logging_cfg_fn, 'w'))
