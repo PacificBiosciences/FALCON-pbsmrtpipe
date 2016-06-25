@@ -7,6 +7,7 @@ based on ranges of the length of a genome.
 from falcon_polish.functional import stricter_json
 from falcon_polish.sys import symlink
 from falcon_kit import run_support as support
+from . import gen_config # for some option names
 import ConfigParser as configparser
 import json
 import logging
@@ -21,8 +22,15 @@ import sys
 log = logging.getLogger(__name__)
 #log.setLevel(logging.DEBUG)
 
-OPTION_CFG = 'HGAP_Options_JSON'
-TASK_HGAP_PREPARE_CFG = 'falcon_ns.task_options.' + OPTION_CFG
+TASK_HGAP_OPTIONS = \
+        'falcon_ns.task_options.' + 'HGAP_Options_JSON'
+TASK_HGAP_GENOME_LENGTH = \
+        'falcon_ns.task_options.' + gen_config.OPTION_GENOME_LENGTH
+TASK_HGAP_SEED_LENGTH_CUTOFF = \
+        'falcon_ns.task_options.' + gen_config.OPTION_SEED_LENGTH_CUTOFF
+TASK_HGAP_SEED_COVERAGE = \
+        'falcon_ns.task_options.' + gen_config.OPTION_SEED_COVERAGE
+
 DEFAULT_LOGGING_CFG = {
     'version': 1,
     'formatters': {
@@ -89,6 +97,7 @@ DEFAULT_LOGGING_CFG = {
     },
 """
 OPTION_SECTION_HGAP = 'hgap'
+OPTION_SECTION_FALCON = 'falcon'
 OPTION_SECTION_PBALIGN = 'pbalign'
 OPTION_SECTION_VARIANTCALLER = 'variantcaller'
 OPTION_SECTION_PBSMRTPIPE = 'pbsmrtpipe'
@@ -120,13 +129,13 @@ def run_hgap_prepare(input_files, output_files, options):
     run_dir = os.path.dirname(o_hgap_cfg_fn)
     symlink(os.path.join(run_dir, 'stderr'), o_log_fn)
 
-    # For now, ignore all but OPTION_CFG
-    cfg_json = options[TASK_HGAP_PREPARE_CFG].strip()
+    # For now, ignore all but HGAP_OPTIONS
+    cfg_json = options[TASK_HGAP_OPTIONS].strip()
     if not cfg_json:
         cfg_json = '{}'
     all_cfg = json.loads(stricter_json(cfg_json))
     say('Parsed {!r}:\n{}'.format(
-        TASK_HGAP_PREPARE_CFG, all_cfg))
+        TASK_HGAP_OPTIONS, all_cfg))
 
     # Get options from pbsmrtpipe.
     pbsmrtpipe_opts = get_pbsmrtpipe_opts(run_dir)
