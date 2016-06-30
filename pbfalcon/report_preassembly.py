@@ -122,7 +122,7 @@ def produce_report(
     attrs.append(Attribute('preassembled_coverage', preassembled_coverage, name="Pre-Assembled Coverage (bases/genome_size)"))
     attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield (bases/seed_bases)"))
 
-    report = Report('preassembly', title='Pre-assembly', attributes=attrs)
+    report = Report('preassembly', title='Preassembly', attributes=attrs)
     return report
 
 def write_report_from_stats(stats_ifs, report_ofs):
