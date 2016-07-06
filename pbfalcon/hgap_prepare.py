@@ -125,6 +125,31 @@ def dump_as_json(data, ofs):
         as_json))
     ofs.write(as_json)
 
+def learn_job_type(ifs):
+    content = ifs.read()
+    re.sub(r'\\\s*', ' ', content)
+    log.info('INFO')
+    log.warning('content=\n{}'.format(content))
+    re_qsub = re.compile(r'qsub\s+.+-q\s+(?P<queue>\S+)')
+    job_type = 'local'
+    sge_option = ''
+    mo = re_qsub.search(content)
+    if mo:
+        job_type = 'sge'
+        sge_option = '-q {}'.format(mo.group('queue'))
+    return job_type, sge_option
+
+def update_for_grid(all_cfg, run_dir):
+    cluster_sh_fn = os.path.join(run_dir, 'cluster.sh')
+    if os.path.exists(cluster_sh_fn):
+        with open(cluster_sh_fn) as ifs:
+            job_type, sge_option = learn_job_type(ifs)
+            all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
+            all_cfg[OPTION_SECTION_HGAP]['sge_option'] = sge_option
+    else:
+        job_type = 'local'
+        all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
+
 def run_hgap_prepare(input_files, output_files, options):
     """Generate a config-file from options.
     """
@@ -136,6 +161,11 @@ def run_hgap_prepare(input_files, output_files, options):
 
     # This will be the cfg we pass to hgap_run.
     all_cfg = collections.defaultdict(lambda: collections.defaultdict(str))
+
+    # Get grid options, for job-distribution.
+    update_for_grid(all_cfg, run_dir)
+
+    # Override from pbsmrtpipe config/preset.xml.
     all_cfg[OPTION_SECTION_FALCON]['genome_size'] = options[TASK_HGAP_GENOME_LENGTH].strip()
     all_cfg[OPTION_SECTION_FALCON]['length_cutoff'] = options[TASK_HGAP_SEED_LENGTH_CUTOFF].strip()
     all_cfg[OPTION_SECTION_FALCON]['seed_coverage'] = options[TASK_HGAP_SEED_COVERAGE].strip()
