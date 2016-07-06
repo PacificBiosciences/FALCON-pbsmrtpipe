@@ -126,6 +126,8 @@ def dump_as_json(data, ofs):
     ofs.write(as_json)
 
 def learn_job_type(ifs):
+    """Infer the job_type from the pbsmrtpipe cluster.sh file.
+    """
     content = ifs.read()
     re.sub(r'\\\s*', ' ', content)
     log.info('INFO')
@@ -136,19 +138,38 @@ def learn_job_type(ifs):
     mo = re_qsub.search(content)
     if mo:
         job_type = 'sge'
-        sge_option = '-q {}'.format(mo.group('queue'))
-    return job_type, sge_option
+        queue_name = mo.group('queue')
+    return job_type, queue_name
 
 def update_for_grid(all_cfg, run_dir):
+    """Update both hgap and falcon options based
+    on pbsmrtpipe cluster.sh file.
+    Precondition: For now, all_cfg['falcon'] is empty or missing.
+    """
+    fc_cfg = all_cfg[OPTION_SECTION_FALCON]
+    assert not fc_cfg
     cluster_sh_fn = os.path.join(run_dir, 'cluster.sh')
     if os.path.exists(cluster_sh_fn):
         with open(cluster_sh_fn) as ifs:
-            job_type, sge_option = learn_job_type(ifs)
-            all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
-            all_cfg[OPTION_SECTION_HGAP]['sge_option'] = sge_option
+            job_type, queue_name = learn_job_type(ifs)
+        all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
+        all_cfg[OPTION_SECTION_HGAP]['job_queue'] = queue_name
+        sge_queue_option = ' -q {}'.format(queue_name)
+        sge_option_names = (
+                'sge_option_da', 'sge_option_la',
+                'sge_option_pda', 'sge_option_pla',
+                'sge_option_fc', 'sge_option_cns',
+        )
+        for option_name in sge_option_names:
+            fc_cfg[option_name] = sge_queue_option + ' -pe smp 4' # TODO: Base on size/step.
+        if 'pa_concurrent_jobs' not in fc_cfg:
+            fc_cfg['pa_concurrent_jobs'] = 32 # TODO: Base on size.
+        if 'ovlp_concurrent_jobs' not in fc_cfg:
+            fc_cfg['ovlp_concurrent_jobs'] = 32 # TODO: Base on size.
     else:
         job_type = 'local'
         all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
+        # Maybe update max concurrencies anyway?
 
 def run_hgap_prepare(input_files, output_files, options):
     """Generate a config-file from options.
