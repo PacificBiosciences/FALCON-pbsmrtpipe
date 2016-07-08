@@ -4,6 +4,7 @@ We plan to generate cfg in a complicated way.
 But for now, we just use a look-up table,
 based on ranges of the length of a genome.
 """
+from __future__ import absolute_import
 from falcon_polish.functional import stricter_json
 from falcon_polish.sys import symlink
 from falcon_polish.pypeflow.hgap import update2
