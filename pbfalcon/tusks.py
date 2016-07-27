@@ -106,6 +106,7 @@ def run_falcon_build_rdb(input_files, output_files):
     support.build_rdb(i_fofn_fn, config, job_done_fn, script_fn, run_daligner_jobs_fn)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
     job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'raw_reads')
+    # We do not bother to calculate 'single' b/c this is only a sanity-check.
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
     symlink('raw_reads.db', raw_reads_db_fn)
@@ -146,7 +147,8 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
     re_daligner = re.compile(r'\bdaligner\b')
 
     line_count = 0
-    job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_jobs_fn), db_prefix)
+    single = (nblock == 1)
+    job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_jobs_fn), db_prefix, single=single)
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s'." %run_jobs_fn)
     for desc, bash in job_descs.iteritems():
@@ -354,6 +356,7 @@ def run_falcon_build_pdb(input_files, output_files):
     support.build_pdb(i_fofn_fn, config, job_done_fn, script_fn, run_daligner_jobs_fn)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
     job_descs = falcon_kit.functional.get_daligner_job_descriptions(open(run_daligner_jobs_fn), 'preads')
+    # We do not bother to calculate 'single' b/c this is only a sanity-check.
     if not job_descs:
         raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
     return 0
