@@ -11,6 +11,7 @@ from falcon_polish.pypeflow.hgap import update2
 from falcon_kit import run_support as support
 from . import gen_config # for some option names
 import collections
+import commands
 import ConfigParser as configparser
 import copy
 import json
@@ -127,20 +128,64 @@ def dump_as_json(data, ofs):
     ofs.write(as_json)
 
 def learn_job_type(ifs):
-    """Infer the job_type from the pbsmrtpipe cluster.sh file.
-    """
     content = ifs.read()
     re.sub(r'\\\s*', ' ', content)
     log.info('INFO')
     log.warning('content=\n{}'.format(content))
+    try:
+        return learn_job_type_from_new_cluster_sh(content)
+    except Exception:
+        log.exception('Apparently we are not using jsmcmd.')
+    return learn_job_type_from_old_cluster_sh(content)
+    # Can throw UnboundLocalError for missing queue_name
+
+def learn_job_type_from_old_cluster_sh(content):
+    """Infer the job_type from the pbsmrtpipe cluster.sh file.
+    """
     re_qsub = re.compile(r'qsub\s+.+-q\s+(?P<queue>\S+)')
-    job_type = 'local'
-    sge_option = ''
     mo = re_qsub.search(content)
     if mo:
         job_type = 'sge'
         queue_name = mo.group('queue')
     return job_type, queue_name
+
+def learn_jmsenv_ish_from_cluster_sh(content):
+    re_qsub = re.compile(r'--jmsenv\s+"(?P<jmsenv>\S+)"', re.MULTILINE)
+    mo = re_qsub.search(content)
+    if mo:
+        jmsenv_ish = mo.group('jmsenv')
+    return jmsenv_ish
+
+def capture(cmd):
+    log.info('capture(`{}`)'.format(cmd))
+    status, output = commands.getstatusoutput(cmd)
+    if status:
+        raise Exception('Status: {} from cmd: `{}`'.format(status, output))
+    return output
+
+def learn_job_type_from_jmsenv_ish(output):
+    re_qsub = re.compile(r'JMS_TYPE=(?P<jms_type>\S+)\s+QUEUE=(?P<queue>\S+)', re.MULTILINE)
+    mo = re_qsub.search(output)
+    if mo:
+        job_type = mo.group('jms_type').lower()
+        queue_name = mo.group('queue')
+    return job_type, queue_name
+
+def learn_job_type_from_jmsenv(jmsenv_ish):
+    jmsenv_ish = '/pbi/dept/secondary/siv/smrtlink/smrtlink-bihourly/smrtsuite_183743/userdata/generated/config/jmsenv/jmsenv.ish'
+    bash = "bash -c '. {}; echo JMS_TYPE=$JMS_TYPE; echo QUEUE=$QUEUE'".format(jmsenv_ish)
+    output = capture(bash)
+    return learn_job_type_from_jmsenv_ish(output)
+
+def learn_job_type_from_new_cluster_sh(content):
+    """Infer the job_type from the pbsmrtpipe cluster.sh file,
+    which must use jmscmd.
+    """
+    try:
+        jmsenv_ish = learn_jmsenv_ish_from_cluster_sh(content)
+    except Exception:
+        log.exception('Apparently we are not using jsmcmd. cluster.sh==\n{}'.format(content))
+    return learn_job_type_from_jmsenv(jmsenv_ish)
 
 def update_for_grid(all_cfg, run_dir):
     """Update both hgap and falcon options based
