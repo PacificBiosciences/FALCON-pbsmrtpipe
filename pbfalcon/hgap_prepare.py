@@ -208,14 +208,10 @@ def update_for_grid(all_cfg, run_dir):
         )
         for option_name in sge_option_names:
             fc_cfg[option_name] = sge_queue_option + ' -pe smp 4' # TODO: Base on size/step.
-        if 'pa_concurrent_jobs' not in fc_cfg:
-            fc_cfg['pa_concurrent_jobs'] = 32 # TODO: Base on size.
-        if 'ovlp_concurrent_jobs' not in fc_cfg:
-            fc_cfg['ovlp_concurrent_jobs'] = 32 # TODO: Base on size.
     else:
         job_type = 'local'
         all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
-        # Maybe update max concurrencies anyway?
+    # Note: The user should consider setting default_concurrent_jobs.
 
 def run_hgap_prepare(input_files, output_files, options):
     """Generate a config-file from options.
