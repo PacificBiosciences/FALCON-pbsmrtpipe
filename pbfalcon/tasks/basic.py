@@ -37,13 +37,7 @@ def FT(file_type, basename, title):
                           title,
                           "description for {f}".format(f=file_type),
                           basename)
-RDJ = FT(FT_BASH, 'run_daligner_jobs.sh', "Shell script")
 FT_DB = FT(FT_DUMMY, 'dazzler.db', "DAZZ_DB (implies dot-files too)")
-FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
-                             "fofn_id",
-                             "FOFN",
-                             "Generic file of file names",
-                             "file")
 FT_JSON_OUT = OutputFileType(FileTypes.JSON.file_type_id,
                              "json_id",
                              "JSON",
@@ -60,6 +54,12 @@ FT_CONTIGS_OUT = OutputFileType(FileTypes.DS_CONTIG.file_type_id,
                               "Contigset of polished FASTA sequences",
                               "polished.contigset")
 
+
+FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
+                             "fofn_id",
+                             "FOFN of daligner input (.fasta paths, possibly relative)",
+                             "file of file names of fasta input",
+                             "file")
 @registry('task_falcon_config_get_fasta', '0.0.0', [FT_CFG], [FT_FOFN_OUT], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
@@ -70,17 +70,32 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_config(rtc.task.input_files, rtc.task.output_files)
 
+FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
+                             "fofn_id",
+                             "FOFN of daligner input (absolute .fasta paths)",
+                             "file of file names of fasta input",
+                             "file")
 @registry('task_falcon_make_fofn_abs', '0.0.0', [FT_FOFN], [FT_FOFN_OUT], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_make_fofn_abs(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon0_build_rdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ, FT_DB, FT(FT_DUMMY, 'job.done', "Status file")], is_distributed=True)
+RDJ0_OUT = OutputFileType(FileTypes.TXT.file_type_id,
+                             "run_daligner_jobs0_id",
+                             "bash file from HPC.daligner, stage-0",
+                             "bash script",
+                             "run_daligner_jobs0.sh")
+@registry('task_falcon0_build_rdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ0_OUT, FT_DB, FT(FT_DUMMY, 'job.done', "Status file")], is_distributed=True)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_build_rdb(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon0_run_daligner_jobs', '0.0.0', [FT_JSON, RDJ], [FT_FOFN_OUT], is_distributed=True, nproc=4)
+FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
+                             "fofn_id",
+                             "FOFN of daligner output (unmerged .las, stage-0)",
+                             "file of file names of local-alignment output",
+                             "file")
+@registry('task_falcon0_run_daligner_jobs', '0.0.0', [FT_JSON, RDJ0_OUT], [FT_FOFN_OUT], is_distributed=True, nproc=4)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_daligner_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
@@ -94,24 +109,44 @@ def run_rtc(rtc):
 # Because this is I/O bound, we do not really harm the machine we are on,
 # but we need to reserve some memory. nproc=6 is more than enough.
 # TODO: Move into /tmp, to reduce the burden on NFS. Then we might chunk.
-@registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ, FT_FOFN], [FT_FOFN_OUT], is_distributed=True, nproc=6)
+FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
+                             "fofn_id",
+                             "FOFN of daligner output (merged .las, stage-0)",
+                             "file of file names of local-alignment output",
+                             "file")
+@registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ0_OUT, FT_FOFN], [FT_FOFN_OUT], is_distributed=True, nproc=6)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
 
 # Run similar steps for preads.
-@registry('task_falcon1_build_pdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ], is_distributed=False)
+RDJ1_OUT = OutputFileType(FileTypes.TXT.file_type_id,
+                             "run_daligner_jobs1_id",
+                             "bash file from HPC.daligner, stage-1",
+                             "bash script",
+                             "run_daligner_jobs1.sh")
+@registry('task_falcon1_build_pdb', '0.0.0', [FT_JSON, FT_FOFN], [RDJ1_OUT], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_build_pdb(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon1_run_daligner_jobs', '0.0.0', [FT_JSON, RDJ], [FT_FOFN_OUT], is_distributed=True, nproc=4)
+FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
+                             "fofn_id",
+                             "FOFN of daligner output (unmerged .las, stage-1)",
+                             "file of file names of local-alignment output",
+                             "file")
+@registry('task_falcon1_run_daligner_jobs', '0.0.0', [FT_JSON, RDJ1_OUT], [FT_FOFN_OUT], is_distributed=True, nproc=4)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_daligner_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
 # Actually, this skips consensus, unlike falcon0_run_merge
-@registry('task_falcon1_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ, FT_FOFN], [FT_FOFN_OUT], is_distributed=True, nproc=1)
+FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
+                             "fofn_id",
+                             "FOFN of daligner output (merged .las, stage-1)",
+                             "file of file names of local-alignment output",
+                             "file")
+@registry('task_falcon1_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ1_OUT, FT_FOFN], [FT_FOFN_OUT], is_distributed=True, nproc=1)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')

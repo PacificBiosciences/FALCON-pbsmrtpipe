@@ -24,7 +24,7 @@ def get_contract_parser():
     p.add_input_file_type(FileTypes.CHUNK, "cjson_in", "Gather ChunkJson",
                           "Fasta Gather Chunk JSON")
 
-    p.add_output_file_type(FileTypes.FOFN, "fofn_out", "FOFN file",
+    p.add_output_file_type(FileTypes.FOFN, "fofn_out", "FOFN of .las files, stage-1",
                            "FOFN Not Sure Yet",
                            "file_gathered")
 

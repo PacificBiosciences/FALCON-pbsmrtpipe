@@ -26,7 +26,7 @@ def get_contract_parser():
                           "Pac Bio ???")
     p.add_input_file_type(FileTypes.TXT, "bash", "Bash",
                           "Pac Bio ???")
-    p.add_output_file_type(FileTypes.CHUNK, "cjson_out", "Chunk JSON Filtered Fasta",
+    p.add_output_file_type(FileTypes.CHUNK, "cjson_out", "Chunk of .fasta for daligner, stage-0",
                            "Chunked JSON Filtered Fasta",
                            "fasta.chunked")
     return p
