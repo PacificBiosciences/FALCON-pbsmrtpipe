@@ -10,8 +10,9 @@ utest:
 	nosetests -v utest/
 
 PBFALCON_TC_RUNNERS:= \
-	pbfalcon.cli.gen_config \
-	pbfalcon.cli.hgap_prepare \
+	pbfalcon.cli.task_gen_config \
+	pbfalcon.cli.task_hgap_prepare \
+	pbfalcon.cli.task_hgap_run \
 	pbfalcon.tasks.scatter0_run_daligner_jobs \
 	pbfalcon.tasks.scatter1_run_daligner_jobs \
 	pbfalcon.tasks.gather0_run_daligner_jobs \

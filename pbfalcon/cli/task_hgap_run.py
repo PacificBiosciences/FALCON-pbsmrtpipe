@@ -2,72 +2,55 @@ from pbcommand.cli import pbparser_runner
 from pbcommand.utils import setup_log
 from pbcommand.models import (ResourceTypes, FileTypes, SymbolTypes)
 from pbcommand.models.parser import get_pbparser
-from .. import hgap_prepare
+#from .. import hgap_prepare
+from .. import tusks as pbfalcon
 import sys
 import logging
 
 __version__ = '1.0.0'
 log = logging.getLogger(__name__)
-TOOL_ID = 'falcon_ns.tasks.task_hgap_prepare'
+TOOL_ID = 'falcon_ns.tasks.task_hgap_run'
 
-default_pbalign_section = """
-    "pbalign": {
-        "options": "--hitPolicy randombest --minAccuracy 70.0 --minLength 50 --algorithm=blasr --concordant",
-        "algorithmOptions": "--minMatch 12 --bestn 10 --minPctSimilarity 70.0",
-        "_jdnotes": "--maxHits 1 --minAnchorSize 12 --maxDivergence=30 --minAccuracy=0.75 --minLength=50 --hitPolicy=random --seed=1",
-        "_comment": "Overrides for blasr alignment (prior to polishing)"
-    },
-"""
-default_variantCaller_section = """
-    "variantCaller": {
-        "options": "--algorithm quiver --diploid --min_confidence 40 --min_coverage 5"
-        "_comment": "Overrides for genomic consensus (polishing)"
-    },
-"""
-# See "Minimal Options" at:
-#   https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/blob/master/HGAP/defaults.md
-default_HGAP_Options = """{
-    "~for_now_see": "https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/blob/master/HGAP/defaults.md"
-}
-"""
+#    i_cfg_fn, i_logging_fn, i_subreadset_fn = input_files
+#    o_contigset_fn, o_preass_json_fn, o_polass_json_fn, o_log_fn, = output_files
+# https://github.com/PacificBiosciences/smrtflow/blob/master/smrt-server-analysis/src/main/resources/pipeline-template-view-rules/pipeline_template_view_rules-polished_falcon_fat.json
+
+def run_rtc(rtc):
+  tempdir = rtc.task.tmpdir_resources[0].path
+  msg = "tempdir={!r}".format(tmpdir)
+  print msg
+  raise Exception(msg)
+  with cd(os.path.dirname(rtc.task.output_files[0])):
+    return pbfalcon.run_hgap(rtc.task.input_files, rtc.task.output_files)
 
 def add_args_and_options(p):
-    # FileType, label, name, description
-    p.add_input_file_type(FileTypes.DS_SUBREADS, "subreads-in", "DataSet-SubreadSet", "Input: Probably BAM files")
+    # FileType, label, name=title, description
+    p.add_input_file_type(FileTypes.JSON, "Label PacBio.FileTypes.json_0", "<FileType id=PacBio.FileTypes.json name=file >", "description for PacBio.FileTypes.json_0")
+    p.add_input_file_type(FileTypes.JSON, "Label PacBio.FileTypes.json_1", "<FileType id=PacBio.FileTypes.json name=file >", "description for PacBio.FileTypes.json_1")
+    p.add_input_file_type(FileTypes.DS_SUBREADS, "Label PacBio.DataSet.SubreadSet_2", "<DataSetFileType id=PacBio.DataSet.SubreadSet name=file >", "description for PacBio.DataSet.SubreadSet_2")
     # File Type, label, name, description, default file name
-    p.add_output_file_type(FileTypes.JSON, "hgap-cfg-out", "HGAP JSON file", "Output: Actual configuration to be used by HGAP, in a 2-level dictionary.", 'hgap-cfg')
-    p.add_output_file_type(FileTypes.JSON, "logging-cfg-out", "Python logging.config JSON file", "Output: Standard Python logging.config (for the task, not pbsmrtpipe)", 'logging-cfg')
-    p.add_output_file_type(FileTypes.LOG, "out", "Log-file from Python logger", "Output: log-file", 'out1')
-    # Option id, label, default value, name, description
-    p.add_str(hgap_prepare.TASK_HGAP_GENOME_LENGTH, "genome-length", '5000000',
-            "Genome length", "Approx. number of base pairs expected in the genome. We choose many hidden settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
-    p.add_str(hgap_prepare.TASK_HGAP_SEED_COVERAGE, "seed-coverage", '30',
-            "Seed coverage", "A target for the total # of bases in the 'raw' (post primary) reads, divided by the total number in the 'seed' reads.")
-    p.add_str(hgap_prepare.TASK_HGAP_SEED_LENGTH_CUTOFF, "seed-length-cutoff", '-1',
-            "Seed length cutoff", "Only reads as long as this will be used as 'seeds' for the draft assembly. (Shorter reads will be used for correction and polishing, if they pass the dataset filters.) If '-1', then this will be calculated automatically, such that the total number of seed bases nearly equals GenomeLength*SeedCoverage.")
-    p.add_str(hgap_prepare.TASK_HGAP_OPTIONS, "advanced-overrides",
-            default_HGAP_Options,
-            "Experimental HGAP.5 config overrides.",
-            "Experimental HGAP.5 config overrides are experimental.")
+    p.add_output_file_type(FileTypes.DS_CONTIG, "contig_id", "contigset", "Contigset of polished FASTA sequences", 'polished.contigset')
+    p.add_output_file_type(FileTypes.REPORT, "preassembly_rpt_id", "Preassembly report", "description for <FileType id=PacBio.FileTypes.JsonReport name=report >", 'preassembly_rpt')
+    p.add_output_file_type(FileTypes.REPORT, "polished_assembly_rpt_id", "Polished assembly report", "description for <FileType id=PacBio.FileTypes.JsonReport name=report >", 'polished_assembly_rpt')
+    p.add_output_file_type(FileTypes.LOG, "out2_id", "Another log output, experimentally", 'description for <FileType id=PacBio.FileTypes.log name=file >', 'out2')
     return p
 
 def get_contract_parser():
-    # Number of processors to use, can also be SymbolTypes.MAX_NPROC
     nproc = SymbolTypes.MAX_NPROC
-    # Log file, tmp dir, tmp file. See ResourceTypes in models, ResourceTypes.TMP_DIR
     resource_types = ()
+    #resource_types = (ResourceTypes.TMP_DIR,)
     # Commandline exe to call "{exe}" /path/to/resolved-tool-contract.json
-    driver_exe = "python -m pbfalcon.cli.hgap_prepare --resolved-tool-contract "
-    desc = "XXX Experimental HGAP.5"
-    name = 'XXX Experimental HgapConfigGenerator'
+    driver_exe = "python -m pbfalcon.cli.task_hgap_run --resolved-tool-contract "
+    desc = 'pbcommand wrapper for ' + TOOL_ID
+    name = 'Tool task_hgap_run'
     p = get_pbparser(TOOL_ID, __version__, name, desc, driver_exe,
-            is_distributed=True, nproc=nproc, resource_types=resource_types)
+            is_distributed=False, nproc=nproc, resource_types=resource_types)
     add_args_and_options(p)
     return p
 
 def run_my_main(input_files, output_files, options):
     # do stuff. Main should return an int exit code
-    rc = hgap_prepare.run_hgap_prepare(input_files, output_files, options)
+    rc = pbfalcon.run_hgap(input_files, output_files)
     if rc:
         return rc
     else:

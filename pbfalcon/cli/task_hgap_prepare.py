@@ -57,7 +57,7 @@ def get_contract_parser():
     # Log file, tmp dir, tmp file. See ResourceTypes in models, ResourceTypes.TMP_DIR
     resource_types = ()
     # Commandline exe to call "{exe}" /path/to/resolved-tool-contract.json
-    driver_exe = "python -m pbfalcon.cli.hgap_prepare --resolved-tool-contract "
+    driver_exe = "python -m pbfalcon.cli.task_hgap_prepare --resolved-tool-contract "
     desc = "XXX Experimental HGAP.5"
     name = 'XXX Experimental HgapConfigGenerator'
     p = get_pbparser(TOOL_ID, __version__, name, desc, driver_exe,

@@ -417,6 +417,7 @@ def run_hgap(input_files, output_files):
     # Update the cfg with our subreadset. (Inside hgap_run?)
     # Run pypeflow.hgap.main.
     cmd = 'python -m pbfalcon.cli.hgap_run --logging {logging_fn} {i_cfg_fn}'.format(**locals())
+    #cmd = 'TMP_DIR={tmp_dir} python -m pbfalcon.cli.hgap_run --logging {logging_fn} {i_cfg_fn}'.format(**locals())
     system(cmd)
     # Write Reports
     with open('run-falcon/0-rawreads/pre_assembly_stats.json') as stats_ifs: # by convention

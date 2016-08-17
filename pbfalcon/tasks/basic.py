@@ -2,7 +2,7 @@
 # FALCON TASKS
 from .. import tusks as pbfalcon
 from pbcommand.cli import registry_builder, registry_runner
-from pbcommand.models import (FileTypes, OutputFileType)
+from pbcommand.models import (FileTypes, OutputFileType, ResourceTypes)
 import logging
 import os
 import StringIO
@@ -155,18 +155,6 @@ def run_rtc(rtc):
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
-
-@registry('task_hgap_run', '0.0.0',
-        [FT_JSON, FT_JSON, FT_SUBREADS],
-        [FT_CONTIGS_OUT,
-         FT(FT_REPORT, 'preassembly_rpt', "Preassembly report"),
-         FT(FT_REPORT, 'polished_assembly_rpt', "Polished assembly report"),
-         FT(FT_LOG, 'out2', "Another log output, experimentally"),
-        ],
-        is_distributed=False)
-def run_rtc(rtc):
-  with cd(os.path.dirname(rtc.task.output_files[0])):
-    return pbfalcon.run_hgap(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_DB], [FT(FT_REPORT, 'preassembly_yield', "Preassembly report")], is_distributed=False)
 def run_rtc(rtc):

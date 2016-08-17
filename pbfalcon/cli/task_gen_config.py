@@ -35,7 +35,7 @@ def get_contract_parser():
     # Log file, tmp dir, tmp file. See ResourceTypes in models, ResourceTypes.TMP_DIR
     resource_types = ()
     # Commandline exe to call "{exe}" /path/to/resolved-tool-contract.json
-    driver_exe = "python -m pbfalcon.cli.gen_config --resolved-tool-contract "
+    driver_exe = "python -m pbfalcon.cli.task_gen_config --resolved-tool-contract "
     desc = "Generate FALCON cfg from pbcommand options."
     name = 'Tool FalconConfigGenerator'
     p = get_pbparser(TOOL_ID, __version__, name, desc, driver_exe,
