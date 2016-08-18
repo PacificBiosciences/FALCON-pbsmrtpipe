@@ -213,6 +213,11 @@ def update_for_grid(all_cfg, run_dir):
         all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
     # Note: The user should consider setting default_concurrent_jobs.
 
+def update_falcon(all_cfg):
+    use_tmpdir = all_cfg[OPTION_SECTION_HGAP].get('use_tmpdir')
+    if use_tmpdir:
+        all_cfg[OPTION_SECTION_FALCON] = use_tmpdir
+
 def run_hgap_prepare(input_files, output_files, options):
     """Generate a config-file from options.
     """
@@ -227,6 +232,9 @@ def run_hgap_prepare(input_files, output_files, options):
 
     # Get grid options, for job-distribution.
     update_for_grid(all_cfg, run_dir)
+
+    # Set some other falcon options, based on hgap options.
+    update_falcon(all_cfg)
 
     # Override from pbsmrtpipe config/preset.xml.
     all_cfg[OPTION_SECTION_FALCON]['genome_size'] = options[TASK_HGAP_GENOME_LENGTH].strip()
