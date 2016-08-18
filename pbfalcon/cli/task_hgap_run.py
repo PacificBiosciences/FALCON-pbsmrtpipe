@@ -39,7 +39,7 @@ def get_contract_parser():
 
 def run_my_main(input_files, output_files, tmpdir):
     # do stuff. Main should return an int exit code
-    rc = pbfalcon.run_hgap(input_files, output_files)
+    rc = pbfalcon.run_hgap(input_files, output_files, tmpdir)
     if rc:
         return rc
     else:
