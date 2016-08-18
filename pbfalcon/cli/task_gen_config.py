@@ -1,73 +1,51 @@
 from pbcommand.cli import pbparser_runner
 from pbcommand.utils import setup_log
-from pbcommand.models import (ResourceTypes, FileTypes, SymbolTypes)
+from pbcommand.models import (ResourceTypes, FileTypes)
 from pbcommand.models.parser import get_pbparser
-from .. import hgap_prepare
+from .. import gen_config
 import sys
 import logging
 
 __version__ = '1.0.0'
 log = logging.getLogger(__name__)
-TOOL_ID = 'falcon_ns.tasks.task_hgap_prepare'
+TOOL_ID = 'falcon_ns.tasks.task_falcon_gen_config'
 
-default_pbalign_section = """
-    "pbalign": {
-        "options": "--hitPolicy randombest --minAccuracy 70.0 --minLength 50 --algorithm=blasr --concordant",
-        "algorithmOptions": "--minMatch 12 --bestn 10 --minPctSimilarity 70.0",
-        "_jdnotes": "--maxHits 1 --minAnchorSize 12 --maxDivergence=30 --minAccuracy=0.75 --minLength=50 --hitPolicy=random --seed=1",
-        "_comment": "Overrides for blasr alignment (prior to polishing)"
-    },
-"""
-default_variantCaller_section = """
-    "variantCaller": {
-        "options": "--algorithm quiver --diploid --min_confidence 40 --min_coverage 5"
-        "_comment": "Overrides for genomic consensus (polishing)"
-    },
-"""
-# See "Minimal Options" at:
-#   https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/blob/master/HGAP/defaults.md
-default_HGAP_Options = """{
-    "~for_now_see": "https://github.com/PacificBiosciences/ExperimentalPipelineOptionsDocs/blob/master/HGAP/defaults.md"
-}
-"""
 
 def add_args_and_options(p):
     # FileType, label, name, description
-    p.add_input_file_type(FileTypes.DS_SUBREADS, "subreads-in", "DataSet-SubreadSet", "Input: Probably BAM files")
+    p.add_input_file_type(FileTypes.FOFN, "fofn_in", "FileOfFileNames", "FOFN for fasta files")
     # File Type, label, name, description, default file name
-    p.add_output_file_type(FileTypes.JSON, "hgap-cfg-out", "HGAP JSON file", "Output: Actual configuration to be used by HGAP, in a 2-level dictionary.", 'hgap-cfg')
-    p.add_output_file_type(FileTypes.JSON, "logging-cfg-out", "Python logging.config JSON file", "Output: Standard Python logging.config (for the task, not pbsmrtpipe)", 'logging-cfg')
-    p.add_output_file_type(FileTypes.LOG, "out", "Log-file from Python logger", "Output: log-file", 'out1')
+    p.add_output_file_type(FileTypes.CFG, "cfg_out", "INI File", "FALCON cfg (aka 'ini')", 'fc_run')
     # Option id, label, default value, name, description
-    p.add_str(hgap_prepare.TASK_HGAP_GENOME_LENGTH, "genome-length", '5000000',
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_GENOME_LENGTH, "genome-length", '5000000',
             "Genome length", "Approx. number of base pairs expected in the genome. We choose many hidden settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
-    p.add_str(hgap_prepare.TASK_HGAP_SEED_COVERAGE, "seed-coverage", '30',
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_SEED_COVERAGE, "seed-coverage", '30',
             "Seed coverage", "A target for the total # of bases in the 'raw' (post primary) reads, divided by the total number in the 'seed' reads.")
-    p.add_str(hgap_prepare.TASK_HGAP_SEED_LENGTH_CUTOFF, "seed-length-cutoff", '-1',
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_SEED_LENGTH_CUTOFF, "seed-length-cutoff", '-1',
             "Seed length cutoff", "Only reads as long as this will be used as 'seeds' for the draft assembly. (Shorter reads will be used for correction and polishing, if they pass the dataset filters.) If '-1', then this will be calculated automatically, such that the total number of seed bases nearly equals GenomeLength*SeedCoverage.")
-    p.add_str(hgap_prepare.TASK_HGAP_OPTIONS, "advanced-overrides",
-            default_HGAP_Options,
-            "Experimental HGAP.5 config overrides.",
-            "Experimental HGAP.5 config overrides are experimental.")
+    #p.add_str("falcon_ns.task_options." + gen_config.OPTION_CORES_MAX, "cores-max", '40',
+    #        "Cores Max IGNORED.", "IGNORE - not currently used")
+    p.add_str("falcon_ns.task_options." + gen_config.OPTION_CFG, "falcon-overrides", '',
+            "FALCON cfg overrides", "This is intended to allow support engineers to override the cfg which we will generate from other options. It is a semicolon-separated list of key=val pairs. Newlines are allowed but ignored. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
     return p
 
 def get_contract_parser():
     # Number of processors to use, can also be SymbolTypes.MAX_NPROC
-    nproc = SymbolTypes.MAX_NPROC
+    nproc = 1
     # Log file, tmp dir, tmp file. See ResourceTypes in models, ResourceTypes.TMP_DIR
     resource_types = ()
     # Commandline exe to call "{exe}" /path/to/resolved-tool-contract.json
-    driver_exe = "python -m pbfalcon.cli.hgap_prepare --resolved-tool-contract "
-    desc = "XXX Experimental HGAP.5"
-    name = 'XXX Experimental HgapConfigGenerator'
+    driver_exe = "python -m pbfalcon.cli.task_gen_config --resolved-tool-contract "
+    desc = "Generate FALCON cfg from pbcommand options."
+    name = 'Tool FalconConfigGenerator'
     p = get_pbparser(TOOL_ID, __version__, name, desc, driver_exe,
-            is_distributed=True, nproc=nproc, resource_types=resource_types)
+            is_distributed=False, nproc=nproc, resource_types=resource_types)
     add_args_and_options(p)
     return p
 
 def run_my_main(input_files, output_files, options):
     # do stuff. Main should return an int exit code
-    rc = hgap_prepare.run_hgap_prepare(input_files, output_files, options)
+    rc = gen_config.run_falcon_gen_config(input_files, output_files, options)
     if rc:
         return rc
     else:

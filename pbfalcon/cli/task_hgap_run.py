@@ -1,0 +1,82 @@
+from pbcommand.cli import pbparser_runner
+from pbcommand.utils import setup_log
+from pbcommand.models import (ResourceTypes, FileTypes, SymbolTypes)
+from pbcommand.models.parser import get_pbparser
+#from .. import hgap_prepare
+from .. import tusks as pbfalcon
+import sys
+import logging
+
+__version__ = '1.0.0'
+log = logging.getLogger(__name__)
+TOOL_ID = 'falcon_ns.tasks.task_hgap_run'
+
+#    i_cfg_fn, i_logging_fn, i_subreadset_fn = input_files
+#    o_contigset_fn, o_preass_json_fn, o_polass_json_fn, o_log_fn, = output_files
+# https://github.com/PacificBiosciences/smrtflow/blob/master/smrt-server-analysis/src/main/resources/pipeline-template-view-rules/pipeline_template_view_rules-polished_falcon_fat.json
+
+def run_rtc(rtc):
+  tempdir = rtc.task.tmpdir_resources[0].path
+  msg = "tempdir={!r}".format(tmpdir)
+  print msg
+  raise Exception(msg)
+  with cd(os.path.dirname(rtc.task.output_files[0])):
+    return pbfalcon.run_hgap(rtc.task.input_files, rtc.task.output_files)
+
+def add_args_and_options(p):
+    # FileType, label, name=title, description
+    p.add_input_file_type(FileTypes.JSON, "Label PacBio.FileTypes.json_0", "<FileType id=PacBio.FileTypes.json name=file >", "description for PacBio.FileTypes.json_0")
+    p.add_input_file_type(FileTypes.JSON, "Label PacBio.FileTypes.json_1", "<FileType id=PacBio.FileTypes.json name=file >", "description for PacBio.FileTypes.json_1")
+    p.add_input_file_type(FileTypes.DS_SUBREADS, "Label PacBio.DataSet.SubreadSet_2", "<DataSetFileType id=PacBio.DataSet.SubreadSet name=file >", "description for PacBio.DataSet.SubreadSet_2")
+    # File Type, label, name, description, default file name
+    p.add_output_file_type(FileTypes.DS_CONTIG, "contig_id", "contigset", "Contigset of polished FASTA sequences", 'polished.contigset')
+    p.add_output_file_type(FileTypes.REPORT, "preassembly_rpt_id", "Preassembly report", "description for <FileType id=PacBio.FileTypes.JsonReport name=report >", 'preassembly_rpt')
+    p.add_output_file_type(FileTypes.REPORT, "polished_assembly_rpt_id", "Polished assembly report", "description for <FileType id=PacBio.FileTypes.JsonReport name=report >", 'polished_assembly_rpt')
+    p.add_output_file_type(FileTypes.LOG, "out2_id", "Another log output, experimentally", 'description for <FileType id=PacBio.FileTypes.log name=file >', 'out2')
+    return p
+
+def get_contract_parser():
+    nproc = SymbolTypes.MAX_NPROC
+    resource_types = ()
+    #resource_types = (ResourceTypes.TMP_DIR,)
+    # Commandline exe to call "{exe}" /path/to/resolved-tool-contract.json
+    driver_exe = "python -m pbfalcon.cli.task_hgap_run --resolved-tool-contract "
+    desc = 'pbcommand wrapper for ' + TOOL_ID
+    name = 'Tool task_hgap_run'
+    p = get_pbparser(TOOL_ID, __version__, name, desc, driver_exe,
+            is_distributed=False, nproc=nproc, resource_types=resource_types)
+    add_args_and_options(p)
+    return p
+
+def run_my_main(input_files, output_files, options):
+    # do stuff. Main should return an int exit code
+    rc = pbfalcon.run_hgap(input_files, output_files)
+    if rc:
+        return rc
+    else:
+        return 0
+
+def _args_runner(args):
+    # this is the args from parser.parse_args()
+    # the properties of args are defined as "labels" in the add_args_and_options func.
+    # TODO: Convert 'args' to a dict somehow?
+    return run_my_main([args.fasta_in], [args.fasta_out], args)
+
+def _resolved_tool_contract_runner(resolved_tool_contract):
+    rtc = resolved_tool_contract
+    # all options are referenced by globally namespaced id. This allows tools to use other tools options
+    # e.g., pbalign to use blasr defined options.
+    return run_my_main(rtc.task.input_files, rtc.task.output_files, rtc.task.options)
+
+def main(argv=sys.argv):
+    log.info("Starting {f} version {v} pbcommand example dev app".format(f=__file__, v=__version__))
+    p = get_contract_parser()
+    return pbparser_runner(argv[1:],
+                           p,
+                           _args_runner, # argparse runner func
+                           _resolved_tool_contract_runner, # tool contract runner func
+                           log, # log instance
+                           setup_log # setup log func
+                           )
+if __name__ == '__main__':
+    sys.exit(main())
