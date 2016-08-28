@@ -51,7 +51,8 @@ def for_task(
         i_raw_reads_db_fn, # maybe symlinked
         o_json_fn,
     ):
-    """See pbfalcon.tusks
+    """This is used by HGAP4, run_report_preassembly_yield().
+    See pbfalcon.tusks
     """
     tasks_dir = os.path.dirname(os.path.dirname(i_json_config_fn))
     i_length_cutoff_fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'length_cutoff')
@@ -95,6 +96,8 @@ def produce_report(
         preassembled_bases,
         preassembled_coverage,
         preassembled_yield,
+        preassembled_seed_fragmentation,
+        preassembled_seed_truncation,
         **ignored
     ):
     #preassembled_yield = '{:.3f}'.format(preassembled_yield) # but this would make it a str, unlike the others.
@@ -128,6 +131,8 @@ def produce_report(
     return report
 
 def write_report_from_stats(stats_ifs, report_ofs):
+    """This is used by HGAP5, task_run_hgap.py.
+    """
     stats = json.loads(stricter_json(stats_ifs.read()))
     report = produce_report(**stats)
     content = report.to_json()
