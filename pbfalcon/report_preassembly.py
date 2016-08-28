@@ -121,6 +121,8 @@ def produce_report(
     attrs.append(Attribute('preassembled_bases', preassembled_bases, name="Number of Pre-Assembled Bases (total)"))
     attrs.append(Attribute('preassembled_coverage', preassembled_coverage, name="Pre-Assembled Coverage (bases/genome_size)"))
     attrs.append(Attribute('preassembled_yield', preassembled_yield, name="Pre-Assembled Yield (bases/seed_bases)"))
+    attrs.append(Attribute('preassembled_seed_fragmentation', preassembled_seed_fragmentation, name="Avg number of reads that each seed is broken into."))
+    attrs.append(Attribute('preassembled_seed_truncation', preassembled_seed_truncation, name="Avg number of bases lost from each seed."))
 
     report = Report('preassembly', title='Preassembly', attributes=attrs)
     return report
