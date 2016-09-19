@@ -68,19 +68,16 @@ def for_task(
         length_cutoff,
     )
     report = produce_report(**report_dict)
-    log.info('%r -> %r' %(report, o_json_fn))
     with open(o_json_fn, 'w') as ofs:
-        log.info("Writing report to {!r}.".format(o_json_fn))
-        content = report.to_json()
-        ofs.write(content)
+        log.info("Writing report to {!r}:\n{}".format(o_json_fn, report))
+        ofs.write(report)
 
 def write_report_from_stats(stats_ifs, report_ofs):
     """This is used by HGAP5, task_run_hgap.py.
     """
     stats = json.loads(stricter_json(stats_ifs.read()))
     report = produce_report(**stats)
-    content = report.to_json()
-    report_ofs.write(content)
+    report_ofs.write(report)
 
 def args_runner(args):
     # UNTESTED -- and needs update for DAZZ_DB -- but never used anyway
@@ -102,12 +99,11 @@ def args_runner(args):
         length_cutoff,
     )
     report = produce_report(**report_dict)
-    log.info('%r -> %r' %(report, o_json_fn))
 
     log.info(report)
     with open(output_json, 'w') as f:
         log.info("Writing report to {!r}.".format(output_json))
-        f.write(report.to_json())
+        f.write(report)
 
     return 0
 
