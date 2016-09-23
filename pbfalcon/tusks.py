@@ -407,6 +407,9 @@ def run_falcon_asm(input_files, output_files):
 
 def run_hgap(input_files, output_files, tmpdir):
     i_cfg_fn, i_logging_fn, i_subreadset_fn = input_files
+    o_preads_fasta_fn, \
+    o_polished_fasta_fn, o_polished_fastq_fn, o_polished_csv_fn, \
+    o_aligned_subreads_fn, o_alignment_summary_gff_fn, o_unmapped_subreads_txt_fn, \
     o_contigset_fn, o_preass_json_fn, o_polass_json_fn, o_log_fn, = output_files
     # Update the logging-cfg with our log-file.
     logging_cfg = json.loads(open(i_logging_fn).read())
@@ -423,6 +426,13 @@ def run_hgap(input_files, output_files, tmpdir):
         with open(o_preass_json_fn, 'w') as report_ofs:
             report_preassembly.write_report_from_stats(stats_ifs, report_ofs)
     # Symlink expected outputs, by convention.
+    symlink('run-falcon/1-preads_ovl/preads4falcon.fasta', o_preads_fasta_fn)
+    symlink('run-gc-gather/contigset.fasta', o_polished_fasta_fn)
+    symlink('run-gc-gather/gathered.fastq', o_polished_fastq_fn)
+    symlink('run-polished-assembly-report/polished_coverage_vs_quality.csv', o_polished_csv_fn)
+    symlink('run-polished-assembly-report/alignment.summary.gff', o_alignment_summary_gff_fn)
+    symlink('run-pbalign_gather/aligned.subreads.alignmentset.xml', o_aligned_subreads_fn)
+    symlink('run-pbalign_gather/unmapped.txt', o_unmapped_subreads_txt_fn)
     symlink('run-gc-gather/contigset.xml', o_contigset_fn)
     symlink('run-polished-assembly-report/polished_assembly_report.json', o_polass_json_fn)
     return 0

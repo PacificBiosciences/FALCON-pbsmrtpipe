@@ -18,8 +18,19 @@ def add_args_and_options(p):
     p.add_input_file_type(FileTypes.JSON, "Label PacBio.FileTypes.json_0", "<FileType id=PacBio.FileTypes.json name=file >", "description for PacBio.FileTypes.json_0")
     p.add_input_file_type(FileTypes.JSON, "Label PacBio.FileTypes.json_1", "<FileType id=PacBio.FileTypes.json name=file >", "description for PacBio.FileTypes.json_1")
     p.add_input_file_type(FileTypes.DS_SUBREADS, "Label PacBio.DataSet.SubreadSet_2", "<DataSetFileType id=PacBio.DataSet.SubreadSet name=file >", "description for PacBio.DataSet.SubreadSet_2")
+
     # File Type, label, name, description, default file name
-    p.add_output_file_type(FileTypes.DS_CONTIG, "contig_id", "contigset", "Contigset of polished FASTA sequences", 'polished.contigset')
+    # new outputs
+    p.add_output_file_type(FileTypes.FASTA, "preads_id", "preads.fasta", "Tarball of FASTA for preassembly reads", 'preads')
+    p.add_output_file_type(FileTypes.FASTA, "polished_fasta_id", "polished.fasta", "FASTA of polished assembly", 'polished')
+    p.add_output_file_type(FileTypes.FASTQ, "polished_fastq_id", "polished.fastq", "FASTQ of polished assembly", 'polished')
+    p.add_output_file_type(FileTypes.CSV, "polished_csv_id", "polished.csv", "CSV from report of polished assembly", 'polished')
+    p.add_output_file_type(FileTypes.DS_ALIGN, "alignmentset_id", "aligned.subreads.alignmentset.xml", "Dataset of BAM files of aligned subreads", 'aligned.subreads')
+    p.add_output_file_type(FileTypes.GFF, "gff_id", "alignment.summary.gff", "General Feature Format file for alignment coverage", 'alignment.summary')
+    p.add_output_file_type(FileTypes.TXT, "unmapped_id", "unmapped.subreads.txt", "Names of unmapped subreads from pbalign", 'unmapped.subreads')
+
+    # old outputs
+    p.add_output_file_type(FileTypes.DS_CONTIG, "contig_id", "polished.contigset.xml", "Contigset of polished FASTA sequences (redundant with polished.fasta)", 'polished.contigset')
     p.add_output_file_type(FileTypes.REPORT, "preassembly_rpt_id", "Preassembly report", "description for <FileType id=PacBio.FileTypes.JsonReport name=report >", 'preassembly_rpt')
     p.add_output_file_type(FileTypes.REPORT, "polished_assembly_rpt_id", "Polished assembly report", "description for <FileType id=PacBio.FileTypes.JsonReport name=report >", 'polished_assembly_rpt')
     p.add_output_file_type(FileTypes.LOG, "out2_id", "Another log output, experimentally", 'description for <FileType id=PacBio.FileTypes.log name=file >', 'out2')
