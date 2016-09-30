@@ -130,8 +130,7 @@ def dump_as_json(data, ofs):
 def learn_job_type(ifs):
     content = ifs.read()
     re.sub(r'\\\s*', ' ', content)
-    log.info('INFO')
-    log.warning('content=\n{}'.format(content))
+    log.info('In learn_job_type(), content=\n"""\n{}\n"""'.format(content))
     try:
         return learn_job_type_from_new_cluster_sh(content)
     except Exception:
@@ -144,16 +143,20 @@ def learn_job_type_from_old_cluster_sh(content):
     """
     re_qsub = re.compile(r'qsub\s+.+-q\s+(?P<queue>\S+)')
     mo = re_qsub.search(content)
-    if mo:
-        job_type = 'sge'
-        queue_name = mo.group('queue')
+    if not mo:
+        raise Exception('re.search 1 failed for "{}" in "{}"'.format(
+            re_qsub.pattern, content))
+    job_type = 'sge'
+    queue_name = mo.group('queue')
     return job_type, queue_name
 
 def learn_jmsenv_ish_from_cluster_sh(content):
     re_qsub = re.compile(r'--jmsenv\s+"(?P<jmsenv>\S+)"', re.MULTILINE)
     mo = re_qsub.search(content)
-    if mo:
-        jmsenv_ish = mo.group('jmsenv')
+    if not mo:
+        raise Exception('re.search 2 failed for "{}" in "{}"'.format(
+            re_qsub.pattern, content))
+    jmsenv_ish = mo.group('jmsenv')
     return jmsenv_ish
 
 def capture(cmd):
@@ -166,16 +169,22 @@ def capture(cmd):
 def learn_job_type_from_jmsenv_ish(output):
     re_qsub = re.compile(r'JMS_TYPE=(?P<jms_type>\S+)\s+QUEUE=(?P<queue>\S+)', re.MULTILINE)
     mo = re_qsub.search(output)
-    if mo:
-        job_type = mo.group('jms_type').lower()
-        queue_name = mo.group('queue')
+    if not mo:
+        raise Exception('re.search 3 failed for "{}" in "{}"'.format(
+            re_qsub.pattern, output))
+    job_type = mo.group('jms_type').lower()
+    queue_name = mo.group('queue')
     return job_type, queue_name
 
+
 def learn_job_type_from_jmsenv(jmsenv_ish):
-    jmsenv_ish = '/pbi/dept/secondary/siv/smrtlink/smrtlink-nightly/smrtsuite_186224/userdata/generated/config/jmsenv/jmsenv.ish'
     bash = "bash -c '. {}; echo JMS_TYPE=$JMS_TYPE; echo QUEUE=$QUEUE'".format(jmsenv_ish)
     output = capture(bash)
-    return learn_job_type_from_jmsenv_ish(output)
+    try:
+        return learn_job_type_from_jmsenv_ish(output)
+    except Exception:
+        log.error('bash command was: {!r}'.format(bash))
+        raise
 
 def learn_job_type_from_new_cluster_sh(content):
     """Infer the job_type from the pbsmrtpipe cluster.sh file,
@@ -184,7 +193,8 @@ def learn_job_type_from_new_cluster_sh(content):
     try:
         jmsenv_ish = learn_jmsenv_ish_from_cluster_sh(content)
     except Exception:
-        log.exception('Apparently we are not using jsmcmd. cluster.sh==\n{}'.format(content))
+        log.exception('Apparently we are not using jsmcmd. cluster.sh==\n"""\n{}\n"""'.format(content))
+        raise
     return learn_job_type_from_jmsenv(jmsenv_ish)
 
 def update_for_grid(all_cfg, run_dir):
