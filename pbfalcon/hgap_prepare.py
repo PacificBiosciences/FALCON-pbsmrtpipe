@@ -172,7 +172,7 @@ def learn_job_type_from_jmsenv_ish(output):
     return job_type, queue_name
 
 def learn_job_type_from_jmsenv(jmsenv_ish):
-    jmsenv_ish = '/pbi/dept/secondary/siv/smrtlink/smrtlink-bihourly/smrtsuite_183743/userdata/generated/config/jmsenv/jmsenv.ish'
+    jmsenv_ish = '/pbi/dept/secondary/siv/smrtlink/smrtlink-nightly/smrtsuite_186224/userdata/generated/config/jmsenv/jmsenv.ish'
     bash = "bash -c '. {}; echo JMS_TYPE=$JMS_TYPE; echo QUEUE=$QUEUE'".format(jmsenv_ish)
     output = capture(bash)
     return learn_job_type_from_jmsenv_ish(output)
