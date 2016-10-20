@@ -37,7 +37,7 @@ def FT(file_type, basename, title):
                           title,
                           "description for {f}".format(f=file_type),
                           basename)
-FT_DB = FT(FT_DUMMY, 'dazzler.db', "DAZZ_DB (implies dot-files too)")
+FT_DB = FT(FT_DUMMY, 'dazzler.db', "Database Overview")
 FT_JSON_OUT = OutputFileType(FileTypes.JSON.file_type_id,
                              "json_id",
                              "JSON",
