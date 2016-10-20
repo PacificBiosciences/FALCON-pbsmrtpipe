@@ -127,75 +127,16 @@ def dump_as_json(data, ofs):
         as_json))
     ofs.write(as_json)
 
-def learn_job_type(ifs):
-    content = ifs.read()
-    re.sub(r'\\\s*', ' ', content)
-    log.info('In learn_job_type(), content=\n"""\n{}\n"""'.format(content))
-    try:
-        return learn_job_type_from_new_cluster_sh(content)
-    except Exception:
-        log.exception('Apparently we are not using jsmcmd.')
-    return learn_job_type_from_old_cluster_sh(content)
-    # Can throw UnboundLocalError for missing queue_name
-
-def learn_job_type_from_old_cluster_sh(content):
-    """Infer the job_type from the pbsmrtpipe cluster.sh file.
+def learn_submit_template(content):
+    """Infer the submission template from the pbsmrtpipe runnable-task.json file.
     """
-    re_qsub = re.compile(r'qsub\s+.+-q\s+(?P<queue>\S+)')
-    mo = re_qsub.search(content)
-    if not mo:
-        raise Exception('re.search 1 failed for "{}" in "{}"'.format(
-            re_qsub.pattern, content))
-    job_type = 'sge'
-    queue_name = mo.group('queue')
-    return job_type, queue_name
-
-def learn_jmsenv_ish_from_cluster_sh(content):
-    re_qsub = re.compile(r'--jmsenv\s+"(?P<jmsenv>\S+)"', re.MULTILINE)
-    mo = re_qsub.search(content)
-    if not mo:
-        raise Exception('re.search 2 failed for "{}" in "{}"'.format(
-            re_qsub.pattern, content))
-    jmsenv_ish = mo.group('jmsenv')
-    return jmsenv_ish
-
-def capture(cmd):
-    log.info('capture(`{}`)'.format(cmd))
-    status, output = commands.getstatusoutput(cmd)
-    if status:
-        raise Exception('Status: {} from cmd: `{}`'.format(status, output))
-    return output
-
-def learn_job_type_from_jmsenv_ish(output):
-    re_qsub = re.compile(r'JMS_TYPE=(?P<jms_type>\S+)\s+QUEUE=(?P<queue>\S+)', re.MULTILINE)
-    mo = re_qsub.search(output)
-    if not mo:
-        raise Exception('re.search 3 failed for "{}" in "{}"'.format(
-            re_qsub.pattern, output))
-    job_type = mo.group('jms_type').lower()
-    queue_name = mo.group('queue')
-    return job_type, queue_name
-
-
-def learn_job_type_from_jmsenv(jmsenv_ish):
-    bash = "bash -c '. {}; echo JMS_TYPE=$JMS_TYPE; echo QUEUE=$QUEUE'".format(jmsenv_ish)
-    output = capture(bash)
-    try:
-        return learn_job_type_from_jmsenv_ish(output)
-    except Exception:
-        log.error('bash command was: {!r}'.format(bash))
-        raise
-
-def learn_job_type_from_new_cluster_sh(content):
-    """Infer the job_type from the pbsmrtpipe cluster.sh file,
-    which must use jmscmd.
-    """
-    try:
-        jmsenv_ish = learn_jmsenv_ish_from_cluster_sh(content)
-    except Exception:
-        log.exception('Apparently we are not using jsmcmd. cluster.sh==\n"""\n{}\n"""'.format(content))
-        raise
-    return learn_job_type_from_jmsenv(jmsenv_ish)
+    table = json.loads(content)
+    cluster_table = table['cluster']
+    if cluster_table is None:
+        raise RuntimeError('No cluster information in "{}"'.format(content))
+    start_string = cluster_table['start']
+    stop_string = cluster_table['stop']
+    return start_string, stop_string
 
 def update_for_grid(all_cfg, run_dir):
     """Update both hgap and falcon options based
@@ -204,24 +145,27 @@ def update_for_grid(all_cfg, run_dir):
     """
     fc_cfg = all_cfg[OPTION_SECTION_FALCON]
     assert not fc_cfg
-    cluster_sh_fn = os.path.join(run_dir, 'cluster.sh')
-    if os.path.exists(cluster_sh_fn):
-        with open(cluster_sh_fn) as ifs:
-            job_type, queue_name = learn_job_type(ifs)
-        all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
-        all_cfg[OPTION_SECTION_HGAP]['job_queue'] = queue_name
-        sge_queue_option = ' -q {}'.format(queue_name)
+    runnable_task_fn = os.path.join(run_dir, 'runnable-task.json')
+    try:
+        with open(runnable_task_fn) as ifs:
+            submit_template, kill_template = learn_submit_template(ifs.read())
+        job_type = 'string'
+        job_queue = submit_template
         sge_option_names = (
                 'sge_option_da', 'sge_option_la',
                 'sge_option_pda', 'sge_option_pla',
                 'sge_option_fc', 'sge_option_cns',
         )
-        for option_name in sge_option_names:
-            fc_cfg[option_name] = sge_queue_option + ' -pe smp 4' # TODO: Base on size/step.
-    else:
-        job_type = 'local'
-        all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
-    # Note: The user should consider setting default_concurrent_jobs.
+        #for option_name in sge_option_names:
+        #    fc_cfg[option_name] = sge_queue_option
+    except Exception:
+        # For testing, this is not really an error. But customers should never see this code-path.
+        log.exception('Running locally instead of via cluster.')
+        job_type = 'string'
+        job_queue = '/bin/bash -c "${CMD}"'
+    all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
+    all_cfg[OPTION_SECTION_HGAP]['job_queue'] = job_queue
+    # TODO: Set default_concurrent_jobs. Set concurrency per stage.
 
 def update_falcon(all_cfg):
     use_tmpdir = all_cfg[OPTION_SECTION_HGAP].get('use_tmpdir')
