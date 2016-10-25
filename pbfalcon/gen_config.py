@@ -28,11 +28,9 @@ length_cutoff = 1000
 length_cutoff_pr = 1
 pa_DBsplit_option = -x5 -s50 -a
 pa_HPCdaligner_option =  -v -k25 -h35 -w5 -e.95 -l40 -s1000 -t27
-pa_concurrent_jobs = 32
 overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
 ovlp_HPCdaligner_option =  -v -k25 -h35 -w5 -e.99 -l40 -s1000 -t27
 ovlp_DBsplit_option = -x5 -s50 -a
-ovlp_concurrent_jobs = 32
 """
 old_defaults_lambda = """\
 genome_size = 48000
@@ -41,11 +39,9 @@ length_cutoff = -1
 length_cutoff_pr = 12000
 pa_DBsplit_option = -x500 -s50 -a
 pa_HPCdaligner_option = -v -dal4 -t16 -e.70 -l1000 -s1000
-pa_concurrent_jobs = 32
 overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24
 ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
 ovlp_DBsplit_option = -x500 -s50 -a
-ovlp_concurrent_jobs = 32
 """
 # These values will need more adjusting, but at least they worked on some dataset.
 # The current values are from my latest experiment, producing 2 contigs and a total
@@ -60,10 +56,8 @@ length_cutoff_pr = 50
 overlap_filtering_setting = --max_diff 1000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
 ovlp_DBsplit_option = -s50 -a
 ovlp_hpcdaligner_option = -v -k15 -h60 -w6 -e.95 -l40 -s100 -M16
-ovlp_concurrent_jobs = 32
 pa_DBsplit_option = -x250 -s500 -a
 pa_HPCdaligner_option =   -v -k15 -h35 -w7 -e.70 -l40 -s100 -M16
-pa_concurrent_jobs = 32
 """
 # ecoli based on Jim's run: http://smrtlink-beta:8080/#/analysis-job/2437
 defaults_ecoli = """
@@ -80,27 +74,23 @@ pa_hpcdaligner_option =   -v -dal24 -t14 -h70 -e.75 -l1000 -s100 -k18
 """
 defaults_yeast = """
 genome_size = 12000000
-cns_concurrent_jobs = 32
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 8
 length_cutoff = -1
 length_cutoff_pr = 500
 overlap_filtering_setting = --max_diff 40 --max_cov 80 --min_cov 2 --n_core 12
 ovlp_DBsplit_option = -x15000 -s40
 ovlp_HPCdaligner_option =  -v -dal4 -k24 -e.96  -s200 -M16 -l2500 -h1024
-ovlp_concurrent_jobs = 32
 pa_DBsplit_option = -a -x500 -s100
 pa_HPCdaligner_option =    -v -dal4 -k18 -e0.70 -s200 -M16 -l4800 -h480 -w8
 """
 defaults_human = """
 genome_size = 3000000000
-cns_concurrent_jobs = 32
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 8
 length_cutoff = -1
 length_cutoff_pr = 500
 overlap_filtering_setting = --max_diff 40 --max_cov 80 --min_cov 2 --n_core 12
 ovlp_DBsplit_option = -x15000 -s40
 ovlp_HPCdaligner_option =  -v -dal4 -k24 -e.96  -s200 -M16 -l2500 -h1024
-ovlp_concurrent_jobs = 32
 pa_DBsplit_option = -a -x500 -s500
 pa_HPCdaligner_option =    -v -dal4 -k18 -e0.70 -s200 -M16 -l4800 -h480 -w8
 """

@@ -166,7 +166,6 @@ def update_for_grid(all_cfg, run_dir):
         job_queue = '/bin/bash -c "${CMD}"'
     all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
     all_cfg[OPTION_SECTION_HGAP]['job_queue'] = job_queue
-    # TODO: Set default_concurrent_jobs. Set concurrency per stage.
 
 def update_falcon(all_cfg):
     # Propagate use_tmpdir from hgap section to falcon section.
