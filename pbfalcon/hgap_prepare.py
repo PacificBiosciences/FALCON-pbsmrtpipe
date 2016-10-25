@@ -139,25 +139,26 @@ def learn_submit_template(content):
     return start_string, stop_string
 
 def update_for_grid(all_cfg, run_dir):
-    """Update both hgap and falcon options based
-    on pbsmrtpipe cluster.sh file.
-    Precondition: For now, all_cfg['falcon'] is empty or missing.
+    """Update hgap options,
+    based on pbsmrtpipe cluster.sh file.
     """
-    fc_cfg = all_cfg[OPTION_SECTION_FALCON]
-    assert not fc_cfg
+    # Set defaults, in case of job_type=sge?
+    #fc_cfg = all_cfg[OPTION_SECTION_FALCON]
+    #sge_option_names = (
+    #        'sge_option_da', 'sge_option_la',
+    #        'sge_option_pda', 'sge_option_pla',
+    #        'sge_option_fc', 'sge_option_cns',
+    #)
+    #for option_name in sge_option_names:
+    #    fc_cfg[option_name] = sge_queue_option
+
+    # Get start_tmpl from pbsmrtpipe.
     runnable_task_fn = os.path.join(run_dir, 'runnable-task.json')
     try:
         with open(runnable_task_fn) as ifs:
             submit_template, kill_template = learn_submit_template(ifs.read())
         job_type = 'string'
         job_queue = submit_template
-        sge_option_names = (
-                'sge_option_da', 'sge_option_la',
-                'sge_option_pda', 'sge_option_pla',
-                'sge_option_fc', 'sge_option_cns',
-        )
-        #for option_name in sge_option_names:
-        #    fc_cfg[option_name] = sge_queue_option
     except Exception:
         # For testing, this is not really an error. But customers should never see this code-path.
         log.exception('Running locally instead of via cluster.')
@@ -168,9 +169,15 @@ def update_for_grid(all_cfg, run_dir):
     # TODO: Set default_concurrent_jobs. Set concurrency per stage.
 
 def update_falcon(all_cfg):
+    # Propagate use_tmpdir from hgap section to falcon section.
     use_tmpdir = all_cfg[OPTION_SECTION_HGAP].get('use_tmpdir')
     if use_tmpdir:
-        all_cfg[OPTION_SECTION_FALCON] = use_tmpdir
+        all_cfg[OPTION_SECTION_FALCON]['use_tmpdir'] = use_tmpdir
+    # Set concurrency per stage. Just use the global default for now.
+    max_conc = 24
+    all_cfg[OPTION_SECTION_FALCON].setdefault('cns_concurrent_jobs', max_conc)
+    all_cfg[OPTION_SECTION_FALCON].setdefault('ovlp_concurrent_jobs', max_conc)
+    all_cfg[OPTION_SECTION_FALCON].setdefault('pa_concurrent_jobs', max_conc)
 
 def run_hgap_prepare(input_files, output_files, options):
     """Generate a config-file from options.
