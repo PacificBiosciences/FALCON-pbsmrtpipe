@@ -213,6 +213,8 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads'):
         'config': config,
         'job_done': job_done,
         'script_fn': script_fn,
+        'preads4falcon_fn': 'preads4falcon.fasta',
+        'preads_db': 'preads.db',
     }
     support.run_db2falcon(**args)
     run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
@@ -426,7 +428,7 @@ def run_hgap(input_files, output_files, tmpdir):
         with open(o_preass_json_fn, 'w') as report_ofs:
             report_preassembly.write_report_from_stats(stats_ifs, report_ofs)
     # Symlink expected outputs, by convention.
-    symlink('run-falcon/1-preads_ovl/preads4falcon.fasta', o_preads_fasta_fn)
+    symlink('run-falcon/1-preads_ovl/db2falcon/preads4falcon.fasta', o_preads_fasta_fn)
     symlink('run-gc-gather/contigset.fasta', o_polished_fasta_fn)
     symlink('run-gc-gather/gathered.fastq', o_polished_fastq_fn)
     symlink('run-polished-assembly-report/polished_coverage_vs_quality.csv', o_polished_csv_fn)
