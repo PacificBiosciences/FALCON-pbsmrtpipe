@@ -154,15 +154,14 @@ def update_for_grid(all_cfg, run_dir):
 
     # Get start_tmpl from pbsmrtpipe.
     runnable_task_fn = os.path.join(run_dir, 'runnable-task.json')
+    job_type = all_cfg[OPTION_SECTION_HGAP].get('job_type', 'string')
     try:
         with open(runnable_task_fn) as ifs:
             submit_template, kill_template = learn_submit_template(ifs.read())
-        job_type = 'string'
         job_queue = submit_template
     except Exception:
         # For testing, this is not really an error. But customers should never see this code-path.
         log.exception('Running locally instead of via cluster.')
-        job_type = 'string'
         job_queue = '/bin/bash -c "${CMD}"'
     all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
     all_cfg[OPTION_SECTION_HGAP]['job_queue'] = job_queue
