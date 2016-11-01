@@ -139,9 +139,25 @@ def learn_submit_template(content):
     return start_string, stop_string
 
 def update_for_grid(all_cfg, run_dir):
-    """Update hgap options,
-    based on pbsmrtpipe cluster.sh file.
+    """Update job_queue,
+    based on pbsmrtpipe runnable-task.json file.
     """
+    job_queue = all_cfg[OPTION_SECTION_HGAP].get('job_queue')
+    # Set job_queue. (job_type means nothing now.)
+    if not job_queue:
+        runnable_task_fn = os.path.join(run_dir, 'runnable-task.json')
+        try:
+            # Get start_tmpl from pbsmrtpipe.
+            with open(runnable_task_fn) as ifs:
+                submit_template, kill_template = learn_submit_template(ifs.read())
+            job_queue = submit_template
+        except Exception:
+            # For testing, this is not really an error. But customers should never see this code-path.
+            log.exception('Running locally instead of via cluster.')
+            job_queue = '/bin/bash -c "${CMD}"'
+    all_cfg[OPTION_SECTION_HGAP]['job_queue'] = job_queue
+
+def update_pwatcher(all_cfg):
     # Set defaults, in case of job_type=sge?
     #fc_cfg = all_cfg[OPTION_SECTION_FALCON]
     #sge_option_names = (
@@ -152,19 +168,16 @@ def update_for_grid(all_cfg, run_dir):
     #for option_name in sge_option_names:
     #    fc_cfg[option_name] = sge_queue_option
 
-    # Get start_tmpl from pbsmrtpipe.
-    runnable_task_fn = os.path.join(run_dir, 'runnable-task.json')
-    job_type = all_cfg[OPTION_SECTION_HGAP].get('job_type', 'string')
-    try:
-        with open(runnable_task_fn) as ifs:
-            submit_template, kill_template = learn_submit_template(ifs.read())
-        job_queue = submit_template
-    except Exception:
-        # For testing, this is not really an error. But customers should never see this code-path.
-        log.exception('Running locally instead of via cluster.')
-        job_queue = '/bin/bash -c "${CMD}"'
+    pwatcher_type = all_cfg[OPTION_SECTION_HGAP].get('pwatcher_type', 'blocking')
+    all_cfg[OPTION_SECTION_HGAP]['pwatcher_type'] = pwatcher_type
+    if pwatcher_type in ('fs_based', 'network_based'):
+        log.error('pwatcher_type {!r} not currently supported within pbsmrtpipe. It may fail when run with an installed tarball.'.format(
+            pwatcher_type))
+        job_type = 'sge'
+    else:
+        job_type = all_cfg[OPTION_SECTION_HGAP].get('job_type', 'string') # for info only
     all_cfg[OPTION_SECTION_HGAP]['job_type'] = job_type
-    all_cfg[OPTION_SECTION_HGAP]['job_queue'] = job_queue
+    all_cfg[OPTION_SECTION_FALCON]['job_type'] = job_type # I think this is used per-task, maybe.
 
 def update_falcon(all_cfg):
     # Propagate use_tmpdir from hgap section to falcon section.
@@ -204,6 +217,8 @@ def run_hgap_prepare(input_files, output_files, options):
         cfg_json = '{}'
     override_cfg = json.loads(stricter_json(cfg_json))
     update2(all_cfg, override_cfg)
+
+    update_pwatcher(all_cfg)
 
     # Get options from pbsmrtpipe.
     pbsmrtpipe_opts = get_pbsmrtpipe_opts(run_dir)
