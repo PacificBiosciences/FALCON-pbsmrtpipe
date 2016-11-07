@@ -21,6 +21,7 @@ OPTION_SEED_COVERAGE = 'HGAP_SeedCoverage_str'
 OPTION_SEED_LENGTH_CUTOFF = 'HGAP_SeedLengthCutoff_str'
 OPTION_CORES_MAX = 'HGAP_CoresMax_str'
 OPTION_CFG = 'HGAP_FalconAdvanced_str'
+OPTION_AGGRESSIVE_ASM = 'HGAP_AggressiveAsm_bool'
 
 defaults_old = """\
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --max_n_read 20000 --n_core 6
@@ -31,6 +32,7 @@ pa_HPCdaligner_option =  -v -k25 -h35 -w5 -e.95 -l40 -s1000 -t27
 overlap_filtering_setting = --max_diff 10000 --max_cov 100000 --min_cov 0 --bestn 1000 --n_core 4
 ovlp_HPCdaligner_option =  -v -k25 -h35 -w5 -e.99 -l40 -s1000 -t27
 ovlp_DBsplit_option = -x5 -s50 -a
+falcon_sense_greedy = False
 """
 old_defaults_lambda = """\
 genome_size = 48000
@@ -42,6 +44,7 @@ pa_HPCdaligner_option = -v -dal4 -t16 -e.70 -l1000 -s1000
 overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24
 ovlp_HPCdaligner_option = -v -dal4 -t32 -h60 -e.96 -l500 -s1000
 ovlp_DBsplit_option = -x500 -s50 -a
+falcon_sense_greedy = False
 """
 # These values will need more adjusting, but at least they worked on some dataset.
 # The current values are from my latest experiment, producing 2 contigs and a total
@@ -58,6 +61,7 @@ ovlp_DBsplit_option = -s50 -a
 ovlp_hpcdaligner_option = -v -k15 -h60 -w6 -e.95 -l40 -s100 -M16
 pa_DBsplit_option = -x250 -s500 -a
 pa_HPCdaligner_option =   -v -k15 -h35 -w7 -e.70 -l40 -s100 -M16
+falcon_sense_greedy = False
 """
 # ecoli based on Jim's run: http://smrtlink-beta:8080/#/analysis-job/2437
 defaults_ecoli = """
@@ -71,6 +75,7 @@ ovlp_dbsplit_option = -x500 -s200 -a
 ovlp_hpcdaligner_option = -v -dal24 -t16 -h35 -e.93 -l1000 -s100 -k25
 pa_dbsplit_option =   -x500 -s200 -a
 pa_hpcdaligner_option =   -v -dal24 -t14 -h70 -e.75 -l1000 -s100 -k18
+falcon_sense_greedy = False
 """
 defaults_yeast = """
 genome_size = 12000000
@@ -82,6 +87,7 @@ ovlp_DBsplit_option = -x15000 -s40
 ovlp_HPCdaligner_option =  -v -dal4 -k24 -e.96  -s200 -M16 -l2500 -h1024
 pa_DBsplit_option = -a -x500 -s100
 pa_HPCdaligner_option =    -v -dal4 -k18 -e0.70 -s200 -M16 -l4800 -h480 -w8
+falcon_sense_greedy = False
 """
 defaults_human = """
 genome_size = 3000000000
@@ -93,6 +99,7 @@ ovlp_DBsplit_option = -x15000 -s40
 ovlp_HPCdaligner_option =  -v -dal4 -k24 -e.96  -s200 -M16 -l2500 -h1024
 pa_DBsplit_option = -a -x500 -s500
 pa_HPCdaligner_option =    -v -dal4 -k18 -e0.70 -s200 -M16 -l4800 -h480 -w8
+falcon_sense_greedy = False
 """
 defaults_human_in_falcon = """
 genome_size = 3000000000
@@ -107,6 +114,7 @@ ovlp_DBsplit_option = -x500 -s400
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200 --n_core 16
 
 overlap_filtering_setting = --max_diff 60 --max_cov 60 --min_cov 2 --n_core 24
+falcon_sense_greedy = False
 """
 # See /lustre/hpcprod/jchin/CHM1_P6_project/asm3
 defaults_human_recent = """
@@ -120,6 +128,7 @@ ovlp_HPCdaligner_option =  -v -dal128  -M24 -k24 -h1024 -e.96 -l2500 -s100
 overlap_filtering_setting = --max_diff 40 --max_cov 80 --min_cov 2 --n_core 12
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 400 --n_core 12
 falcon_sense_skip_contained = False
+falcon_sense_greedy = False
 """
 # also see:
 #   https://dazzlerblog.wordpress.com/command-guides/daligner-command-reference-guide/
@@ -162,6 +171,7 @@ def _populate_falcon_options(options):
     fc['genome_size'] = int(options[OPTION_GENOME_LENGTH])
     fc['length_cutoff'] = int(options.get(OPTION_SEED_LENGTH_CUTOFF, '-9'))
     fc['seed_coverage'] = float(options.get(OPTION_SEED_COVERAGE, '21'))
+    fc['falcon_sense_greedy'] = bool(options.get(OPTION_AGGRESSIVE_ASM, False))
     return fc
 
 def _options_dict_with_base_keys(options_dict, prefix='falcon_ns.task_options.'):

@@ -27,6 +27,8 @@ def add_args_and_options(p):
     #        "Cores Max IGNORED.", "IGNORE - not currently used")
     p.add_str("falcon_ns.task_options." + gen_config.OPTION_CFG, "falcon-overrides", '',
             "FALCON cfg overrides", "This is intended to allow support engineers to override the cfg which we will generate from other options. It is a semicolon-separated list of key=val pairs. Newlines are allowed but ignored. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
+    p.add_boolean("falcon_ns.task_options." + gen_config.OPTION_AGGRESSIVE_ASM, "falcon-greedy", False,
+            "Aggressive option", "Greedy option for LA4Falcon. For more details on the available options, see https://github.com/PacificBiosciences/FALCON/wiki/Manual")
     return p
 
 def get_contract_parser():
