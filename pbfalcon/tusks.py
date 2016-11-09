@@ -235,7 +235,9 @@ def _run_merge_jobs(tasks):
             merge_args['script_fn'] = script_fn
             del merge_args['merge_subdir'] # was just a temporary hack
             support.run_las_merge(**merge_args)
-            run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
+            mkdir(run_dir)
+            with cd(run_dir):
+                run_cmd('bash %s' %os.path.basename(script_fn), sys.stdout, sys.stderr, shell=False)
             fns.append(os.path.join(run_dir, las_bfn))
     return fns # *.las
 
