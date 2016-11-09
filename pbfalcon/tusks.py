@@ -239,6 +239,9 @@ def _run_merge_jobs(tasks):
             fns.append(os.path.join(run_dir, las_bfn))
     return fns # *.las
 
+def mkdir(d):
+    if not os.path.isdir(d):
+        os.makedirs(d)
 def _run_consensus_jobs(tasks):
     fns = list()
     for p_id, (cons_args, fasta_bfn) in tasks.items():
@@ -248,7 +251,9 @@ def _run_consensus_jobs(tasks):
             cons_args['job_done'] = job_done
             cons_args['script_fn'] = script_fn
             support.run_consensus(**cons_args)
-            run_cmd('bash %s' %script_fn, sys.stdout, sys.stderr, shell=False)
+            mkdir(run_dir)
+            with cd(run_dir):
+                run_cmd('bash %s' %os.path.basename(script_fn), sys.stdout, sys.stderr, shell=False)
             fns.append(os.path.join(run_dir, fasta_bfn))
     return fns # *.fasta
 
