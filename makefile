@@ -17,6 +17,8 @@ PBFALCON_TC_RUNNERS:= \
 	pbfalcon.tasks.scatter1_run_daligner_jobs \
 	pbfalcon.tasks.gather0_run_daligner_jobs \
 	pbfalcon.tasks.gather1_run_daligner_jobs \
+	pbfalcon.tasks.scatter_run_scripts_in_pickle \
+	pbfalcon.tasks.scatter_run_scripts_in_pickle_2 \
 
 update:
 	\rm -f *.json
