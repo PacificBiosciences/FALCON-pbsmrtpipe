@@ -14,7 +14,6 @@ import os
 import re
 import StringIO
 import sys
-import cPickle
 
 log = logging.getLogger(__name__)
 
@@ -180,19 +179,17 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads', d
     """
     dry_run --- if True, only make scripts, don't actually run them.
 
-    if db_prefix is 'raw_reads', stage 0, make merge scripts and write to o_merge_pickle_fn,
-    then make cons scripts and write them to o_last_pickle_fn.
-    otherwise, db_prefix is 'preads', stage 1, make merge scripts and write to o_merge_pickle_fn,
-    then make db2falcon scripts and write to o_last_pickle_fn.
+    if db_prefix is 'raw_reads', stage 0, make merge scripts and write to o_merge_json_fn,
+    then make cons scripts and write them to o_last_json_fn.
+    otherwise, db_prefix is 'preads', stage 1, make merge scripts and write to o_merge_json_fn,
+    then make db2falcon scripts and write to o_last_json_fn.
 
-    Pickle contains dict{p_id: args}, where args is:
-    dict{'script_fn': script_fn,
-         'script_dir': current_work_dir, ...}.
+    json file contains dict{p_id: dict{'script_fn':script_fn, 'script_dir':script_dir}}
     script_fn and script_dir will be used in scattered tasks later.
     """
     print('run_merge_consensus_jobs: %s %s %s' %(db_prefix, repr(input_files), repr(output_files)))
     i_json_config_fn, run_daligner_job_fn, i_fofn_fn = input_files[0:3]
-    o_fofn_fn, o_merge_pickle_fn, o_last_pickle_fn = output_files[0:3]
+    o_fofn_fn, o_merge_json_fn, o_last_json_fn = output_files[0:3]
 
     db_dir = os.path.dirname(run_daligner_job_fn)
     cmds = ['pwd', 'ls -al']
@@ -219,12 +216,12 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads', d
 
     las_fns = _run_merge_jobs(
             dict((p_id, (argstuple[0], argstuple[2])) for (p_id, argstuple) in tasks.items()),
-            dry_run=dry_run, merge_pickle_fn=o_merge_pickle_fn)
+            dry_run=dry_run, merge_json_fn=o_merge_json_fn)
 
     if db_prefix == 'raw_reads':
         fasta_fns = _run_consensus_jobs(
             dict((p_id, (argstuple[1], argstuple[3])) for (p_id, argstuple) in tasks.items()),
-            dry_run=dry_run, cons_pickle_fn=o_last_pickle_fn)
+            dry_run=dry_run, cons_json_fn=o_last_json_fn)
         # Record '*.fasta' from cons jobs in FOFN.
         write_fns(o_fofn_fn, sorted(os.path.abspath(f) for f in fasta_fns))
         assert_nonzero(o_fofn_fn)
@@ -238,7 +235,7 @@ def run_merge_consensus_jobs(input_files, output_files, db_prefix='raw_reads', d
 
     # Generate preads4falcon.fasta from preads.db
     _run_db2falcon_jobs(cwd=cwd, config=config, dry_run=dry_run,
-                        db2falcon_pickle_fn=o_last_pickle_fn)
+                        db2falcon_json_fn=o_last_json_fn)
     return 0
 
 merged_las_fofn_bfn = 'merged_las.fofn'
@@ -248,12 +245,12 @@ def mkdir(d):
     if not os.path.isdir(d):
         os.makedirs(d)
 
-def _run_merge_jobs(tasks, dry_run=False, merge_pickle_fn=None):
+def _run_merge_jobs(tasks, dry_run=False, merge_json_fn=None):
     """dry_run --- if True, do not actually run the scripts,
-       merge_pickle_fn --- if not None, write dict{p_id->mege_args} to it
+       merge_json_fn --- if not None, write dict{p_id->mege_args} to it
     """
     fns = list()
-    pickle = dict()
+    json_data = dict()
     for p_id, (merge_args, las_bfn) in tasks.items():
         run_dir = merge_args['merge_subdir']
         job_done = "merge_%05d_done" %p_id
@@ -261,6 +258,11 @@ def _run_merge_jobs(tasks, dry_run=False, merge_pickle_fn=None):
         merge_args['job_done'] = job_done
         merge_args['script_fn'] = script_fn
         del merge_args['merge_subdir'] # was just a temporary hack
+        # merge_args <- dict{
+        # 'job_done'  : 'merge_00001_done',
+        # 'script_fn' : 'merge_00001.sh',
+        # 'script'    : 'LAmege -v ...',
+        # 'config'    : config}
         support.run_las_merge(**merge_args)
         mkdir(run_dir)
         with cd(run_dir):
@@ -269,32 +271,33 @@ def _run_merge_jobs(tasks, dry_run=False, merge_pickle_fn=None):
         fns.append(os.path.join(run_dir, las_bfn))
 
         # add script_dir to args for scattered tasks to work in the correct dir
-        merge_args['script_dir'] = os.path.join(os.getcwd(), run_dir)
-        merge_args['script_fn'] = os.path.basename(script_fn)
-        pickle[p_id] = merge_args
-        # pickle <- dict{p_id: merge_args}, where merge_args <- dict{
-        # 'job_done'  : 'merge_00001_done',
-        # 'script_fn' : 'merge_00001.sh',
-        # 'script_dir': '/pbi/.../tasks/falcon_ns.task.task_falcon0_run_merge_consensus_jobs/m_00001',
-        # 'script'    : 'LAmege -v ...',
-        # 'config'    : config}
-    pickle_fn = 'merge_jobs.pickle' if merge_pickle_fn is None else merge_pickle_fn
-    # Write dict{p_id: merge_args} to a pickle file
-    cPickle.dump(pickle, open(pickle_fn, 'wb'))
+        json_data[p_id] = {'script_dir': os.path.join(os.getcwd(), run_dir), # 'merge_00001.sh'
+                           'script_fn': os.path.basename(script_fn)} # '/pbi/.../tasks/falcon_ns.task.task_falcon0_run_merge_consensus_jobs/m_00001',
+        json_fn = 'merge_jobs.json' if merge_json_fn is None else merge_json_fn
+    # Write dict{p_id: dict{'script_fn':script_fn, 'script_dir':script_dir}} to a json file
+    with open(json_fn, 'w') as writer:
+        writer.write(json.dumps(json_data) + "\n")
+
     return fns # *.las, e.g., ['m_00001/raw_reads.1.las', 'm_00002/raw_reads.2.las', 'm_00003/raw_reads.3.las']
 
-def _run_consensus_jobs(tasks, dry_run=False, cons_pickle_fn=None):
+def _run_consensus_jobs(tasks, dry_run=False, cons_json_fn=None):
     """dry_run --- if True, do not actually run the scripts
-       cons_pickle_fn --- if not None, write dict{p_id->mege_args} to it
+       cons_json_fn --- if not None, write dict{p_id: dict{'script_fn':script_fn, 'script_dir':script_dir}} to it
     """
     fns = list()
-    pickle = dict()
+    json_data = dict()
     for p_id, (cons_args, fasta_bfn) in tasks.items():
         run_dir = 'preads'
         job_done = "c_%05d_done" %p_id
         script_fn = os.path.join(run_dir, "c_%05d.sh" %(p_id))
         cons_args['job_done'] = job_done
         cons_args['script_fn'] = script_fn
+        # cons_args <- dict{
+        # 'out_file_fn': abspath to preads/out.00001.fasta
+        # 'script_fn'  : c_00001.sh
+        # 'job_done'   : c_00001_done
+        # 'raw_reads'  : raw_reads
+        # 'config'     : config}
         support.run_consensus(**cons_args)
         mkdir(run_dir)
         with cd(run_dir):
@@ -303,26 +306,19 @@ def _run_consensus_jobs(tasks, dry_run=False, cons_pickle_fn=None):
         fns.append(os.path.join(run_dir, fasta_bfn))
 
         # add script_dir to args for scattered tasks to work in the correct dir
-        cons_args['script_dir'] = os.path.join(os.getcwd(), run_dir)
-        cons_args['script_fn'] = os.path.basename(script_fn)
-        pickle[p_id] = cons_args
-        # cons_args <- dict{
-        # 'out_file_fn': abspath to preads/out.00001.fasta
-        # 'script_fn'  : c_00001.sh
-        # 'script_dir' : /pbi/.../tasks/falcon_ns.tasks.task_falcon0_run_merge_jobs/preads/
-        # 'job_done'   : c_00001_done
-        # 'raw_reads'  : raw_reads
-        # 'config'     : config
+        json_data[p_id] = {'script_fn': os.path.basename(script_fn), # 'c_00001.sh'
+                           'script_dir': os.path.join(os.getcwd(), run_dir)} # '/pbi/.../tasks/falcon_ns.tasks.task_falcon0_run_merge_jobs/preads/'
 
-    pickle_fn = "cons_jobs.pickle" if cons_pickle_fn is None else cons_pickle_fn
-    cPickle.dump(pickle, open(pickle_fn, 'wb'))
+    json_fn = "cons_jobs.json" if cons_json_fn is None else cons_json_fn
+    with open(json_fn, 'w') as writer:
+        writer.write(json.dumps(json_data) + "\n")
     return fns # *.fasta ['preads/out.0001.fasta', 'preads/out.00002.fasta', 'preads/out.00003.fasta']
 
-def _run_db2falcon_jobs(cwd, config, dry_run, db2falcon_pickle_fn=None):
+def _run_db2falcon_jobs(cwd, config, dry_run, db2falcon_json_fn=None):
     """
     cwd --- current workding directory
     dry_run --- if True, do not actually run the scripts
-    db2falcon_pickle_fn --- if not None, write dict{0->args} to it
+    db2falcon_json_fn --- if not None, write dict{0: dict('script_fn':script_fn, 'script_dir':script_dir)}
     """
     # Generate preads4falcon.fasta from preads.db
     script_fn = os.path.join(cwd, "run_db2falcon.sh")
@@ -335,12 +331,12 @@ def _run_db2falcon_jobs(cwd, config, dry_run, db2falcon_pickle_fn=None):
         'preads_db': 'preads.db',
     }
     support.run_db2falcon(**args)
-    pickle_fn = "db2falcon.pickle" if db2falcon_pickle_fn is None else db2falcon_pickle_fn
+    json_fn = "db2falcon.json" if db2falcon_json_fn is None else db2falcon_json_fn
 
     # add script_dir to args for scattered tasks to work in the correct dir
-    args['script_dir'] = cwd
-    args['script_fn'] = os.path.basename(script_fn)
-    cPickle.dump({0: args}, open(pickle_fn, 'wb'))
+    json_data = {0: {'script_fn':os.path.basename(script_fn), 'script_dir': cwd}}
+    with open(json_fn, 'w') as writer:
+        writer.write(json.dumps(json_data) + "\n")
 
     mkdir(cwd)
     with cd(cwd):
@@ -348,22 +344,24 @@ def _run_db2falcon_jobs(cwd, config, dry_run, db2falcon_pickle_fn=None):
             run_cmd('bash %s' %os.path.basename(script_fn), sys.stdout, sys.stderr, shell=False)
             assert_nonzero('preads4falcon.fasta')
 
-def run_scripts_in_pickle(input_files, output_files):
+def run_scripts_in_json(input_files, output_files):
     """
-    input_files = ['*.pickle'] (e.g., merge|cons|db2falcon.pickle), where
-                  *.pickle <- dict{p_id: args} and args <- dict{'script_fn':$script_fn, ...}
+    input_files = ['*.json'] (e.g., merge|cons|db2falcon.json), where
+                  *.json <- dict(p_id: dict('script_fn':script_fn, 'script_dir':script_dir))
     output_files = ['*_done.txt'] (e.g., merge_done.txt, cons_done.txt, db2falcon_done.txt)
     execute all script files.
     """
-    pickle_fn = input_files[0]
+    json_fn = input_files[0]
     txt_fn = output_files[0]
-    a = cPickle.load(open(pickle_fn, 'rb'))
+
+    a = json.load(open(json_fn, 'r'))
+
     writer = open(txt_fn, 'w')
-    script_dir = a[a.keys()[0]]['script_dir']
+    script_dir = str(a[a.keys()[0]]['script_dir'])
     with cd(script_dir):
         for p_id, args in a.iteritems():
             if 'script_fn' not in args:
-                raise ValueError("Could not find 'script_fn' in pickle %s" % pickle_fn)
+                raise ValueError("Could not find 'script_fn' in json %s key %s" % (json_fn, p_id))
             script_fn = args['script_fn']
             run_cmd('bash %s' % script_fn, sys.stdout, sys.stderr, shell=False)
             writer.write(script_fn + "\n")

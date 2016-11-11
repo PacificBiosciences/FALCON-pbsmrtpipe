@@ -126,24 +126,24 @@ FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
                              "FOFN of daligner output (merged .las, stage-0)",
                              "file of file names of local-alignment output",
                              "file")
-FT_PICKLE_MERGE_OUT = OutputFileType(FileTypes.PICKLE.file_type_id, "pickle_id", "pickle of LAmerge scripts, stage-0", "pickle of LAmerge scripts", "merge")
-FT_PICKLE_CONS_OUT = OutputFileType(FileTypes.PICKLE.file_type_id, "pickle_id", "pickle of LA4Falcon scripts, stage-0", "pickle of LA4Falcon scripts", "cons")
-@registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ0_OUT, FT_FOFN], [FT_FOFN_OUT, FT_PICKLE_MERGE_OUT, FT_PICKLE_CONS_OUT], is_distributed=True, nproc=6)
+FT_JSON_MERGE_OUT = OutputFileType(FileTypes.JSON.file_type_id, "json_id", "json of LAmerge scripts, stage-0", "json of LAmerge scripts", "merge")
+FT_JSON_CONS_OUT = OutputFileType(FileTypes.JSON.file_type_id, "json_id", "json of LA4Falcon scripts, stage-0", "json of LA4Falcon scripts", "cons")
+@registry('task_falcon0_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ0_OUT, FT_FOFN], [FT_FOFN_OUT, FT_JSON_MERGE_OUT, FT_JSON_CONS_OUT], is_distributed=True, nproc=6)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads', dry_run=True)
 
 FT_TXT_MERGE_OUT = OutputFileType(FileTypes.TXT.file_type_id, "txt_id", "txt showing LAmerge scripts done, stage-0", "txt of LAmerge scripts done", "merge_done")
-@registry('task_falcon0_merge', '0.0.0', [FT_PICKLE_MERGE_OUT], [FT_TXT_MERGE_OUT], is_distributed=True, nproc=6)
+@registry('task_falcon0_merge', '0.0.0', [FT_JSON_MERGE_OUT], [FT_TXT_MERGE_OUT], is_distributed=True, nproc=6)
 def run_rtc(rtc):
     with cd(os.path.dirname(rtc.task.output_files[0])):
-        return pbfalcon.run_scripts_in_pickle(rtc.task.input_files, rtc.task.output_files)
+        return pbfalcon.run_scripts_in_json(rtc.task.input_files, rtc.task.output_files)
 
 FT_TXT_CONS_OUT = OutputFileType(FileTypes.TXT.file_type_id, "txt_id", "txt showing LA4Falcon scripts done, stage-0", "txt of LA4Falcon scripts done", "cons_done")
-@registry('task_falcon0_cons', '0.0.0', [FT_PICKLE_CONS_OUT, FT_TXT_MERGE_OUT], [FT_TXT_CONS_OUT], is_distributed=True, nproc=6)
+@registry('task_falcon0_cons', '0.0.0', [FT_JSON_CONS_OUT, FT_TXT_MERGE_OUT], [FT_TXT_CONS_OUT], is_distributed=True, nproc=6)
 def run_rtc(rtc):
     with cd(os.path.dirname(rtc.task.output_files[0])):
-        return pbfalcon.run_scripts_in_pickle(rtc.task.input_files, rtc.task.output_files)
+        return pbfalcon.run_scripts_in_json(rtc.task.input_files, rtc.task.output_files)
 
 # Run similar steps for preads.
 RDJ1_OUT = OutputFileType(FileTypes.TXT.file_type_id,
@@ -172,24 +172,24 @@ FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
                              "FOFN of daligner output (merged .las, stage-1)",
                              "file of file names of local-alignment output",
                              "file")
-FT_PICKLE_MERGE_OUT = OutputFileType(FileTypes.PICKLE.file_type_id, "pickle_id", "pickle of LAmerge scripts, stage-1", "pickle of LAmerge scripts", "merge")
-FT_PICKLE_DB2FALCON_OUT = OutputFileType(FileTypes.PICKLE.file_type_id, "pickle_id", "pickle of db2falcon scripts, stage-1", "pickle of db2falcon scripts", "db2falcon")
-@registry('task_falcon1_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ1_OUT, FT_FOFN], [FT_FOFN_OUT, FT_PICKLE_MERGE_OUT, FT_PICKLE_DB2FALCON_OUT], is_distributed=True, nproc=1)
+FT_JSON_MERGE_OUT = OutputFileType(FileTypes.JSON.file_type_id, "json_id", "json of LAmerge scripts, stage-1", "json of LAmerge scripts", "merge")
+FT_JSON_DB2FALCON_OUT = OutputFileType(FileTypes.JSON.file_type_id, "json_id", "json of db2falcon scripts, stage-1", "json of db2falcon scripts", "db2falcon")
+@registry('task_falcon1_run_merge_consensus_jobs', '0.0.0', [FT_JSON, RDJ1_OUT, FT_FOFN], [FT_FOFN_OUT, FT_JSON_MERGE_OUT, FT_JSON_DB2FALCON_OUT], is_distributed=True, nproc=1)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_merge_consensus_jobs(rtc.task.input_files, rtc.task.output_files, db_prefix='preads', dry_run=True)
 
 FT_TXT_MERGE_OUT = OutputFileType(FileTypes.TXT.file_type_id, "txt_id", "txt showing LAmerge scripts done, stage-1", "txt of LAmerge scripts done", "merge_done")
-@registry('task_falcon1_merge', '0.0.0', [FT_PICKLE_MERGE_OUT], [FT_TXT_MERGE_OUT], is_distributed=True, nproc=6)
+@registry('task_falcon1_merge', '0.0.0', [FT_JSON_MERGE_OUT], [FT_TXT_MERGE_OUT], is_distributed=True, nproc=6)
 def run_rtc(rtc):
     with cd(os.path.dirname(rtc.task.output_files[0])):
-        return pbfalcon.run_scripts_in_pickle(rtc.task.input_files, rtc.task.output_files)
+        return pbfalcon.run_scripts_in_json(rtc.task.input_files, rtc.task.output_files)
 
 FT_TXT_DB2FALCON_OUT = OutputFileType(FileTypes.TXT.file_type_id, "txt_id", "txt showing db2falcon scripts done, stage-1", "txt of db2falcon scripts done", "db2falcon_done")
-@registry('task_falcon1_db2falcon', '0.0.0', [FT_PICKLE_DB2FALCON_OUT, FT_TXT_CONS_OUT], [FT_TXT_DB2FALCON_OUT], is_distributed=True, nproc=6)
+@registry('task_falcon1_db2falcon', '0.0.0', [FT_JSON_DB2FALCON_OUT, FT_TXT_CONS_OUT], [FT_TXT_DB2FALCON_OUT], is_distributed=True, nproc=6)
 def run_rtc(rtc):
     with cd(os.path.dirname(rtc.task.output_files[0])):
-        return pbfalcon.run_scripts_in_pickle(rtc.task.input_files, rtc.task.output_files)
+        return pbfalcon.run_scripts_in_json(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon2_run_asm', '0.0.0', [FT_JSON, FT_FOFN, FT_TXT_DB2FALCON_OUT], [FT_FASTA_OUT], is_distributed=True)
 def run_rtc(rtc):
