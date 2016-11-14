@@ -23,6 +23,10 @@ OPTION_CORES_MAX = 'HGAP_CoresMax_str'
 OPTION_CFG = 'HGAP_FalconAdvanced_str'
 OPTION_AGGRESSIVE_ASM = 'HGAP_AggressiveAsm_bool'
 
+# Override pa_hpcdaligner_option if aggressive (greedy) mode is on
+OPTION_HPC = 'pa_hpcdaligner_option'
+AGGRESSIVE_HPC_OPTION_VALUE = "-v -dal24 -t14 -h70 -e.70 -l1000 -s100 -k14"
+
 defaults_old = """\
 falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 1 --max_n_read 20000 --n_core 6
 length_cutoff = 1000
@@ -172,6 +176,11 @@ def _populate_falcon_options(options):
     fc['length_cutoff'] = int(options.get(OPTION_SEED_LENGTH_CUTOFF, '-9'))
     fc['seed_coverage'] = float(options.get(OPTION_SEED_COVERAGE, '21'))
     fc['falcon_sense_greedy'] = bool(options.get(OPTION_AGGRESSIVE_ASM, False))
+
+    # Greedy mode, override pa_HPCdaligner_option too
+    if fc['falcon_sense_greedy'] is True:
+       log.info('Agressive (greedy) mode is turned on, override %s=%s' % (OPTION_HPC, AGGRESSIVE_HPC_OPTION_VALUE))
+       fc[OPTION_HPC] = AGGRESSIVE_HPC_OPTION_VALUE # "-v -dal24 -t14 -h70 -e.70 -l1000 -s100 -k14"
     return fc
 
 def _options_dict_with_base_keys(options_dict, prefix='falcon_ns.task_options.'):
