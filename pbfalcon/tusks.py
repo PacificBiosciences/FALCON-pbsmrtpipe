@@ -357,12 +357,12 @@ def run_scripts_in_json(input_files, output_files):
     a = json.load(open(json_fn, 'r'))
 
     writer = open(txt_fn, 'w')
-    script_dir = str(a[a.keys()[0]]['script_dir'])
-    with cd(script_dir):
-        for p_id, args in a.iteritems():
-            if 'script_fn' not in args:
-                raise ValueError("Could not find 'script_fn' in json %s key %s" % (json_fn, p_id))
-            script_fn = args['script_fn']
+    for p_id, args in a.iteritems():
+        if 'script_fn' not in args:
+            raise ValueError("Could not find 'script_fn' in json %r key %r" % (json_fn, p_id))
+        script_dir = str(args['script_dir'])
+        with cd(script_dir):
+            script_fn = str(args['script_fn'])
             run_cmd('bash %s' % script_fn, sys.stdout, sys.stderr, shell=False)
             writer.write(script_fn + "\n")
     writer.close()
