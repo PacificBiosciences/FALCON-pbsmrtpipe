@@ -359,7 +359,7 @@ def run_scripts_in_json(input_files, output_files):
     writer = open(txt_fn, 'w')
     for p_id, args in a.iteritems():
         if 'script_fn' not in args:
-            raise ValueError("Could not find 'script_fn' in json %s key %s" % (json_fn, p_id))
+            raise ValueError("Could not find 'script_fn' in json %r key %r" % (json_fn, p_id))
         script_dir = str(args['script_dir'])
         with cd(script_dir):
             script_fn = str(args['script_fn'])
