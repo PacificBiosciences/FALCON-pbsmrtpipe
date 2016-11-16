@@ -57,6 +57,19 @@ def get_contract_parser():
     return p
 
 
+def num_items_in_chunks(num_items, num_chunks):
+    """
+    Put num_items items to num_chunks drawers as even as possible.
+    Return a list of integers, where ret[i] is the number of items put to drawer i.
+    """
+    num_items_per_chunk = int(num_items / num_chunks)
+    ret = [num_items_per_chunk] * num_chunks
+    for i in range(0, num_items % num_chunks):
+        ret[i] = ret[i] + 1
+    assert sum(ret) == num_items
+    return ret
+
+
 def run_main(json_file, output_json_file, max_nchunks):
     """
     Spawn a json with scripts into multiple json files each containing a script.
@@ -71,7 +84,7 @@ def run_main(json_file, output_json_file, max_nchunks):
     out_dir = op.dirname(output_json_file)
 
     num_chunks = min(max_nchunks, len(a))
-    num_scripts_per_chunk = int(len(a)/num_chunks)
+    num_scripts_in_chunks = num_items_in_chunks(num_items=len(a), num_chunks=num_chunks)
 
     # Writing chunk.json
     base_name = "spawned_json_w_scripts_chunk"
@@ -83,14 +96,13 @@ def run_main(json_file, output_json_file, max_nchunks):
         chunk_id = "_".join([base_name, str(chunk_idx)])
         spawned_json_file = op.join(out_dir, chunk_id + ".json")
         # make a chunk
-        print Constants.CHUNK_KEYS[0]
         d = {Constants.CHUNK_KEYS[0]: spawned_json_file}
         c = PipelineChunk(chunk_id, **d)
         chunks.append(c)
 
         # make content for the spawned json
         scripts_dict = dict()
-        num_scripts = min(num_scripts_per_chunk, len(p_ids))
+        num_scripts = num_scripts_in_chunks[chunk_idx]
         for script_idx in range(0, num_scripts):
             p_id = p_ids[script_idx]
             scripts_dict[p_id] = a[p_id]
@@ -103,6 +115,9 @@ def run_main(json_file, output_json_file, max_nchunks):
             writer.write(json.dumps(scripts_dict) + "\n")
 
         spawned_jsons.append(spawned_json_file)
+
+    if len(p_ids) != 0:
+        raise AssertionError("Scripts of p_ids %s are not scattered." % repr(p_ids))
 
     log.info("Spawning %s into %d files", json_file, num_chunks)
     log.debug("Spawned files: %s.", ", ".join(spawned_jsons))
