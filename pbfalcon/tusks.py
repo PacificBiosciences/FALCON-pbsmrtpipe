@@ -530,6 +530,17 @@ def run_falcon_asm(input_files, output_files):
     say('Finished run_falcon_asm(%s, %s)' %(repr(input_files), repr(output_files)))
     return 0
 
+
+def run_rm_las(input_files, output_files):
+    """ Delete all intermediate las files. """
+    cmd = "pwd && find .. -type f -name '*.las' -delete -print"
+    say(cmd)
+    run_cmd(cmd, sys.stdout, sys.stderr)
+    with open(output_files[0], 'w') as writer:
+        writer.write("#%s" % cmd)
+    return 0
+
+
 def run_hgap(input_files, output_files, tmpdir):
     i_cfg_fn, i_logging_fn, i_subreadset_fn = input_files
     o_preads_fasta_fn, \
