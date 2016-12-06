@@ -531,9 +531,9 @@ def run_falcon_asm(input_files, output_files):
     return 0
 
 
-def run_rm_las(input_files, output_files):
+def run_rm_las(input_files, output_files, prefix):
     """ Delete all intermediate las files. """
-    cmd = "pwd && find .. -type f -name '*.las' -delete -print"
+    cmd = "pwd && find .. -type f -name '%s*.las' -delete -print" % prefix
     say(cmd)
     run_cmd(cmd, sys.stdout, sys.stderr)
     with open(output_files[0], 'w') as writer:
