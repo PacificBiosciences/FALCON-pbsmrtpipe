@@ -197,7 +197,7 @@ def run_rtc(rtc):
     with cd(os.path.dirname(rtc.task.output_files[0])):
         return pbfalcon.run_scripts_in_json(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon1_rm_las', '0.0.0', [FT_TXT_CONS_OUT], [FT_TXT], is_distributed=True)
+@registry('task_falcon1_rm_las', '0.0.0', [FT_TXT_CONS_OUT, FT_TXT], [FT_TXT], is_distributed=True)
 # remove raw_reads.*.las
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
@@ -208,11 +208,11 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon2_rm_las', '0.0.0', [FT_FASTA_OUT], [FT_TXT], is_distributed=True)
-# remove preads.*.las
+@registry('task_falcon2_rm_las', '0.0.0', [FT_FASTA_OUT, FT_TXT], [FT_TXT], is_distributed=True)
+# remove all las files regardless
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
-    return pbfalcon.run_rm_las(rtc.task.input_files, rtc.task.output_files, prefix='preads')
+    return pbfalcon.run_rm_las(rtc.task.input_files, rtc.task.output_files, prefix='')
 
 @registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_DB, FT_TXT], [FT(FT_REPORT, 'preassembly_yield', "Preassembly report")], is_distributed=False)
 def run_rtc(rtc):
