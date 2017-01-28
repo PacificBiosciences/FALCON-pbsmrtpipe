@@ -8,10 +8,7 @@ y = foo
 zother_setting = etc
 """
 
-tab = """   overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24
-y = foo
-zother_setting = etc
-"""
+tab = '\t' +ini
 
 ot = """\
 overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24;
@@ -29,6 +26,6 @@ def test_option_text2ini():
     got = option_text2ini(ot_canonical)
     assert_equal(ini, got)
 
-def test_ini2option_tab():
+def test_regress_sat709():
     got = ini2option_text(tab)
     assert_equal(ot_canonical, got)
