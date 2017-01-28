@@ -235,7 +235,7 @@ re_newline = re.compile(r'\s*\n\s*', re.MULTILINE)
 
 def ini2option_text(ini):
     # Basically, just translate linefeeds into semicolons.
-    return re_newline.sub(';', ini)
+    return re_newline.sub(';', ini).strip()
 
 def get_falcon_overrides(cfg_content, OPTION_CFG=OPTION_CFG):
     """options keys are bare (no namespaces)
@@ -251,13 +251,7 @@ def get_falcon_overrides(cfg_content, OPTION_CFG=OPTION_CFG):
         cfg_content = cfg_content[cfg_content.index(']'):]
     ini = option_text2ini(cfg_content)
     log.info(ini)
-    # Now, parse the overrides, but skip it on any error.
-    try:
-        overrides = ini2dict(ini)
-    except Exception as exc:
-        log.exception('For option "%s" (for overrides) we had a problem parsing its contents:\n%s' %(
-            OPTION_CFG, cfg_content))
-        overrides = dict()
+    overrides = ini2dict(ini)
     return overrides
 
 def run_falcon_gen_config(input_files, output_files, options):
