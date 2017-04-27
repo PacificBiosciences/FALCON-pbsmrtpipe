@@ -19,11 +19,17 @@ log = logging.getLogger(__name__)
 
 
 def run_cmd(cmd, *args, **kwds):
+    errfile = os.path.abspath('pbfalcon.run_cmd.err')
+    os.environ['PBFALCON_ERRFILE'] = errfile
     say('RUN: %s' %repr(cmd))
     rc = pb_run_cmd(cmd, *args, **kwds)
     say(' RC: %s' %repr(rc))
     if rc.exit_code:
-        raise Exception(repr(rc))
+        msg = repr(rc)
+        if os.path.exists(errfile):
+            with open(errfile) as ifs:
+                msg += '\n' + ifs.read()
+        raise Exception(msg)
 
 def _get_config(fn):
     """Return a dict.
