@@ -26,7 +26,7 @@ def add_args_and_options(p):
     p.add_output_file_type(FileTypes.LOG, "out", "Log-file from Python logger", "Output: log-file", 'out1')
     # Option id, label, default value, name, description
     p.add_str(hgap_prepare.TASK_HGAP_GENOME_LENGTH, "genome-length", '5000000',
-            "Genome length", "Approx. number of base pairs expected in the genome. We choose many hidden settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
+            "Genome Length", "Approx. number of base pairs expected in the genome. We choose many hidden settings automatically, based on this. (To learn what we generate, see fc_*.cfg, currently called 'falcon_ns.tasks.task_falcon0_build_rdb-PacBio.FileTypes.txt' amongst output files.)")
     p.add_str(hgap_prepare.TASK_HGAP_SEED_COVERAGE, "seed-coverage", '30',
             "Seed coverage", "A target for the total # of bases in the 'raw' (post primary) reads, divided by the total number in the 'seed' reads.")
     p.add_str(hgap_prepare.TASK_HGAP_SEED_LENGTH_CUTOFF, "seed-length-cutoff", '-1',
