@@ -3,6 +3,8 @@ source bamboo_setup.sh
 
 set -vex
 echo 'hi'
+ls -larth ..
+find ../tag_deps
 
 pushd ../pbcommand
 pip install --user --edit .
