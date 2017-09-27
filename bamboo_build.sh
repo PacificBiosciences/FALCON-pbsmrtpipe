@@ -4,14 +4,15 @@ source bamboo_setup.sh
 set -vex
 echo 'hi'
 
-pip install --user nose
-pip install --user pytest
-
 pushd ../pbcommand
 pip install --user --edit .
 popd
 
 pushd ../pbreports
+pip install --user --edit .
+popd
+
+pushd ../pbcoretools
 pip install --user --edit .
 popd
 
@@ -29,4 +30,9 @@ popd
 
 pip install --user --edit .
 
+pip install --user nose
+pip install --user pytest
+pip install --user pylint
+
 make utest
+make pylint
