@@ -5,18 +5,9 @@ set -vex
 echo 'hi'
 ls -larth ..
 find ../tag_deps
+WHEELHOUSE=$(pwd)/../tag_deps/gcc-6.4.0/wheelhouse
 
-pushd ../pbcommand
-pip install --user --edit .
-popd
-
-pushd ../pbreports
-pip install --user --edit .
-popd
-
-pushd ../pbcoretools
-pip install --user --edit .
-popd
+pip install --user --no-index --find-links=${WHEELHOUSE} pbcommand pbreports pbcoretools
 
 pushd ../pypeFLOW
 pip install --user --edit .
