@@ -8,6 +8,8 @@ run:
 
 utest:
 	py.test -v utest/
+pylint:
+	pylint --errors-only pbfalcon
 
 PBFALCON_TC_RUNNERS:= \
 	pbfalcon.cli.task_gen_config \
