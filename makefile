@@ -7,7 +7,7 @@ run:
 	cd falcon; pbsmrtpipe  pipeline $$(pwd)/workflow_id.xml --debug  -e e_01:$$(pwd)/input.txt --preset-xml=$$(pwd)/preset.xml    --output-dir=$$(pwd)/job_output
 
 utest:
-	nosetests -v utest/
+	py.test -v utest/
 
 PBFALCON_TC_RUNNERS:= \
 	pbfalcon.cli.task_gen_config \
