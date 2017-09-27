@@ -9,16 +9,20 @@ ls -larth ..
 find ../tag_deps
 rsync -va ../tag_deps/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
 rsync -va ../pypeflow_wheel/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
+rsync -va ../falcon_wheel/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
 
-pip install --user --no-index --find-links=${WHEELHOUSE} pbcommand pbreports pbcoretools pypeflow
+pip install --user --no-index --find-links=${WHEELHOUSE} pbcommand pbreports pbcoretools pypeflow falcon_kit
 
 #pushd ../pypeFLOW
 #pip install --user --edit .
 #popd
 
-pushd ../FALCON
-pip install --user --edit .
-popd
+#pushd ../FALCON
+#pip install --user --edit .
+#popd
+
+python -c 'import pypeflow; print pypeflow'
+python -c 'import falcon_kit; print falcon_kit'
 
 pushd ../FALCON-polish
 pip install --user --edit .
