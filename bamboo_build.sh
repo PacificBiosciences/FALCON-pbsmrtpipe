@@ -13,14 +13,6 @@ rsync -va ../falcon_wheel/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
 
 pip install --user --no-index --find-links=${WHEELHOUSE} pbcommand pbreports pbcoretools pypeflow falcon_kit
 
-#pushd ../pypeFLOW
-#pip install --user --edit .
-#popd
-
-#pushd ../FALCON
-#pip install --user --edit .
-#popd
-
 python -c 'import pypeflow; print pypeflow'
 python -c 'import falcon_kit; print falcon_kit'
 
@@ -30,9 +22,7 @@ popd
 
 pip install --user --edit .
 
-pip install --user nose
-pip install --user pytest
-pip install --user pylint
+pip install --user --no-index --find-links=${WHEELHOUSE} pip pytest pylint nose
 
 make utest
 make pylint
