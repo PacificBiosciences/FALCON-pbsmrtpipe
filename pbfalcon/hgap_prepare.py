@@ -237,3 +237,5 @@ def run_hgap_prepare(input_files, output_files, options):
     # Dump logging cfg.
     say('Dumping to {}'.format(repr(o_logging_cfg_fn)))
     dump_as_json(logging_cfg, open(o_logging_cfg_fn, 'w'))
+
+    return 0

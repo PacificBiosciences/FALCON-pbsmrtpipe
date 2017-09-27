@@ -1,5 +1,6 @@
 ###################
 # FALCON TASKS
+# pylint: disable=function-redefined
 from .. import tusks as pbfalcon
 from pbcommand.cli import registry_builder, registry_runner
 from pbcommand.models import (FileTypes, OutputFileType, ResourceTypes)
