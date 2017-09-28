@@ -3,26 +3,18 @@ source bamboo_setup.sh
 
 set -vex
 echo 'hi'
+WHEELHOUSE=$(pwd)/../wheelhouse
 
-pushd ../pbcommand
-pip install --user --edit .
-popd
+ls -larth ..
+find ../tag_deps
+rsync -va ../tag_deps/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
+rsync -va ../pypeflow_wheel/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
+rsync -va ../falcon_wheel/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
 
-pushd ../pbreports
-pip install --user --edit .
-popd
+pip install --user --no-index --find-links=${WHEELHOUSE} pbcommand pbreports pbcoretools pypeflow falcon_kit
 
-pushd ../pbcoretools
-pip install --user --edit .
-popd
-
-pushd ../pypeFLOW
-pip install --user --edit .
-popd
-
-pushd ../FALCON
-pip install --user --edit .
-popd
+python -c 'import pypeflow; print pypeflow'
+python -c 'import falcon_kit; print falcon_kit'
 
 pushd ../FALCON-polish
 pip install --user --edit .
@@ -30,9 +22,7 @@ popd
 
 pip install --user --edit .
 
-pip install --user nose
-pip install --user pytest
-pip install --user pylint
+pip install --user --no-index --find-links=${WHEELHOUSE} pip pytest pylint nose
 
 make utest
 make pylint
