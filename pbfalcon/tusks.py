@@ -124,7 +124,10 @@ def run_daligner_jobs(input_files, output_files, db_prefix='raw_reads'):
     o_fofn_fn, = output_files
     db_dir = os.path.dirname(run_daligner_job_fn)
     cmds = ['pwd', 'ls -al']
-    fns = ['.{pre}.bps', '.{pre}.idx', '{pre}.db']
+    fns = ['.{pre}.bps', '.{pre}.idx', '{pre}.db',
+           '.{pre}.dust.anno',
+           '.{pre}.dust.data',
+    ]
     cmds += [r'\rm -f %s' %fn for fn in fns]
     cmds += ['ln -sf {dir}/%s .' %fn for fn in fns]
     cmd = ';'.join(cmds).format(
@@ -162,7 +165,8 @@ def create_daligner_tasks(run_jobs_fn, wd, db_prefix, db_file, config, pread_aln
         line_count += 1
         jobd = os.path.join(wd, "./job_%s" % job_uid)
         support.make_dirs(jobd)
-        call = "cd %s; ln -sf ../.%s.bps .; ln -sf ../.%s.idx .; ln -sf ../%s.db ." % (jobd, db_prefix, db_prefix, db_prefix)
+        call = "cd {jobd}; ln -sf ../.{pre}.dust.anno .; ln -sf ../.{pre}.dust.data .; ln -sf ../.{pre}.bps .; ln -sf ../.{pre}.idx .; ln -sf ../{pre}.db .".format(
+                jobd=jobd, pre=db_prefix)
         rc = os.system(call)
         if rc:
             raise Exception("Failure in system call: %r -> %d" %(call, rc))

@@ -92,7 +92,7 @@ def args_runner(args):
         'length_cutoff': length_cutoff,
     }
 
-    report_dict = falcon_polish.stats_preassembly.make_dict(
+    report_dict = stats_preassembly.make_dict(
         corrected_reads,
         filtered_subreads,
         genome_length,
@@ -110,11 +110,11 @@ def args_runner(args):
 
 def get_parser():
     p = argparse.ArgumentParser(version=__version__)
-    p.add_argument('filtered_subreads_fasta', type=_validate_file,
+    p.add_argument('filtered_subreads_fasta',
                    help="Path to filtered reads.")
-    p.add_argument('filtered_longreads_fasta', type=_validate_file,
+    p.add_argument('filtered_longreads_fasta',
                    help="Path to filtered longreads.")
-    p.add_argument("corrected_reads", type=_validate_file,
+    p.add_argument("corrected_reads",
                    help="Path to corrected reads.")
     p.add_argument("--debug", action='store_true',
                    help="Flag to debug to stdout.")
