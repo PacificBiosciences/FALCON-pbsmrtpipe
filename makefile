@@ -1,3 +1,7 @@
+WHEELHOUSE?=wheelhouse
+PIP=pip wheel --wheel-dir ${WHEELHOUSE} --find-links ${WHEELHOUSE}
+MY_TEST_FLAGS?=-v -s --durations=0
+
 all:
 	pip install -v -e .
 	pb-falcon -h
@@ -6,10 +10,17 @@ run-dev:
 run:
 	cd falcon; pbsmrtpipe  pipeline $$(pwd)/workflow_id.xml --debug  -e e_01:$$(pwd)/input.txt --preset-xml=$$(pwd)/preset.xml    --output-dir=$$(pwd)/job_output
 
-utest:
-	py.test -v utest/
+pytest:
+	python -c 'import pbfalcon; print pbfalcon'
+	py.test ${MY_TEST_FLAGS} --junit-xml=test.xml --doctest-modules pbfalcon/ utest/
 pylint:
 	pylint --errors-only pbfalcon
+autopep8:
+	autopep8 --max-line-length=120 -ir -j0 pbfalcon/
+wheel:
+	which pip
+	${PIP} --no-deps .
+	ls -larth ${WHEELHOUSE}
 
 PBFALCON_TC_RUNNERS:= \
 	pbfalcon.cli.task_gen_config \
