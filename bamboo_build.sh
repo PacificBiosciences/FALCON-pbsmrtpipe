@@ -1,8 +1,15 @@
-#!/bin/bash
-source bamboo_setup.sh
+#!/bin/bash -e
+#source /mnt/software/Modules/current/init/bash
+type module >& /dev/null || . /mnt/software/Modules/current/init/bash
+module load python/2.7.13-UCS4
 
 set -vex
-echo 'hi'
+which python
+which pip
+
+mkdir -p LOCAL
+export PYTHONUSERBASE=$(pwd)/LOCAL
+export PATH=${PYTHONUSERBASE}/bin:${PATH}
 WHEELHOUSE=$(pwd)/../wheelhouse
 
 ls -larth ..
@@ -22,7 +29,16 @@ popd
 
 pip install --user --edit .
 
-pip install --user --no-index --find-links=${WHEELHOUSE} pip pytest pylint nose
+# For speed, use cdunn wheelhouse.
+WHEELHOUSE=/home/UNIXHOME/cdunn/wheelhouse/gcc-6/
+pip install --user --no-index --find-links=${WHEELHOUSE} pip pytest pytest-cov pylint nose
 
-make utest
+export MY_TEST_FLAGS="-v -s --durations=0 --cov=. --cov-report=term-missing --cov-report=xml:coverage.xml --cov-branch"
+make pytest
+#sed -i -e 's@filename="@filename="./pbfalcon/@g' coverage.xml
+
 make pylint
+
+pwd
+ls -larth
+find . -name '*.pyc' | xargs rm
