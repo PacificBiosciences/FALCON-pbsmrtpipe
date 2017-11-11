@@ -22,7 +22,6 @@ OPTION_SEED_LENGTH_CUTOFF = 'HGAP_SeedLengthCutoff_str'
 OPTION_CORES_MAX = 'HGAP_CoresMax_str'
 OPTION_CFG = 'HGAP_FalconAdvanced_str'
 OPTION_AGGRESSIVE_ASM = 'HGAP_AggressiveAsm_bool'
-OPTION_SAVE_LAS_FOR_UNZIP = 'HGAP_SaveLasForUnzip_bool'
 
 # Override pa_hpcdaligner_option if aggressive (greedy) mode is on
 OPTION_HPC = 'pa_hpcdaligner_option'

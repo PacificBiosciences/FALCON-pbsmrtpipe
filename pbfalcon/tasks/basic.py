@@ -2,13 +2,12 @@
 # FALCON TASKS
 # pylint: disable=function-redefined
 from .. import tusks as pbfalcon
-from pbcommand.cli import registry_builder, registry_runner
+from pbcommand.cli import registry_builder, registry_runner, QuickOpt
 from pbcommand.models import (FileTypes, OutputFileType, ResourceTypes)
 import logging
 import os
 import StringIO
 import sys
-from .. import gen_config
 cd = pbfalcon.cd
 
 log = logging.getLogger(__name__)
@@ -212,10 +211,13 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon2_rm_las', '0.0.0', [FT_FASTA_OUT, FT_TXT], [FT_TXT], is_distributed=True)
+opt_save_unzip = QuickOpt(False, "Save Output for Unzip", 
+    "Saves certain files that enable running unzip via command line")
+
+@registry('task_falcon2_rm_las', '0.0.0', [FT_FASTA_OUT, FT_TXT], [FT_TXT], options={'save_las_for_unzip':opt_save_unzip}, is_distributed=True)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
-    optname = "falcon_ns.task_options." + gen_config.OPTION_SAVE_LAS_FOR_UNZIP
+    optname = "falcon_ns.task_options.save_las_for_unzip"
     if not bool(rtc.task.options.get(optname, False)):
       # remove all .las files
       return pbfalcon.run_rm_las(rtc.task.input_files, rtc.task.output_files, prefix='')
