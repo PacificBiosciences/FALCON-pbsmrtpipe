@@ -2,7 +2,7 @@
 # FALCON TASKS
 # pylint: disable=function-redefined
 from .. import tusks as pbfalcon
-from pbcommand.cli import registry_builder, registry_runner
+from pbcommand.cli import registry_builder, registry_runner, QuickOpt
 from pbcommand.models import (FileTypes, OutputFileType, ResourceTypes)
 import logging
 import os
@@ -211,12 +211,19 @@ def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon2_rm_las', '0.0.0', [FT_FASTA_OUT, FT_TXT], [FT_TXT], is_distributed=True)
-# remove all las files regardless
+opt_save_unzip = QuickOpt(False, "Save Output for Unzip", 
+    "Saves certain files that enable running unzip via command line")
+
+@registry('task_falcon2_rm_las', '0.0.0', [FT_FASTA_OUT, FT_TXT], [FT_TXT], options={'save_las_for_unzip':opt_save_unzip}, is_distributed=True)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
-    #return pbfalcon.run_rm_las(rtc.task.input_files, rtc.task.output_files, prefix='preads*.')
-    return pbfalcon.run_rm_las(rtc.task.input_files, rtc.task.output_files, prefix='preads.*.preads.')
+    optname = "falcon_ns.task_options.save_las_for_unzip"
+    if not bool(rtc.task.options.get(optname, False)):
+      # remove all .las files
+      return pbfalcon.run_rm_las(rtc.task.input_files, rtc.task.output_files, prefix='')
+    else:
+      # remove intermediate pread .las files (both raw and pread final merged/sorted .las files remain)
+      return pbfalcon.run_rm_las(rtc.task.input_files, rtc.task.output_files, prefix='preads.*.preads.')
 
 @registry('task_report_preassembly_yield', '0.0.0', [FT_JSON, FT_FOFN, FT_DB, FT_TXT], [FT(FT_REPORT, 'preassembly_yield', "Preassembly report")], is_distributed=False)
 def run_rtc(rtc):
