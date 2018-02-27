@@ -42,6 +42,7 @@ canon:
 install:
 	mv *.json ../pbpipeline-resources/registered-tool-contracts/
 modules:
+	python -m pbfalcon.tasks.basic2 emit-tool-contracts
 	python -m pbfalcon.tasks.basic emit-tool-contracts
 runners: ${PBFALCON_TC_RUNNERS}
 
