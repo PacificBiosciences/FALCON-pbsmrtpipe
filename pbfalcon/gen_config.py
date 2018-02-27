@@ -77,7 +77,7 @@ falcon_sense_option = --output_multi --min_idt 0.70 --min_cov 4 --max_n_read 200
 overlap_filtering_setting = --max_diff 60 --max_cov 100 --min_cov 4 --bestn 10 --n_core 4
 ovlp_dbsplit_option = -x500 -s200 -a
 ovlp_hpcdaligner_option = -v -dal24 -t16 -h35 -e.93 -l1000 -s100 -k25
-pa_dbsplit_option =   -x500 -s200 -a
+pa_dbsplit_option =   -x500 -s200
 pa_hpcdaligner_option =   -v -dal24 -t14 -h70 -e.75 -l1000 -s100 -k18
 falcon_sense_greedy = False
 """
