@@ -122,6 +122,11 @@ def run(script, inputs, outputs, parameters):
 def run_falcon_build_rdb(input_files, output_files):
     i_general_config_fn, i_fofn_fn = input_files
     run_jobs_fn, db_fn, job_done_fn, length_cutoff_fn = output_files
+    cwd = os.getcwd()
+    rd = os.path.dirname(output_files[0])
+    if not os.path.samefile(cwd, rd):
+        msg = 'ERROR: We are not running in the output directory:\n cwd={!r}\n out={!r}'.format(cwd, rd)
+        say(msg)
     run(
             script=falcon_kit.pype_tasks.TASK_BUILD_RDB_SCRIPT,
             inputs={
