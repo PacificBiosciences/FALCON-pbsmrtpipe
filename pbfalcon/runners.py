@@ -116,7 +116,23 @@ def run_generic_chunkable_jobs(input_files, output_files):
     )
     return 0
 
+def update_path_for_bash():
+    """Since the top system might not add /bin to PATH,
+    and the qsub system might not have /usr/bin/bash,
+    we will add both /usr/bin and /bin to the PATH, if missing.
+    """
+    PATH = os.environ['PATH']
+    path = PATH.split(':')
+    if '/bin' not in path:
+        path.append('/bin')
+    if '/usr/bin' not in path:
+        path.append('/usr/bin')
+    if PATH != ':'.join(path):
+        PATH = ':'.join(path)
+        os.environ['PATH'] = PATH
+
 def run(script, inputs, outputs, parameters):
+    update_path_for_bash()
     pypeflow.do_task.run_bash(script, inputs, outputs, parameters)
 
 def run_falcon_build_rdb(input_files, output_files):
