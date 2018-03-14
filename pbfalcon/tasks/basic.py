@@ -77,7 +77,7 @@ FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
                              "FOFN of daligner input (absolute .fasta paths)",
                              "file of file names of fasta input",
                              "file")
-@registry('task_falcon_make_fofn_abs', '0.0.0', [FT_FOFN], [FT_FOFN_OUT], is_distributed=False)
+@registry('task_falcon_make_fofn_abs', '0.0.0', [FT_JSON], [FT_FOFN_OUT], is_distributed=False)
 def run_rtc(rtc):
   with cd(os.path.dirname(rtc.task.output_files[0])):
     return pbfalcon.run_falcon_make_fofn_abs(rtc.task.input_files, rtc.task.output_files)

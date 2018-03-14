@@ -40,8 +40,9 @@ update:
 canon:
 	./canonicalize.py *.json
 install:
-	mv *.json ../pbsmrtpipe/pbsmrtpipe/registered_tool_contracts_sa3
+	mv *.json ../pbpipeline-resources/registered-tool-contracts/
 modules:
+	python -m pbfalcon.tasks.basic2 emit-tool-contracts
 	python -m pbfalcon.tasks.basic emit-tool-contracts
 runners: ${PBFALCON_TC_RUNNERS}
 
