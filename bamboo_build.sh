@@ -12,6 +12,9 @@ export PYTHONUSERBASE=$(pwd)/LOCAL
 export PATH=${PYTHONUSERBASE}/bin:${PATH}
 WHEELHOUSE=$(pwd)/../wheelhouse
 
+rm -rf ${PYTHONUSERBASE}
+# Or pip install --ignore-installed
+
 ls -larth ..
 find ../tag_deps
 rsync -va ../tag_deps/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
