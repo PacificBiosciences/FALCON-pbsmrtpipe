@@ -22,6 +22,7 @@ import sys
 log = logging.getLogger(__name__)
 
 
+'''
 def run_cmd(cmd, *args, **kwds):
     errfile = os.path.abspath('pbfalcon.run_cmd.err')
     os.environ['PBFALCON_ERRFILE'] = errfile
@@ -34,6 +35,7 @@ def run_cmd(cmd, *args, **kwds):
             with open(errfile) as ifs:
                 msg += '\n' + ifs.read()
         raise Exception(msg)
+'''
 
 def _get_config(fn):
     """Return a dict.
@@ -350,7 +352,7 @@ def run_rm_las(input_files, output_files, prefix):
     """ Delete all intermediate las files. """
     cmd = "pwd && find .. -type f -name '{}*.las' -delete -print".format(prefix)
     say(cmd)
-    run_cmd(cmd, sys.stdout, sys.stderr)
+    pb_run_cmd(cmd, sys.stdout, sys.stderr)
     with open(output_files[0], 'w') as writer:
         writer.write("#%s" % cmd)
     return 0
