@@ -55,8 +55,8 @@ def scatter_fubar(srtc):
     outputs = srtc['output_files']
     max_nchunks = srtc['max_nchunks']
     #chunk_keys = srtc['chunk_keys']
-    from . import scatter_json_list
-    scatter_json_list.run('scatter_fubar', max_nchunks, inputs[0], outputs[0])
+    from . import scatter_json_list as mod
+    mod.run('scatter_fubar', max_nchunks, inputs[0], outputs[0])
 def scatter_json_list_plus_txt(srtc):
     LOG.info('In scatter_json_list_plus_txt: {}'.format(repr(srtc)))
     inputs = srtc['input_files']
@@ -65,8 +65,8 @@ def scatter_json_list_plus_txt(srtc):
     tcid = srtc['tool_contract_id']
     basename = os.path.splitext(tcid)[1][1:]
     #chunk_keys = srtc['chunk_keys']
-    from . import scatter_json_list_plus_txt
-    scatter_json_list_plus_txt.run(basename, max_nchunks, inputs[0], inputs[1], outputs[0])
+    from . import scatter_json_list_plus_txt as mod
+    mod.run(basename, max_nchunks, inputs[0], inputs[1], outputs[0])
 def gather_json_list(srtc):
     LOG.info('In gather_json')
     inputs = srtc['input_files']
@@ -74,8 +74,8 @@ def gather_json_list(srtc):
     chunk_key = srtc['chunk_key']
     chunk_input_json_fn = inputs[0]
     output_fn = outputs[0]
-    from . import gather_json_list
-    gather_json_list.run(chunk_key, chunk_input_json_fn, output_fn)
+    from . import gather_json_list as mod
+    mod.run(chunk_key, chunk_input_json_fn, output_fn)
 def run_rtc(args):
     setup_logging(args)
 
