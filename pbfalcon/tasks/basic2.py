@@ -18,7 +18,44 @@ DRIVER_BASE = "python -m pbfalcon.tasks.basic2 "
 
 #from . import pbcommand_quick as pbquick
 #registry = pbquick.registry_builder(TOOL_NAMESPACE, DRIVER_BASE)
-registry = registry_builder(TOOL_NAMESPACE, DRIVER_BASE)
+pbregistry = registry_builder(TOOL_NAMESPACE, DRIVER_BASE)
+
+def registry(*args, **kwds):
+    """Fancy decorator.
+    Return a registry-decorated version of a safe wrapper
+    for the real func. The safe_func will trap exceptions,
+    look for any PBFALCON_ERRFILE, and minimize the stack-trace.
+    """
+    def run(func):
+        #run.namespace = TOOL_NAMESPACE
+        #run.driver_base = DRIVER_BASE
+        def safe_func(*inner_args, **inner_kwds):
+            errfile = os.path.abspath('pbfalcon.run_cmd.err')
+            os.environ['PBFALCON_ERRFILE'] = errfile
+            try:
+                rc = func(*inner_args, **inner_kwds)
+                if rc is None:
+                    return 0
+                else:
+                    return rc
+            except pbfalcon.RunError as exc:
+                # This Exception is raised only by runners.run().
+                msg = repr(exc)
+                if os.path.exists(errfile):
+                    msg += "\n From '{}':".format(os.path.abspath(errfile))
+                    with open(errfile) as ifs:
+                        msg += '\n' + ifs.read()
+                #raise Exception(msg)
+                log.error(msg)
+                return 1
+            except Exception:
+                # We cannot log the full stack-trace because the pbcommand runner
+                # will parser only the last few lines of stderr.
+                log.exception('Task failed. See stderr.')
+                return 1
+        return pbregistry(*args, **kwds)(safe_func)
+    return run
+
 
 # FT_FOFN = FileType(to_file_ns("generic_fofn"), "generic", "fofn", 'text/plain')
 FT_FOFN = FileTypes.FOFN
@@ -209,4 +246,4 @@ def run_rtc(rtc):
 if __name__ == '__main__':
     from falcon_kit import run_support
     run_support.logger = logging.getLogger("fc_run")
-    sys.exit(registry_runner(registry, sys.argv[1:]))
+    sys.exit(registry_runner(pbregistry, sys.argv[1:]))
