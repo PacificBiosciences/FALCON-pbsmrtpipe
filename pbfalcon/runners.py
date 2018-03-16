@@ -133,9 +133,17 @@ def update_path_for_bash():
         PATH = ':'.join(path)
         os.environ['PATH'] = PATH
 
+class RunError(Exception): pass
+
 def run(script, inputs, outputs, parameters):
     update_path_for_bash()
-    pypeflow.do_task.run_bash(script, inputs, outputs, parameters)
+    try:
+        pypeflow.do_task.run_bash(script, inputs, outputs, parameters)
+    except Exception as exc:
+        # We cannot log the full stack-trace because the pbcommand runner
+        # will parser only the last few lines of stderr.
+        raise RunError('In dir {}, pypeflow.do_task.run_bash() failed: {} (See stderr.)'.format(
+            os.getcwd(), exc))
 
 def run_falcon_build_rdb(input_files, output_files):
     i_general_config_fn, i_fofn_fn = input_files
