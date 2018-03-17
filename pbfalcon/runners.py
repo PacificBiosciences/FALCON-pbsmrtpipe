@@ -22,6 +22,7 @@ import sys
 log = logging.getLogger(__name__)
 
 
+'''
 def run_cmd(cmd, *args, **kwds):
     errfile = os.path.abspath('pbfalcon.run_cmd.err')
     os.environ['PBFALCON_ERRFILE'] = errfile
@@ -34,6 +35,7 @@ def run_cmd(cmd, *args, **kwds):
             with open(errfile) as ifs:
                 msg += '\n' + ifs.read()
         raise Exception(msg)
+'''
 
 def _get_config(fn):
     """Return a dict.
@@ -131,9 +133,17 @@ def update_path_for_bash():
         PATH = ':'.join(path)
         os.environ['PATH'] = PATH
 
+class RunError(Exception): pass
+
 def run(script, inputs, outputs, parameters):
     update_path_for_bash()
-    pypeflow.do_task.run_bash(script, inputs, outputs, parameters)
+    try:
+        pypeflow.do_task.run_bash(script, inputs, outputs, parameters)
+    except Exception as exc:
+        # We cannot log the full stack-trace because the pbcommand runner
+        # will parser only the last few lines of stderr.
+        raise RunError('In dir {}, pypeflow.do_task.run_bash() failed: {} (See stderr.)'.format(
+            os.getcwd(), exc))
 
 def run_falcon_build_rdb(input_files, output_files):
     i_general_config_fn, i_fofn_fn = input_files
@@ -350,7 +360,7 @@ def run_rm_las(input_files, output_files, prefix):
     """ Delete all intermediate las files. """
     cmd = "pwd && find .. -type f -name '{}*.las' -delete -print".format(prefix)
     say(cmd)
-    run_cmd(cmd, sys.stdout, sys.stderr)
+    pb_run_cmd(cmd, sys.stdout, sys.stderr)
     with open(output_files[0], 'w') as writer:
         writer.write("#%s" % cmd)
     return 0
