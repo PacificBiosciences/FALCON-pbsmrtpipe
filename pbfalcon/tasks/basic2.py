@@ -101,7 +101,7 @@ FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
                              "file of file names of fasta input",
                              "file")
 @registry('task_falcon_config_get_fasta', '0.0.0', [FT_CFG], [FT_FOFN_OUT], is_distributed=False)
-def run_rtc(rtc): #KEEP for later
+def run_rtc(rtc):
     return pbfalcon.run_falcon_config_get_fasta(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon_config', '0.0.0', [FT_CFG, FT_FOFN], [FT_JSON_OUT], is_distributed=False)
@@ -229,6 +229,9 @@ def run_rtc(rtc):
 def run_rtc(rtc):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
+# This opt will be in the falcon_ns2 namespace. Because we actually want to
+# avoid changing the fullname of the opt, in the pipeline we will actually
+# use the old falcon_ns namespaced version of this task.
 opt_save_unzip = QuickOpt(False, "Save Output for Unzip",
     "Saves certain files that enable running unzip via command line")
 
