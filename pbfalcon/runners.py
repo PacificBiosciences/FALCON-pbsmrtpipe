@@ -57,8 +57,7 @@ def run_falcon_config_get_fasta(input_files, output_files):
         msg = '%r -> %r' %(i_fofn_fn, o_fofn_fn)
         say(msg)
         with cd(os.path.dirname(i_fofn_fn)):
-            return support.make_fofn_abs(i_fofn_fn, o_fofn_fn)
-        return 0
+            support.make_fofn_abs(i_fofn_fn, o_fofn_fn)
 
 def run_falcon_config(input_files, output_files):
         i_config_fn, i_fasta_fofn = input_files
@@ -173,7 +172,6 @@ def run_falcon_build_rdb(input_files, output_files):
 
     # To use this filename in pb, we might need to add Dazzler FileType. symlink is simpler.
     symlink('raw_reads.db', db_fn)
-    return 0
 
 def run_falcon_build_pdb(input_files, output_files):
     i_general_config_fn, i_fofn_fn, = input_files
@@ -193,7 +191,6 @@ def run_falcon_build_pdb(input_files, output_files):
     )
     # To use this filename in pb, we might need to add Dazzler FileType. symlink is simpler.
     symlink('preads.db', db_fn)
-    return 0
 
 def run_daligner_split(input_files, output_files, db_prefix='raw_reads'):
     run_jobs_fn, rawreads_db_fn = input_files
@@ -215,7 +212,6 @@ def run_daligner_split(input_files, output_files, db_prefix='raw_reads'):
         },
         parameters=params,
     )
-    return 0
 
 def run_daligner_find_las(input_files, output_files):
     gathered_fn, = input_files
@@ -228,7 +224,6 @@ def run_daligner_find_las(input_files, output_files):
         },
         parameters={},
     )
-    return 0
 
 def run_las_merge_split(input_files, output_files, db_prefix='raw_reads'):
     run_jobs_fn, gathered_las_fn = input_files
@@ -248,7 +243,6 @@ def run_las_merge_split(input_files, output_files, db_prefix='raw_reads'):
         },
         parameters=params,
     )
-    return 0
 
 def run_las_merge_post_gather(input_files, output_files):
     gathered_fn, = input_files
@@ -262,7 +256,6 @@ def run_las_merge_post_gather(input_files, output_files):
         },
         parameters={},
     )
-    return 0
 
 def run_cns_split(input_files, output_files):
     p_id2las_fn, raw_reads_db_fn, general_config_fn, length_cutoff_fn, = input_files
@@ -284,7 +277,6 @@ def run_cns_split(input_files, output_files):
         },
         parameters=params,
     )
-    return 0
 
 def run_cns_post_gather(input_files, output_files):
     gathered_fn, = input_files
@@ -299,7 +291,6 @@ def run_cns_post_gather(input_files, output_files):
         },
         parameters={},
     )
-    return 0
 
 def run_db2falcon(input_files, output_files):
     i_p_id2las_fn, i_preads_db_fn, = input_files
@@ -318,7 +309,6 @@ def run_db2falcon(input_files, output_files):
                  },
         parameters={},
     )
-    return 0
 
 def run_falcon_asm(input_files, output_files):
     # Given, las_fofn.json and preads4falcon.fasta,
@@ -354,7 +344,6 @@ def run_falcon_asm(input_files, output_files):
         # We already checked 0-length, but maybe this is still possible.
         # Really, we want to detect 0 base-length, but I do not know how yet.
         raise Exception("No records found in primary contigs: '%s'" %os.path.abspath(p_ctg))
-    return 0
 
 def run_rm_las(input_files, output_files, prefix):
     """ Delete all intermediate las files. """
@@ -431,7 +420,6 @@ def run_report_preassembly_yield(input_files, output_files):
         'o_json_fn': o_json_fn,
     }
     report_preassembly.for_task(**kwds)
-    return 0
 
 
 def _linewrap_fasta(ifn, ofn):

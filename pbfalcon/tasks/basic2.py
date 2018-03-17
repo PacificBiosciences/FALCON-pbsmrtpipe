@@ -52,7 +52,7 @@ def registry(*args, **kwds):
                 # We cannot log the full stack-trace because the pbcommand runner
                 # will parser only the last few lines of stderr.
                 log.exception('Task failed. See stderr.')
-                return 1
+                return 3
         return pbregistry(*args, **kwds)(safe_func)
     return run
 
