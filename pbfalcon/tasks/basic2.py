@@ -29,11 +29,16 @@ def registry(*args, **kwds):
     def run(func):
         #run.namespace = TOOL_NAMESPACE
         #run.driver_base = DRIVER_BASE
-        def safe_func(*inner_args, **inner_kwds):
+        #def safe_func(*inner_args, **inner_kwds):
+        def safe_func(rtc): # the only func-sig we actually decorate
             errfile = os.path.abspath('pbfalcon.run_cmd.err')
             os.environ['PBFALCON_ERRFILE'] = errfile
             try:
-                rc = func(*inner_args, **inner_kwds)
+                #rc = func(*inner_args, **inner_kwds)
+                os.environ['PBFALCON_NPROC'] = str(rtc.task.nproc)
+                # Purists will object to using the ENV, but we avoid changing every
+                # damn function.
+                rc = func(rtc)
                 if rc is None:
                     return 0
                 else:
@@ -126,7 +131,7 @@ RDJ0_OUT = OutputFileType(FileTypes.TXT.file_type_id,
 def run_rtc(rtc):
     return pbfalcon.run_falcon_build_rdb(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon0_run_daligner_split', '0.0.0', [RDJ0_OUT, FT_DB], [FT(FT_JSON, 'all-units-of-work', 'daligner run units from HPC.daligner'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=1)
+@registry('task_falcon0_run_daligner_split', '0.0.0', [RDJ0_OUT, FT_DB], [FT(FT_JSON, 'all-units-of-work', 'daligner run units from HPC.daligner'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=4)
 def run_rtc(rtc):
     return pbfalcon.run_daligner_split(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
 
@@ -195,7 +200,7 @@ RDJ1_OUT = OutputFileType(FileTypes.TXT.file_type_id,
 def run_rtc(rtc):
     return pbfalcon.run_falcon_build_pdb(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon1_run_daligner_split', '0.0.0', [RDJ1_OUT, FT_DB], [FT(FT_JSON, 'all-units-of-work', 'daligner run units from HPC.daligner'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=1)
+@registry('task_falcon1_run_daligner_split', '0.0.0', [RDJ1_OUT, FT_DB], [FT(FT_JSON, 'all-units-of-work', 'daligner run units from HPC.daligner'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=4)
 def run_rtc(rtc):
     return pbfalcon.run_daligner_split(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
