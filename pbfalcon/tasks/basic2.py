@@ -101,7 +101,7 @@ FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
                              "file of file names of fasta input",
                              "file")
 @registry('task_falcon_config_get_fasta', '0.0.0', [FT_CFG], [FT_FOFN_OUT], is_distributed=False)
-def run_rtc(rtc):
+def run_rtc(rtc): # used by pipeline 'pipe_falcon', for running from fasta
     return pbfalcon.run_falcon_config_get_fasta(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon_config', '0.0.0', [FT_CFG, FT_FOFN], [FT_JSON_OUT], is_distributed=False)
@@ -159,10 +159,8 @@ def run_rtc(rtc):
 def run_rtc(rtc):
     return pbfalcon.run_cns_split(rtc.task.input_files, rtc.task.output_files)
 
-# Typically, 6 procs for falcon_sense, but really that is set in cfg.
 # We run each block on a single machine because we currently use python 'multiproc'.
-# We run one 6-proc job for each block, serially.
-# Too many could swamp NFS, so serial on one machine is fine, for now, until we measure.
+# We run one 6-proc job for each block.
 # We pipe the result of LA4Falcon to the main process, which means that each fork consumes that much memory;
 # that is the main impact on other processes on the same machine, typically 6GB altogether.
 # Because this is I/O bound, we do not really harm the machine we are on,

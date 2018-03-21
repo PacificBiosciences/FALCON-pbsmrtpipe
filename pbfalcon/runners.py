@@ -19,7 +19,7 @@ import re
 import StringIO
 import sys
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 '''
@@ -62,14 +62,14 @@ def run_falcon_config_get_fasta(input_files, output_files):
 def run_falcon_config(input_files, output_files):
         i_config_fn, i_fasta_fofn = input_files
         o_json_fn, = output_files
-        log.info('i_config_fn cont: "{}"'.format(open(i_config_fn).read()))
+        LOG.info('i_config_fn cont: "{}"'.format(open(i_config_fn).read()))
         config = _get_config(i_config_fn)
         config['input_fofn'] = os.path.abspath(i_fasta_fofn)
         config['original_self'] = i_config_fn
         output = json.dumps(config, sort_keys=True, indent=4, separators=(',', ': '))
         out = StringIO.StringIO()
         out.write(output)
-        log.info('falcon_config:\n' + output)
+        LOG.info('falcon_config:\n' + output)
         with open(o_json_fn, 'w') as ofs:
             ofs.write(output)
         #return run_cmd('echo hi', open(hello, 'w'), sys.stderr, shell=False)
