@@ -586,7 +586,10 @@ def run_hgap(input_files, output_files, tmpdir):
 def run_report_preassembly_yield(input_files, output_files):
     i_json_config_fn, i_preads_fofn_fn, i_raw_reads_db_fn = input_files[0:3]
     o_json_fn, = output_files
+    tasks_dir = os.path.dirname(os.path.dirname(i_json_config_fn))
+    i_length_cutoff_fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'length_cutoff')
     kwds = {
+        'i_length_cutoff_fn': i_length_cutoff_fn,
         'i_json_config_fn': i_json_config_fn,
         'i_raw_reads_db_fn': i_raw_reads_db_fn,
         'i_preads_fofn_fn': i_preads_fofn_fn,
