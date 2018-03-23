@@ -417,8 +417,8 @@ def run_report_preassembly_yield(input_files, output_files):
     i_general_config_fn, i_preads_fofn_fn, i_raw_reads_db_fn, i_length_cutoff_fn = input_files
     o_json_fn, = output_files
     i_raw_reads_db_fn = os.path.realpath(i_raw_reads_db_fn)
-    # Ignore length_cutff_fn, for now.
     kwds = {
+        'i_length_cutoff_fn': i_length_cutoff_fn,
         'i_json_config_fn': i_general_config_fn,
         'i_raw_reads_db_fn': i_raw_reads_db_fn,
         'i_preads_fofn_fn': i_preads_fofn_fn,

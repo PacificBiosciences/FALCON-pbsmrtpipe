@@ -46,6 +46,7 @@ def _get_cfg(i_json_config_fn, i_length_cutoff_fn):
     return cfg
 
 def for_task(
+        i_length_cutoff_fn,
         i_json_config_fn,
         i_preads_fofn_fn,
         i_raw_reads_db_fn, # maybe symlinked
@@ -55,7 +56,6 @@ def for_task(
     See pbfalcon.tusks
     """
     tasks_dir = os.path.dirname(os.path.dirname(i_json_config_fn))
-    i_length_cutoff_fn = os.path.join(tasks_dir, 'falcon_ns.tasks.task_falcon0_build_rdb-0', 'length_cutoff')
     cfg = _get_cfg(i_json_config_fn, i_length_cutoff_fn)
     genome_length = int(cfg.get('genome_size', 0)) # different name in falcon
     length_cutoff = cfg['length_cutoff']
