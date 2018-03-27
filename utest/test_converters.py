@@ -3,7 +3,7 @@ from nose.tools import assert_equal
 from StringIO import StringIO
 
 ini = """\
-overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24
+overlap_filtering_setting = --max-diff 100 --max-cov 50 --min-cov 1 --bestn 10 --n-core 24
 y = foo
 zother_setting = etc
 """
@@ -11,10 +11,10 @@ zother_setting = etc
 tab = '\t' +ini
 
 ot = """\
-overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24;
+overlap_filtering_setting = --max-diff 100 --max-cov 50 --min-cov 1 --bestn 10 --n-core 24;
 y = foo; zother_setting = etc;
 """
-ot_canonical = "overlap_filtering_setting = --max_diff 100 --max_cov 50 --min_cov 1 --bestn 10 --n_core 24;y = foo;zother_setting = etc;"
+ot_canonical = "overlap_filtering_setting = --max-diff 100 --max-cov 50 --min-cov 1 --bestn 10 --n-core 24;y = foo;zother_setting = etc;"
 
 def test_ini2option_text():
     got = ini2option_text(ini)
