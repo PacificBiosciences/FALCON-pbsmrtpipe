@@ -12,11 +12,16 @@ export PYTHONUSERBASE=$(pwd)/LOCAL
 export PATH=${PYTHONUSERBASE}/bin:${PATH}
 WHEELHOUSE=$(pwd)/../wheelhouse
 
+rm -rf ${PYTHONUSERBASE}
+# Or pip install --ignore-installed
+
 ls -larth ..
-find ../tag_deps
+find ../tag_deps/gcc-6.4.0
 rsync -va ../tag_deps/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
 rsync -va ../pypeflow_wheel/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
 rsync -va ../falcon_wheel/gcc-6.4.0/wheelhouse/ ${WHEELHOUSE}
+
+ls -larth ${WHEELHOUSE}
 
 pip install --user --no-index --find-links=${WHEELHOUSE} pbcommand pbreports pbcoretools pypeflow falcon_kit
 

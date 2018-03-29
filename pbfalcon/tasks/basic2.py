@@ -18,7 +18,49 @@ DRIVER_BASE = "python -m pbfalcon.tasks.basic2 "
 
 #from . import pbcommand_quick as pbquick
 #registry = pbquick.registry_builder(TOOL_NAMESPACE, DRIVER_BASE)
-registry = registry_builder(TOOL_NAMESPACE, DRIVER_BASE)
+pbregistry = registry_builder(TOOL_NAMESPACE, DRIVER_BASE)
+
+def registry(*args, **kwds):
+    """Fancy decorator.
+    Return a registry-decorated version of a safe wrapper
+    for the real func. The safe_func will trap exceptions,
+    look for any PBFALCON_ERRFILE, and minimize the stack-trace.
+    """
+    def run(func):
+        #run.namespace = TOOL_NAMESPACE
+        #run.driver_base = DRIVER_BASE
+        #def safe_func(*inner_args, **inner_kwds):
+        def safe_func(rtc): # the only func-sig we actually decorate
+            errfile = os.path.abspath('pbfalcon.run_cmd.err')
+            os.environ['PBFALCON_ERRFILE'] = errfile
+            try:
+                #rc = func(*inner_args, **inner_kwds)
+                os.environ['PBFALCON_NPROC'] = str(rtc.task.nproc)
+                # Purists will object to using the ENV, but we avoid changing every
+                # damn function.
+                rc = func(rtc)
+                if rc is None:
+                    return 0
+                else:
+                    return rc
+            except pbfalcon.RunError as exc:
+                # This Exception is raised only by runners.run().
+                msg = repr(exc)
+                if os.path.exists(errfile):
+                    msg += "\n From '{}':".format(os.path.abspath(errfile))
+                    with open(errfile) as ifs:
+                        msg += '\n' + ifs.read()
+                #raise Exception(msg)
+                log.error(msg)
+                return 1
+            except Exception:
+                # We cannot log the full stack-trace because the pbcommand runner
+                # will parser only the last few lines of stderr.
+                log.exception('Task failed. See stderr.')
+                return 3
+        return pbregistry(*args, **kwds)(safe_func)
+    return run
+
 
 # FT_FOFN = FileType(to_file_ns("generic_fofn"), "generic", "fofn", 'text/plain')
 FT_FOFN = FileTypes.FOFN
@@ -64,7 +106,7 @@ FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
                              "file of file names of fasta input",
                              "file")
 @registry('task_falcon_config_get_fasta', '0.0.0', [FT_CFG], [FT_FOFN_OUT], is_distributed=False)
-def run_rtc(rtc): #KEEP for later
+def run_rtc(rtc): # used by pipeline 'pipe_falcon', for running from fasta
     return pbfalcon.run_falcon_config_get_fasta(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon_config', '0.0.0', [FT_CFG, FT_FOFN], [FT_JSON_OUT], is_distributed=False)
@@ -89,7 +131,7 @@ RDJ0_OUT = OutputFileType(FileTypes.TXT.file_type_id,
 def run_rtc(rtc):
     return pbfalcon.run_falcon_build_rdb(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon0_run_daligner_split', '0.0.0', [RDJ0_OUT, FT_DB], [FT(FT_JSON, 'all-units-of-work', 'daligner run units from HPC.daligner'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=1)
+@registry('task_falcon0_run_daligner_split', '0.0.0', [RDJ0_OUT, FT_DB], [FT(FT_JSON, 'all-units-of-work', 'daligner run units from HPC.daligner'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=4)
 def run_rtc(rtc):
     return pbfalcon.run_daligner_split(rtc.task.input_files, rtc.task.output_files, db_prefix='raw_reads')
 
@@ -122,10 +164,8 @@ def run_rtc(rtc):
 def run_rtc(rtc):
     return pbfalcon.run_cns_split(rtc.task.input_files, rtc.task.output_files)
 
-# Typically, 6 procs for falcon_sense, but really that is set in cfg.
 # We run each block on a single machine because we currently use python 'multiproc'.
-# We run one 6-proc job for each block, serially.
-# Too many could swamp NFS, so serial on one machine is fine, for now, until we measure.
+# We run one 6-proc job for each block.
 # We pipe the result of LA4Falcon to the main process, which means that each fork consumes that much memory;
 # that is the main impact on other processes on the same machine, typically 6GB altogether.
 # Because this is I/O bound, we do not really harm the machine we are on,
@@ -160,7 +200,7 @@ RDJ1_OUT = OutputFileType(FileTypes.TXT.file_type_id,
 def run_rtc(rtc):
     return pbfalcon.run_falcon_build_pdb(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon1_run_daligner_split', '0.0.0', [RDJ1_OUT, FT_DB], [FT(FT_JSON, 'all-units-of-work', 'daligner run units from HPC.daligner'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=1)
+@registry('task_falcon1_run_daligner_split', '0.0.0', [RDJ1_OUT, FT_DB], [FT(FT_JSON, 'all-units-of-work', 'daligner run units from HPC.daligner'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=4)
 def run_rtc(rtc):
     return pbfalcon.run_daligner_split(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
@@ -192,6 +232,9 @@ def run_rtc(rtc):
 def run_rtc(rtc):
     return pbfalcon.run_falcon_asm(rtc.task.input_files, rtc.task.output_files)
 
+# This opt will be in the falcon_ns2 namespace. Because we actually want to
+# avoid changing the fullname of the opt, in the pipeline we will actually
+# use the old falcon_ns namespaced version of this task.
 opt_save_unzip = QuickOpt(False, "Save Output for Unzip",
     "Saves certain files that enable running unzip via command line")
 
@@ -209,4 +252,4 @@ def run_rtc(rtc):
 if __name__ == '__main__':
     from falcon_kit import run_support
     run_support.logger = logging.getLogger("fc_run")
-    sys.exit(registry_runner(registry, sys.argv[1:]))
+    sys.exit(registry_runner(pbregistry, sys.argv[1:]))

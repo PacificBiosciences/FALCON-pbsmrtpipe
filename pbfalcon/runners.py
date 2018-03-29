@@ -19,9 +19,10 @@ import re
 import StringIO
 import sys
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
+'''
 def run_cmd(cmd, *args, **kwds):
     errfile = os.path.abspath('pbfalcon.run_cmd.err')
     os.environ['PBFALCON_ERRFILE'] = errfile
@@ -34,6 +35,7 @@ def run_cmd(cmd, *args, **kwds):
             with open(errfile) as ifs:
                 msg += '\n' + ifs.read()
         raise Exception(msg)
+'''
 
 def _get_config(fn):
     """Return a dict.
@@ -55,20 +57,19 @@ def run_falcon_config_get_fasta(input_files, output_files):
         msg = '%r -> %r' %(i_fofn_fn, o_fofn_fn)
         say(msg)
         with cd(os.path.dirname(i_fofn_fn)):
-            return support.make_fofn_abs(i_fofn_fn, o_fofn_fn)
-        return 0
+            support.make_fofn_abs(i_fofn_fn, o_fofn_fn)
 
 def run_falcon_config(input_files, output_files):
         i_config_fn, i_fasta_fofn = input_files
         o_json_fn, = output_files
-        log.info('i_config_fn cont: "{}"'.format(open(i_config_fn).read()))
+        LOG.info('i_config_fn cont: "{}"'.format(open(i_config_fn).read()))
         config = _get_config(i_config_fn)
         config['input_fofn'] = os.path.abspath(i_fasta_fofn)
         config['original_self'] = i_config_fn
         output = json.dumps(config, sort_keys=True, indent=4, separators=(',', ': '))
         out = StringIO.StringIO()
         out.write(output)
-        log.info('falcon_config:\n' + output)
+        LOG.info('falcon_config:\n' + output)
         with open(o_json_fn, 'w') as ofs:
             ofs.write(output)
         #return run_cmd('echo hi', open(hello, 'w'), sys.stderr, shell=False)
@@ -131,9 +132,22 @@ def update_path_for_bash():
         PATH = ':'.join(path)
         os.environ['PATH'] = PATH
 
+class RunError(Exception): pass
+
 def run(script, inputs, outputs, parameters):
+    nproc = os.environ['PBFALCON_NPROC']
+    parameters['pypeflow_nproc'] = nproc
+    parameters['pypeflow_mb'] = 4 * int(nproc)
     update_path_for_bash()
-    pypeflow.do_task.run_bash(script, inputs, outputs, parameters)
+    try:
+        pypeflow.do_task.run_bash(script, inputs, outputs, parameters)
+    except Exception as exc:
+        msg = 'In dir {}, pypeflow.do_task.run_bash() failed: {} (See stderr.)'.format(
+            os.getcwd(), exc)
+        LOG.exception(msg)
+        # We cannot log the full stack-trace because the pbcommand runner
+        # will parser only the last few lines of stderr.
+        raise RunError(msg)
 
 def run_falcon_build_rdb(input_files, output_files):
     i_general_config_fn, i_fofn_fn = input_files
@@ -163,7 +177,6 @@ def run_falcon_build_rdb(input_files, output_files):
 
     # To use this filename in pb, we might need to add Dazzler FileType. symlink is simpler.
     symlink('raw_reads.db', db_fn)
-    return 0
 
 def run_falcon_build_pdb(input_files, output_files):
     i_general_config_fn, i_fofn_fn, = input_files
@@ -183,7 +196,6 @@ def run_falcon_build_pdb(input_files, output_files):
     )
     # To use this filename in pb, we might need to add Dazzler FileType. symlink is simpler.
     symlink('preads.db', db_fn)
-    return 0
 
 def run_daligner_split(input_files, output_files, db_prefix='raw_reads'):
     run_jobs_fn, rawreads_db_fn = input_files
@@ -205,7 +217,6 @@ def run_daligner_split(input_files, output_files, db_prefix='raw_reads'):
         },
         parameters=params,
     )
-    return 0
 
 def run_daligner_find_las(input_files, output_files):
     gathered_fn, = input_files
@@ -218,7 +229,6 @@ def run_daligner_find_las(input_files, output_files):
         },
         parameters={},
     )
-    return 0
 
 def run_las_merge_split(input_files, output_files, db_prefix='raw_reads'):
     run_jobs_fn, gathered_las_fn = input_files
@@ -238,7 +248,6 @@ def run_las_merge_split(input_files, output_files, db_prefix='raw_reads'):
         },
         parameters=params,
     )
-    return 0
 
 def run_las_merge_post_gather(input_files, output_files):
     gathered_fn, = input_files
@@ -252,7 +261,6 @@ def run_las_merge_post_gather(input_files, output_files):
         },
         parameters={},
     )
-    return 0
 
 def run_cns_split(input_files, output_files):
     p_id2las_fn, raw_reads_db_fn, general_config_fn, length_cutoff_fn, = input_files
@@ -274,7 +282,6 @@ def run_cns_split(input_files, output_files):
         },
         parameters=params,
     )
-    return 0
 
 def run_cns_post_gather(input_files, output_files):
     gathered_fn, = input_files
@@ -289,7 +296,6 @@ def run_cns_post_gather(input_files, output_files):
         },
         parameters={},
     )
-    return 0
 
 def run_db2falcon(input_files, output_files):
     i_p_id2las_fn, i_preads_db_fn, = input_files
@@ -308,7 +314,6 @@ def run_db2falcon(input_files, output_files):
                  },
         parameters={},
     )
-    return 0
 
 def run_falcon_asm(input_files, output_files):
     # Given, las_fofn.json and preads4falcon.fasta,
@@ -344,13 +349,12 @@ def run_falcon_asm(input_files, output_files):
         # We already checked 0-length, but maybe this is still possible.
         # Really, we want to detect 0 base-length, but I do not know how yet.
         raise Exception("No records found in primary contigs: '%s'" %os.path.abspath(p_ctg))
-    return 0
 
 def run_rm_las(input_files, output_files, prefix):
     """ Delete all intermediate las files. """
     cmd = "pwd && find .. -type f -name '{}*.las' -delete -print".format(prefix)
     say(cmd)
-    run_cmd(cmd, sys.stdout, sys.stderr)
+    pb_run_cmd(cmd, sys.stdout, sys.stderr)
     with open(output_files[0], 'w') as writer:
         writer.write("#%s" % cmd)
     return 0
@@ -413,15 +417,14 @@ def run_report_preassembly_yield(input_files, output_files):
     i_general_config_fn, i_preads_fofn_fn, i_raw_reads_db_fn, i_length_cutoff_fn = input_files
     o_json_fn, = output_files
     i_raw_reads_db_fn = os.path.realpath(i_raw_reads_db_fn)
-    # Ignore length_cutff_fn, for now.
     kwds = {
+        'i_length_cutoff_fn': i_length_cutoff_fn,
         'i_json_config_fn': i_general_config_fn,
         'i_raw_reads_db_fn': i_raw_reads_db_fn,
         'i_preads_fofn_fn': i_preads_fofn_fn,
         'o_json_fn': o_json_fn,
     }
     report_preassembly.for_task(**kwds)
-    return 0
 
 
 def _linewrap_fasta(ifn, ofn):
