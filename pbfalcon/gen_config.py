@@ -23,8 +23,8 @@ OPTION_CORES_MAX = 'HGAP_CoresMax_str'
 OPTION_CFG = 'HGAP_FalconAdvanced_str'
 OPTION_AGGRESSIVE_ASM = 'HGAP_AggressiveAsm_bool'
 
-# Override pa_hpcdaligner_option if aggressive (greedy) mode is on
-OPTION_HPC = 'pa_hpcdaligner_option'
+# Override pa_HPCdaligner_option if aggressive (greedy) mode is on
+OPTION_HPC = 'pa_HPCdaligner_option'
 AGGRESSIVE_HPC_OPTION_VALUE = "-v -dal24 -M16 -h70 -e.70 -l1000 -s100 -k14"
 
 defaults_old = """\
@@ -62,7 +62,7 @@ length_cutoff = -1
 length_cutoff_pr = 50
 overlap_filtering_setting = --max-diff 1000 --max-cov 100000 --min-cov 0 --bestn 1000 --n-core 4
 ovlp_DBsplit_option = -s50 -a
-ovlp_hpcdaligner_option = -v -k15 -h60 -w6 -e.95 -l40 -s100 -M16
+ovlp_HPCdaligner_option = -v -k15 -h60 -w6 -e.95 -l40 -s100 -M16
 pa_DBsplit_option = -x250 -s500
 pa_HPCdaligner_option =   -v -k15 -h35 -w7 -e.70 -l40 -s100 -M16
 falcon_sense_greedy = False
@@ -75,10 +75,10 @@ length_cutoff = -1
 length_cutoff_pr = 500
 falcon_sense_option = --output-multi --min-idt 0.70 --min-cov 4 --max-n-read 200 --n-core 6
 overlap_filtering_setting = --max-diff 60 --max-cov 100 --min-cov 4 --bestn 10 --n-core 4
-ovlp_dbsplit_option = -x500 -s200 -a
-ovlp_hpcdaligner_option = -v -dal24 -M16 -h35 -e.93 -l1000 -s100 -k25
-pa_dbsplit_option =   -x500 -s200
-pa_hpcdaligner_option =   -v -dal24 -M16 -h70 -e.75 -l1000 -s100 -k18
+ovlp_DBsplit_option = -x500 -s200 -a
+ovlp_HPCdaligner_option = -v -dal24 -M16 -h35 -e.93 -l1000 -s100 -k25
+pa_DBsplit_option =   -x500 -s200
+pa_HPCdaligner_option =   -v -dal24 -M16 -h70 -e.75 -l1000 -s100 -k18
 falcon_sense_greedy = False
 """
 defaults_yeast = """
@@ -205,6 +205,7 @@ def _gen_config(options_dict):
     """Generate ConfigParser object from dict.
     """
     cfg = configparser.ConfigParser()
+    cfg.optionxform = str
     sec = "General"
     cfg.add_section(sec)
     for key, val in options_dict.items():
@@ -224,6 +225,7 @@ def _write_config(config, config_fn):
 def ini2dict(ini_text):
     ifp = StringIO.StringIO('[General]\n' + ini_text)
     cp = configparser.ConfigParser()
+    cp.optionxform = str
     cp.readfp(ifp)
     return dict(cp.items('General'))
 
@@ -273,6 +275,8 @@ def run_falcon_gen_config(input_files, output_files, options):
         falcon_options.update(overrides)
     else:
         raise Exception("Could not find %s" %OPTION_CFG)
+    if 'pa_hpcdaligner_option' in falcon_options:
+        raise Exception('Options are case-sensitive, but we found lower-case "pa_hpcdaligner_option"="{}"'.format(falcon_options['pa_hpcdaligner_option']))
     config = _gen_config(falcon_options)
     with tusks.cd(os.path.dirname(i_fofn_fn)):
         return _write_config(config, o_cfg_fn) # Write lower-case keys, which is fine.
