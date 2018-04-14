@@ -267,7 +267,6 @@ def run_falcon_gen_config(input_files, output_files, options):
     log.info('options to run_falcon_gen_config:\n{}'.format(pprint.pformat(options)))
     options = _options_dict_with_base_keys(options)
     falcon_options = _populate_falcon_options(options)
-    clean_falcon_options(falcon_options)
     log.info('falcon_options to run_falcon_gen_config:\n{}'.format(pprint.pformat(falcon_options)))
     if OPTION_CFG in options:
         overrides = get_falcon_overrides(options[OPTION_CFG], OPTION_CFG)
@@ -277,6 +276,7 @@ def run_falcon_gen_config(input_files, output_files, options):
         raise Exception("Could not find %s" %OPTION_CFG)
     if 'pa_hpcdaligner_option' in falcon_options:
         raise Exception('Options are case-sensitive, but we found lower-case "pa_hpcdaligner_option"="{}"'.format(falcon_options['pa_hpcdaligner_option']))
+    clean_falcon_options(falcon_options)
     config = _gen_config(falcon_options)
     with tusks.cd(os.path.dirname(i_fofn_fn)):
         return _write_config(config, o_cfg_fn) # Write lower-case keys, which is fine.
