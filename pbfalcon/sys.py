@@ -28,7 +28,8 @@ def symlink(actual, symbolic=None):
     symbolic name is basename(actual) if not provided.
     """
     symbolic = os.path.basename(actual) if not symbolic else symbolic
-    assert os.path.abspath(actual) != os.path.abspath(symbolic), '{!r} == {!r}'.format(actual, symbolic)
+    if os.path.samefile(actual, symbolic):
+        return
     rel = os.path.relpath(actual)
     lg('ln -s %s %s' %(rel, symbolic))
     if os.path.lexists(symbolic):
