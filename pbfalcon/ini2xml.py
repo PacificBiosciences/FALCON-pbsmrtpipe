@@ -5,6 +5,7 @@ This is not part of the workflow. It is only a utility, used as needed.
 
 https://github.com/PacificBiosciences/FALCON-pbsmrtpipe/issues/2
 """
+from __future__ import absolute_import
 import ConfigParser
 import contextlib
 import pprint

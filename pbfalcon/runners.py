@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from falcon_polish.sys import symlink, cd, say, system, filesize
+from .sys import symlink, cd, say, system, filesize
 from pbcore.io import FastaIO
 from pbcommand.engine import run_cmd as pb_run_cmd
 from falcon_kit import run_support as support
