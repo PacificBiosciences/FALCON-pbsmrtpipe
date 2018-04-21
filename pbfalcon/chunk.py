@@ -2,8 +2,8 @@
 from falcon_kit.functional import (get_daligner_job_descriptions, get_script_xformer)
 from pbcommand.models import PipelineChunk
 from pbcommand.pb_io import write_pipeline_chunks
-from falcon_polish.functional import joined_strs
-from falcon_polish.sys import symlink
+from .functional import joined_strs
+from .sys import symlink
 import logging
 import os
 
