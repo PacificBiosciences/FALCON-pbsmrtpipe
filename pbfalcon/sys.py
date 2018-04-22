@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import logging
 import os
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 @contextmanager
 def cd(newdir):
@@ -19,7 +19,7 @@ def cd(newdir):
 
 def lg(msg):
     #print(msg)
-    log.info(msg)
+    LOG.info(msg)
 
 say=lg
 
@@ -28,7 +28,8 @@ def symlink(actual, symbolic=None):
     symbolic name is basename(actual) if not provided.
     """
     symbolic = os.path.basename(actual) if not symbolic else symbolic
-    if os.path.samefile(actual, symbolic):
+    if os.path.abspath(actual) == os.path.abspath(symbolic):
+        LOG.warning('Cannot symlink {!r} as {!r}, itself.'.format(actual, symbolic))
         return
     rel = os.path.relpath(actual)
     lg('ln -s %s %s' %(rel, symbolic))
