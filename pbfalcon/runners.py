@@ -177,7 +177,7 @@ def run_falcon_build_rdb(input_files, output_files):
 
     # To use this filename in pb, we might need to add Dazzler FileType. symlink is simpler.
     symlink('raw_reads.db', db_fn)
-    symlink('length_cutoff', length_cutoff_fn)
+    #symlink('length_cutoff', length_cutoff_fn)
 
 def run_falcon_build_pdb(input_files, output_files):
     i_general_config_fn, i_fofn_fn, = input_files
