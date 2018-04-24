@@ -149,6 +149,141 @@ def run(script, inputs, outputs, parameters):
         # will parser only the last few lines of stderr.
         raise RunError(msg)
 
+def resolve1(fn):
+    """Assuming fn is a simple symlink, to a relative path,
+    resolve it once. It will probably resolve to a file in the
+    same directory.
+    """
+    assert os.path.islink(fn), '{!r} is not a symbolic link.'.format(fn)
+    dn = os.path.dirname(fn)
+    assert not os.path.isabs(os.readlink(fn)), '{!r} is not symlinked to a relative path.'.format(fn)
+    return os.path.join(dn, os.readlink(fn))
+def run_dazzler_build(input_files, output_files, db_prefix):
+    i_general_config_fn, i_fofn_fn = input_files
+    db_fn, length_cutoff_fn = output_files
+    actual_db_fn = '{}.db'.format(db_prefix)
+    run(
+            script=falcon_kit.pype_tasks.TASK_DB_BUILD_SCRIPT,
+            inputs={
+                'config': i_general_config_fn,
+                'input_fofn': i_fofn_fn,
+            },
+            outputs={
+                'db': actual_db_fn,
+                'length_cutoff': length_cutoff_fn,
+            },
+            parameters={},
+    )
+    #if not job_descs:
+    #    raise Exception("No daligner jobs generated in '%s' by '%s'." %(run_daligner_jobs_fn, script_fn))
+    # TODO: Add 0-jobs check to tool.
+
+    # To use this filename in pb, we might need to add Dazzler FileType. symlink is simpler.
+    symlink(actual_db_fn, db_fn)
+def run_dazzler_tan_split(input_files, output_files):
+    i_general_config_fn, db_fn, = input_files
+    o_split_fn, o_bash_fn, = output_files
+    actual_db_fn = resolve1(db_fn)
+    run(
+            script=falcon_kit.pype_tasks.TASK_DB_TAN_SPLIT_SCRIPT,
+            inputs={
+                'config': i_general_config_fn,
+                'db': actual_db_fn,
+            },
+            outputs={
+                'split': o_split_fn,
+                'bash_template': o_bash_fn,
+            },
+            parameters={},
+    )
+def run_dazzler_tan_combine(input_files, output_files, db_prefix):
+    i_general_config_fn, i_db_fn, i_gathered_fn, = input_files
+    o_db_fn, = output_files
+    i_actual_db_fn = resolve1(i_db_fn)
+    o_actual_db_fn = '{}.db'.format(db_prefix)
+    run(
+            script=falcon_kit.pype_tasks.TASK_DB_TAN_COMBINE_SCRIPT,
+            inputs={
+                'config': i_general_config_fn,
+                'db': i_actual_db_fn,
+                'gathered': i_gathered_fn,
+            },
+            outputs={
+                'new_db': o_actual_db_fn,
+            },
+            parameters={},
+    )
+    symlink(o_actual_db_fn, o_db_fn)
+def run_dazzler_daligner_split(input_files, output_files):
+    i_general_config_fn, i_db_fn, i_length_cutoff_fn, = input_files
+    o_split_fn, o_bash_fn, = output_files
+    actual_db_fn = resolve1(i_db_fn)
+    run(
+            script=falcon_kit.pype_tasks.TASK_DB_DALIGNER_SPLIT_SCRIPT,
+            inputs={
+                'config': i_general_config_fn,
+                'db': actual_db_fn,
+                'length_cutoff': i_length_cutoff_fn,
+            },
+            outputs={
+                'split': o_split_fn,
+                'bash_template': o_bash_fn,
+            },
+            parameters={
+                'wildcards': 'dal0_id',
+            },
+    )
+def run_dazzler_daligner_combine(input_files, output_files, db_prefix):
+    i_general_config_fn, i_db_fn, i_gathered_fn, = input_files
+    o_las_paths_fn, = output_files
+    actual_db_fn = '{}.db'.format(db_prefix)
+    run(
+            script=falcon_kit.pype_tasks.TASK_DB_DALIGNER_COMBINE_SCRIPT,
+            inputs={
+                'config': i_general_config_fn,
+                'db': i_db_fn,
+                'gathered': i_gathered_fn,
+            },
+            outputs={
+                'las_paths': o_las_paths_fn,
+            },
+            parameters={
+            },
+    )
+def run_dazzler_lamerge_split(input_files, output_files, db_prefix):
+    i_general_config_fn, i_las_paths_fn, = input_files
+    o_split_fn, o_bash_fn, = output_files
+    run(
+            script=falcon_kit.pype_tasks.TASK_DB_LAMERGE_SPLIT_SCRIPT,
+            inputs={
+                'config': i_general_config_fn,
+                'las_paths': i_las_paths_fn,
+            },
+            outputs={
+                'split': o_split_fn,
+                'bash_template': o_bash_fn,
+            },
+            parameters={
+                'db_prefix': db_prefix,
+            },
+    )
+def run_dazzler_lamerge_combine(input_files, output_files):
+    i_general_config_fn, i_gathered_fn, = input_files
+    o_las_paths_fn, o_block2las_fn, = output_files
+    run(
+            script=falcon_kit.pype_tasks.TASK_DB_LAMERGE_COMBINE_SCRIPT,
+            inputs={
+                'config': i_general_config_fn,
+                'gathered': i_gathered_fn,
+            },
+            outputs={
+                'las_paths': o_las_paths_fn,
+                'block2las': o_block2las_fn,
+            },
+            parameters={
+            },
+    )
+
 def run_falcon_build_rdb(input_files, output_files):
     i_general_config_fn, i_fofn_fn = input_files
     run_jobs_fn, db_fn, job_done_fn, length_cutoff_fn = output_files

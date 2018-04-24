@@ -1,6 +1,7 @@
 from __future__ import division
 from __future__ import unicode_literals
 from ..pbcommand import (PipelineChunk, write_pipeline_chunks)
+import copy
 import json
 import logging
 import os
@@ -39,6 +40,20 @@ def num_items_in_each_chunk(num_items, num_chunks):
     assert sum(ret) == num_items
     return ret
 
+def abs_inputs(dn, datum):
+    # If 'input' is a dict within datum (by convention),
+    # then any './' values within it should be prefixed by 'dn'.
+    result = copy.copy(datum)
+    try:
+        input_dict = result['input']
+        for k,v in list(input_dict.items()):
+            if v.startswith('./'):
+                input_dict[k] = os.path.normpath(os.path.join(dn, v))
+    except Exception:
+        # Some other kind of datum.
+        pass
+    return result
+
 def run(task_basename, max_nchunks, input_data_fn, input_txt_fn, chunk_output_json_fn):
     # Given input with a set of N data, write NC outputs ("chunks") with roughly
     # N/NC sets of data each, and write a JSON file to describe them.
@@ -47,9 +62,10 @@ def run(task_basename, max_nchunks, input_data_fn, input_txt_fn, chunk_output_js
     # Then, write a chunk-description file (JSON).
     def yield_each_datum():
         with open(input_data_fn) as stream:
+            dn = os.path.abspath(os.path.dirname(input_data_fn))
             data = json.loads(stream.read())
             for datum in data:
-                yield datum
+                yield abs_inputs(dn, datum)
     nd = sum(1 for _ in yield_each_datum()) # count data
     nchunks = min(max_nchunks, nd)
     list_of_nsd = num_items_in_each_chunk(num_items=nd, num_chunks=nchunks)
