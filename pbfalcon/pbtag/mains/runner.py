@@ -101,11 +101,19 @@ def run_rtc(args):
             'task_run_fubar_jobs': fubar,
             'scatter_fubar': scatter_fubar,
             'gather_fubar': gather_json_list,
+            'task_falcon0_dazzler_tan_apply_jobs_scatter': scatter_json_list_plus_txt,
+            'task_falcon0_dazzler_daligner_apply_jobs_scatter': scatter_json_list_plus_txt,
+            'task_falcon0_dazzler_lamerge_apply_jobs_scatter': scatter_json_list_plus_txt,
+
             'task_falcon0_run_daligner_jobs_scatter': scatter_json_list_plus_txt,
             'task_falcon0_run_las_merge_jobs_scatter': scatter_json_list_plus_txt,
             'task_falcon0_run_cns_jobs_scatter': scatter_json_list_plus_txt,
             'task_falcon1_run_daligner_jobs_scatter': scatter_json_list_plus_txt,
             'task_falcon1_run_las_merge_jobs_scatter': scatter_json_list_plus_txt,
+
+            'task_falcon0_dazzler_tan_apply_jobs_gather': gather_json_list,
+            'task_falcon0_dazzler_daligner_apply_jobs_gather': gather_json_list,
+            'task_falcon0_dazzler_lamerge_apply_jobs_gather': gather_json_list,
 
             'task_falcon0_run_daligner_jobs_gather': gather_json_list,
             'task_falcon0_run_las_merge_jobs_gather': gather_json_list,
