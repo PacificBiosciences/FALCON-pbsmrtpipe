@@ -28,6 +28,7 @@ pip install --user --no-index --find-links=${WHEELHOUSE} pbcommand pbreports pbc
 
 python -c 'import pypeflow; print pypeflow'
 python -c 'import falcon_kit; print falcon_kit'
+python -c 'import falcon_kit.pype_tasks; print falcon_kit.pype_tasks.TASK_DB_BUILD_SCRIPT'
 
 pushd ../FALCON-polish
 pip install --user --edit .
