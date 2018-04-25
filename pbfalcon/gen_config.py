@@ -23,9 +23,9 @@ OPTION_CORES_MAX = 'HGAP_CoresMax_str'
 OPTION_CFG = 'HGAP_FalconAdvanced_str'
 OPTION_AGGRESSIVE_ASM = 'HGAP_AggressiveAsm_bool'
 
-# Override pa_hpcdaligner_option if aggressive (greedy) mode is on
-OPTION_HPC = 'pa_hpcdaligner_option'
-AGGRESSIVE_HPC_OPTION_VALUE = "-v -dal24 -M16 -h70 -e.70 -l1000 -s100 -k14"
+# Override pa_HPCdaligner_option if aggressive (greedy) mode is on
+OPTION_HPC = 'pa_HPCdaligner_option'
+AGGRESSIVE_HPC_OPTION_VALUE = "-v -B24 -M16 -h70 -e.70 -l1000 -s100 -k14"
 
 defaults_old = """\
 falcon_sense_option = --output-multi --min-idt 0.70 --min-cov 1 --max-n-read 20000 --n-core 6
@@ -44,9 +44,9 @@ falcon_sense_option = --output-multi --min-idt 0.70 --min-cov 4 --max-n-read 200
 length_cutoff = -1
 length_cutoff_pr = 12000
 pa_DBsplit_option = -x500 -s50
-pa_HPCdaligner_option = -v -dal4 -M16 -e.70 -l1000 -s1000
+pa_HPCdaligner_option = -v -B4 -M16 -e.70 -l1000 -s1000
 overlap_filtering_setting = --max-diff 100 --max-cov 50 --min-cov 1 --bestn 10 --n-core 24
-ovlp_HPCdaligner_option = -v -dal4 -M16 -h60 -e.96 -l500 -s1000
+ovlp_HPCdaligner_option = -v -B4 -M16 -h60 -e.96 -l500 -s1000
 ovlp_DBsplit_option = -x500 -s50 -a
 falcon_sense_greedy = False
 """
@@ -62,7 +62,7 @@ length_cutoff = -1
 length_cutoff_pr = 50
 overlap_filtering_setting = --max-diff 1000 --max-cov 100000 --min-cov 0 --bestn 1000 --n-core 4
 ovlp_DBsplit_option = -s50 -a
-ovlp_hpcdaligner_option = -v -k15 -h60 -w6 -e.95 -l40 -s100 -M16
+ovlp_HPCdaligner_option = -v -k15 -h60 -w6 -e.95 -l40 -s100 -M16
 pa_DBsplit_option = -x250 -s500
 pa_HPCdaligner_option =   -v -k15 -h35 -w7 -e.70 -l40 -s100 -M16
 falcon_sense_greedy = False
@@ -75,10 +75,10 @@ length_cutoff = -1
 length_cutoff_pr = 500
 falcon_sense_option = --output-multi --min-idt 0.70 --min-cov 4 --max-n-read 200 --n-core 6
 overlap_filtering_setting = --max-diff 60 --max-cov 100 --min-cov 4 --bestn 10 --n-core 4
-ovlp_dbsplit_option = -x500 -s200 -a
-ovlp_hpcdaligner_option = -v -dal24 -M16 -h35 -e.93 -l1000 -s100 -k25
-pa_dbsplit_option =   -x500 -s200
-pa_hpcdaligner_option =   -v -dal24 -M16 -h70 -e.75 -l1000 -s100 -k18
+ovlp_DBsplit_option = -x500 -s200 -a
+ovlp_HPCdaligner_option = -v -B24 -M16 -h35 -e.93 -l1000 -s100 -k25
+pa_DBsplit_option =   -x500 -s200
+pa_HPCdaligner_option =   -v -B24 -M16 -h70 -e.75 -l1000 -s100 -k18
 falcon_sense_greedy = False
 """
 defaults_yeast = """
@@ -89,9 +89,9 @@ length_cutoff_pr = 500
 overlap_filtering_setting = --max_diff 40 --max_cov 80 --min_cov 2 --n_core 12
 overlap_filtering_setting = --max-diff 40 --max-cov 80 --min-cov 2 --n-core 12
 ovlp_DBsplit_option = -x15000 -s40 -a
-ovlp_HPCdaligner_option =  -v -dal4 -k24 -e.96  -s200 -M16 -l2500 -h1024
+ovlp_HPCdaligner_option =  -v -B4 -k24 -e.96  -s200 -M16 -l2500 -h1024
 pa_DBsplit_option = -x500 -s100
-pa_HPCdaligner_option =    -v -dal4 -k18 -e0.70 -s200 -M16 -l4800 -h480 -w8
+pa_HPCdaligner_option =    -v -B4 -k18 -e0.70 -s200 -M16 -l4800 -h480 -w8
 falcon_sense_greedy = False
 """
 defaults_human = """
@@ -102,17 +102,17 @@ length_cutoff_pr = 500
 overlap_filtering_setting = --max_diff 40 --max_cov 80 --min_cov 2 --n_core 12
 overlap_filtering_setting = --max-diff 40 --max-cov 80 --min-cov 2 --n-core 12
 ovlp_DBsplit_option = -x15000 -s40 -a
-ovlp_HPCdaligner_option =  -v -dal4 -k24 -e.96  -s200 -M16 -l2500 -h1024
+ovlp_HPCdaligner_option =  -v -B4 -k24 -e.96  -s200 -M16 -l2500 -h1024
 pa_DBsplit_option = -x500 -s500
-pa_HPCdaligner_option =    -v -dal4 -k18 -e0.70 -s200 -M16 -l4800 -h480 -w8
+pa_HPCdaligner_option =    -v -B4 -k18 -e0.70 -s200 -M16 -l4800 -h480 -w8
 falcon_sense_greedy = False
 """
 defaults_human_in_falcon = """
 genome_size = 3000000000
 length_cutoff = -1
 length_cutoff_pr = 7000
-pa_HPCdaligner_option =  -v -dal128 -M16 -e.70 -l1000 -s1000
-ovlp_HPCdaligner_option = -v -dal128 -M16 -h60 -e.96 -l500 -s1000
+pa_HPCdaligner_option =  -v -B128 -M16 -e.70 -l1000 -s1000
+ovlp_HPCdaligner_option = -v -B128 -M16 -h60 -e.96 -l500 -s1000
 
 pa_DBsplit_option = -x500 -s400
 ovlp_DBsplit_option = -x500 -s400 -a
@@ -128,9 +128,9 @@ genome_size = 3000000000
 length_cutoff = -1
 length_cutoff_pr = 15000
 pa_DBsplit_option = -x500 -s400
-pa_HPCdaligner_option =  -v -dal128 -e0.75 -M24 -l4800 -k18 -h480 -w8 -s100
+pa_HPCdaligner_option =  -v -B128 -e0.75 -M24 -l4800 -k18 -h480 -w8 -s100
 ovlp_DBsplit_option = -s400 -a
-ovlp_HPCdaligner_option =  -v -dal128  -M24 -k24 -h1024 -e.96 -l2500 -s100
+ovlp_HPCdaligner_option =  -v -B128  -M24 -k24 -h1024 -e.96 -l2500 -s100
 overlap_filtering_setting = --max-diff 40 --max-cov 80 --min-cov 2 --n-core 12
 falcon_sense_option = --output-multi --min-idt 0.70 --min-cov 4 --max-n-read 400 --n-core 12
 falcon_sense_skip_contained = False
@@ -182,7 +182,7 @@ def _populate_falcon_options(options):
     # Greedy mode, override pa_HPCdaligner_option too
     if fc['falcon_sense_greedy'] is True:
        log.info('Agressive (greedy) mode is turned on, override %s=%s' % (OPTION_HPC, AGGRESSIVE_HPC_OPTION_VALUE))
-       fc[OPTION_HPC] = AGGRESSIVE_HPC_OPTION_VALUE # "-v -dal24 -M16 -h70 -e.70 -l1000 -s100 -k14"
+       fc[OPTION_HPC] = AGGRESSIVE_HPC_OPTION_VALUE # "-v -B24 -M16 -h70 -e.70 -l1000 -s100 -k14"
     return fc
 
 def _options_dict_with_base_keys(options_dict, prefix='falcon_ns.task_options.'):
@@ -205,6 +205,7 @@ def _gen_config(options_dict):
     """Generate ConfigParser object from dict.
     """
     cfg = configparser.ConfigParser()
+    cfg.optionxform = str
     sec = "General"
     cfg.add_section(sec)
     for key, val in options_dict.items():
@@ -224,6 +225,7 @@ def _write_config(config, config_fn):
 def ini2dict(ini_text):
     ifp = StringIO.StringIO('[General]\n' + ini_text)
     cp = configparser.ConfigParser()
+    cp.optionxform = str
     cp.readfp(ifp)
     return dict(cp.items('General'))
 
@@ -265,7 +267,6 @@ def run_falcon_gen_config(input_files, output_files, options):
     log.info('options to run_falcon_gen_config:\n{}'.format(pprint.pformat(options)))
     options = _options_dict_with_base_keys(options)
     falcon_options = _populate_falcon_options(options)
-    clean_falcon_options(falcon_options)
     log.info('falcon_options to run_falcon_gen_config:\n{}'.format(pprint.pformat(falcon_options)))
     if OPTION_CFG in options:
         overrides = get_falcon_overrides(options[OPTION_CFG], OPTION_CFG)
@@ -273,6 +274,9 @@ def run_falcon_gen_config(input_files, output_files, options):
         falcon_options.update(overrides)
     else:
         raise Exception("Could not find %s" %OPTION_CFG)
+    if 'pa_hpcdaligner_option' in falcon_options:
+        raise Exception('Options are case-sensitive, but we found lower-case "pa_hpcdaligner_option"="{}"'.format(falcon_options['pa_hpcdaligner_option']))
+    clean_falcon_options(falcon_options)
     config = _gen_config(falcon_options)
     with tusks.cd(os.path.dirname(i_fofn_fn)):
         return _write_config(config, o_cfg_fn) # Write lower-case keys, which is fine.

@@ -23,7 +23,7 @@ Output of Original Report
 #   http://swarm/files/depot/branches/springfield/S2.3/software/smrtanalysis/bioinformatics/tools/pbreports/pbreports/report/preassembly.py
 from __future__ import absolute_import
 from pbreports.report.preassembly import produce_report
-from falcon_polish.functional import stricter_json
+from .functional import stricter_json
 from falcon_kit.run_support import get_length_cutoff
 from falcon_kit import stats_preassembly
 import argparse

@@ -122,6 +122,49 @@ FT_FOFN_OUT = OutputFileType(FileTypes.FOFN.file_type_id,
 def run_rtc(rtc):
     return pbfalcon.run_falcon_make_fofn_abs(rtc.task.input_files, rtc.task.output_files)
 
+
+@registry('task_falcon0_dazzler_build_raw', '0.0.0', [FT_JSON, FT_FOFN], [FT_DB, FT(FT_TXT, 'length_cutoff', 'Just a number, the length-cutoff for raw_reads to consider, which might be provided or might be generated')], is_distributed=True, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_dazzler_build(rtc.task.input_files, rtc.task.output_files, 'raw_reads')
+
+@registry('task_falcon0_dazzler_tan_split', '0.0.0', [FT_JSON, FT_DB], [FT(FT_JSON, 'split', 'Units of work.'), FT(FT_TXT, 'bash_template', 'Script to be used in parallel application.')], is_distributed=False, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_dazzler_tan_split(rtc.task.input_files, rtc.task.output_files)
+
+@registry('task_falcon0_dazzler_tan_apply_jobs', '0.0.0', [FT_JSON, FT_TXT], [FT(FT_JSON, 'results', 'for now, just done-sentinels')], is_distributed=True, nproc=4)
+def run_rtc(rtc):
+    return pbfalcon.run_generic_chunkable_jobs(rtc.task.input_files, rtc.task.output_files)
+
+@registry('task_falcon0_dazzler_tan_combine', '0.0.0', [FT_JSON, FT_DB, FT_JSON], [FT_DB], is_distributed=False, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_dazzler_tan_combine(rtc.task.input_files, rtc.task.output_files, 'raw_reads')
+
+@registry('task_falcon0_dazzler_daligner_split', '0.0.0', [FT_JSON, FT_DB, FT_TXT], [FT(FT_JSON, 'split', 'Units of work.'), FT(FT_TXT, 'bash_template', 'Script to be used in parallel application.')], is_distributed=False, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_dazzler_daligner_split(rtc.task.input_files, rtc.task.output_files)
+
+@registry('task_falcon0_dazzler_daligner_apply_jobs', '0.0.0', [FT_JSON, FT_TXT], [FT(FT_JSON, 'results', 'for now, just done-sentinels')], is_distributed=True, nproc=4)
+def run_rtc(rtc):
+    return pbfalcon.run_generic_chunkable_jobs(rtc.task.input_files, rtc.task.output_files)
+
+@registry('task_falcon0_dazzler_daligner_combine', '0.0.0', [FT_JSON, FT_DB, FT_JSON], [FT(FT_JSON, 'las_paths', 'All merged .las files.')], is_distributed=False, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_dazzler_daligner_combine(rtc.task.input_files, rtc.task.output_files, 'raw_reads')
+
+@registry('task_falcon0_dazzler_lamerge_split', '0.0.0', [FT_JSON, FT_JSON], [FT(FT_JSON, 'split', 'Units of work.'), FT(FT_TXT, 'bash_template', 'Script to be used in parallel application.')], is_distributed=False, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_dazzler_lamerge_split(rtc.task.input_files, rtc.task.output_files, 'raw_reads')
+
+@registry('task_falcon0_dazzler_lamerge_apply_jobs', '0.0.0', [FT_JSON, FT_TXT], [FT(FT_JSON, 'results', 'for now, just done-sentinels')], is_distributed=True, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_generic_chunkable_jobs(rtc.task.input_files, rtc.task.output_files)
+
+@registry('task_falcon0_dazzler_lamerge_combine', '0.0.0', [FT_JSON, FT_JSON], [FT(FT_JSON, 'las_paths', 'All merged .las files.'), FT(FT_JSON, 'block2las', 'Archaic oddity.')], is_distributed=False, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_dazzler_lamerge_combine(rtc.task.input_files, rtc.task.output_files)
+
+
+######################################
 RDJ0_OUT = OutputFileType(FileTypes.TXT.file_type_id,
                              "run_daligner_jobs0_id",
                              "bash file from HPC.daligner, stage-0",
@@ -151,14 +194,15 @@ def run_rtc(rtc):
 def run_rtc(rtc):
     return pbfalcon.run_generic_chunkable_jobs(rtc.task.input_files, rtc.task.output_files)
 
+@registry('task_falcon0_run_las_merge_post_gather', '0.0.0', [FT_JSON], [FT(FT_JSON, 'las-fofn', 'JSON list of .las filenames'), FT(FT_JSON, 'p_id2las', 'Odd file, currently consumed by consensus.')], is_distributed=False, nproc=1)
+def run_rtc(rtc):
+    return pbfalcon.run_las_merge_post_gather(rtc.task.input_files, rtc.task.output_files)
+######################################
+
 @registry('task_falcon0_rm_las', '0.0.0', [FT_JSON], [FT_TXT], is_distributed=True)
 # remove raw_reads.*.raw_reads.*.las # TODO: These should already be gone.
 def run_rtc(rtc):
     return pbfalcon.run_rm_las(rtc.task.input_files, rtc.task.output_files, prefix='L*.*.raw_reads.')
-
-@registry('task_falcon0_run_las_merge_post_gather', '0.0.0', [FT_JSON], [FT(FT_JSON, 'las-fofn', 'JSON list of .las filenames'), FT(FT_JSON, 'p_id2las', 'Odd file, currently consumed by consensus.')], is_distributed=False, nproc=1)
-def run_rtc(rtc):
-    return pbfalcon.run_las_merge_post_gather(rtc.task.input_files, rtc.task.output_files)
 
 @registry('task_falcon0_run_cns_split', '0.0.0', [FT_JSON, FT_DB, FT_JSON, FT_TXT], [FT(FT_JSON, 'all-units-of-work', 'Split work for consensus'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=1)
 def run_rtc(rtc):
@@ -212,7 +256,7 @@ def run_rtc(rtc):
 def run_rtc(rtc):
     return pbfalcon.run_daligner_find_las(rtc.task.input_files, rtc.task.output_files)
 
-@registry('task_falcon1_run_las_merge_split', '0.0.0', [RDJ0_OUT, FT_JSON], [FT(FT_JSON, 'all-units-of-work', 'Split work script for LAmerge'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=1)
+@registry('task_falcon1_run_las_merge_split', '0.0.0', [FT_TXT, FT_JSON], [FT(FT_JSON, 'all-units-of-work', 'Split work script for LAmerge'), FT(FT_TXT, 'daligner_bash_template.sh', 'bash run script')], is_distributed=False, nproc=1)
 def run_rtc(rtc):
     return pbfalcon.run_las_merge_split(rtc.task.input_files, rtc.task.output_files, db_prefix='preads')
 
